@@ -1,0 +1,50 @@
+name: CarFlip hlidani
+
+# Spousti se automaticky kazdych ~15 minut (GitHub muze obcas trochu zpozdit)
+# a da se spustit i rucne tlacitkem "Run workflow".
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+# Aby nebezely dva behy najednou (treba kdyz prvni dlouhy beh jeste neskoncil).
+concurrency:
+  group: carflip
+  cancel-in-progress: false
+
+# Aby program mohl ulozit stav (videno.db) zpatky do repozitare.
+permissions:
+  contents: write
+
+jobs:
+  hlidat:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stahnout kod a stav
+        uses: actions/checkout@v4
+
+      - name: Nainstalovat Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Nainstalovat knihovny
+        run: pip install -r requirements-server.txt
+
+      - name: Spustit CarFlip (jeden beh)
+        env:
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          CARFLIP_ONCE: "1"
+        run: python main.py
+
+      - name: Ulozit stav zpatky do repozitare
+        run: |
+          git config user.name "carflip-bot"
+          git config user.email "carflip-bot@users.noreply.github.com"
+          git add videno.db cena_cache.json kurz_cache.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Zadna zmena stavu k ulozeni."
+          else
+            git commit -m "stav hlidani"
+            git push
+          fi

@@ -1,0 +1,6 @@
+requests
+beautifulsoup4
+lxml
+deep-translator
+tkintermapview
+pillow

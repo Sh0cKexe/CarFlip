@@ -1,0 +1,6 @@
+# Tajny token - nikdy do repozitare!
+token.txt
+
+# Docasne / vyrovnavaci
+__pycache__/
+*.pyc

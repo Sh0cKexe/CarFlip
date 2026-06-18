@@ -1,0 +1,57 @@
+{
+  "telegram": {
+    "token": "",
+    "chat_id": "5153420127",
+    "dalsi_prijemci": [
+      "5452977671"
+    ]
+  },
+  "min_zisk_kc": 20000,
+  "naklady_dovoz_kc": 10000,
+  "min_srovnani": 3,
+  "kontrola_minut": 15,
+  "filtry": {
+    "znacky": [
+      "volkswagen",
+      "audi",
+      "skoda",
+      "seat",
+      "bmw",
+      "opel",
+      "renault",
+      "peugeot",
+      "citroen",
+      "ford",
+      "toyota",
+      "hyundai",
+      "kia",
+      "volvo",
+      "mazda",
+      "nissan",
+      "fiat"
+    ],
+    "palivo": "vse",
+    "prevodovka": "manual",
+    "oblasti": [
+      {
+        "nazev": "Sosnowiec",
+        "mesto_slug": "sosnowiec",
+        "lat": 50.27695,
+        "lon": 19.2769,
+        "okruh_km": 100
+      },
+      {
+        "nazev": "Chwalibożyce",
+        "mesto_slug": "chwalibozyce",
+        "lat": 50.86307,
+        "lon": 17.32134,
+        "okruh_km": 65
+      }
+    ],
+    "min_rok": 2003,
+    "max_najezd_nafta": 250000,
+    "max_najezd_benzin": 200000,
+    "max_cena_pln": 12501,
+    "min_cena_pln": 0
+  }
+}
