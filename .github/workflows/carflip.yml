@@ -1,10 +1,9 @@
 name: CarFlip hlidani
 
-# Spousti se automaticky kazdych ~15 minut (GitHub muze obcas trochu zpozdit)
-# a da se spustit i rucne tlacitkem "Run workflow".
+# Spousti se kazdych 15 minut zvenku pres cron-job.org (ten "zmackne" workflow_dispatch).
+# Da se spustit i rucne tlacitkem "Run workflow".
+# (Vlastni GitHub "schedule" je zamerne vypnuty, aby to nebezelo dvakrat.)
 on:
-  schedule:
-    - cron: "*/15 * * * *"
   workflow_dispatch: {}
 
 # Aby nebezely dva behy najednou (treba kdyz prvni dlouhy beh jeste neskoncil).
