@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
+import Logo from "@/app/components/Logo";
 
 const LANG_KLIC = "carflip_lang";
 
@@ -59,9 +60,7 @@ export default function LoginPage() {
       >
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent2 text-lg">
-              🚗
-            </span>
+            <Logo size={36} />
             <h1 className="text-xl font-semibold tracking-tight text-zinc-100">FlipniTo</h1>
           </div>
           <div className="flex gap-1">

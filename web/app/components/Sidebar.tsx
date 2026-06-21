@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
+import Logo from "@/app/components/Logo";
 
 export default function Sidebar({ email, trh, userId }: { email: string; trh?: Trh; userId?: string }) {
   const router = useRouter();
@@ -24,7 +25,9 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   }
 
   const polozky = [
-    { href: "/dashboard/bot", ikona: "🤖", text: t.nastaveniBota },
+    { href: "/dashboard", ikona: "📊", text: t.prehled, presne: true },
+    { href: "/dashboard/ai", ikona: "🤖", text: t.aiRozborNadpis },
+    { href: "/dashboard/bot", ikona: "🛠️", text: t.nastaveniBota },
     { href: "/dashboard/filtry", ikona: "🔍", text: t.filtryHledani },
     { href: "/auta", ikona: "📋", text: t.mojeAuta },
   ];
@@ -32,18 +35,18 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-sidebar text-zinc-200">
       <Link href="/dashboard" className="flex items-center gap-2.5 px-5 py-6 hover:opacity-90">
-        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent2 text-lg">
-          🚗
-        </span>
+        <Logo size={36} />
         <span className="text-lg font-semibold tracking-tight text-white">FlipniTo</span>
       </Link>
       <nav className="flex-1 space-y-1 px-3">
-        {polozky.map((p) => (
+        {polozky.map((p) => {
+          const aktivni = p.presne ? pathname === p.href : pathname.startsWith(p.href);
+          return (
           <Link
             key={p.href}
             href={p.href}
             className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-              pathname.startsWith(p.href)
+              aktivni
                 ? "bg-accent text-white font-medium"
                 : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
             }`}
@@ -51,7 +54,8 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
             <span>{p.ikona}</span>
             {p.text}
           </Link>
-        ))}
+          );
+        })}
       </nav>
       <div className="border-t border-sidebar2 px-5 py-4">
         <div className="mb-3">

@@ -154,3 +154,28 @@ create policy "auta_fotky_delete_own" on storage.objects
     bucket_id = 'auta-fotky'
     and (storage.foldername(name))[1] = auth.uid()::text
   );
+
+-- ---------------------------------------------------------------------
+-- AI rozbor inzeratu: historie predchozich rozboru (samostatna stranka,
+-- neni vazana na konkretni auto v "auta").
+-- ---------------------------------------------------------------------
+
+create table if not exists public.ai_rozbory (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  url text not null default '',
+  vysledek text not null default '',
+  vytvoreno timestamptz not null default now()
+);
+
+alter table public.ai_rozbory enable row level security;
+
+drop policy if exists "ai_rozbory_select_own" on public.ai_rozbory;
+create policy "ai_rozbory_select_own" on public.ai_rozbory
+  for select using (auth.uid() = user_id);
+drop policy if exists "ai_rozbory_insert_own" on public.ai_rozbory;
+create policy "ai_rozbory_insert_own" on public.ai_rozbory
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "ai_rozbory_delete_own" on public.ai_rozbory;
+create policy "ai_rozbory_delete_own" on public.ai_rozbory
+  for delete using (auth.uid() = user_id);
