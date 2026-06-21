@@ -32,6 +32,9 @@ export default function AutoDetail({
   const [uklada, setUklada] = useState(false);
   const [nahravam, setNahravam] = useState(false);
   const [zprava, setZprava] = useState<string | null>(null);
+  const [aiRozbor, setAiRozbor] = useState<string | null>(null);
+  const [aiBezi, setAiBezi] = useState(false);
+  const [aiChyba, setAiChyba] = useState<string | null>(null);
 
   const sumaNakladu = naklady.reduce((s, n) => s + (n.castka_kc || 0), 0);
   const zisk =
@@ -114,6 +117,32 @@ export default function AutoDetail({
     if (fileInput.current) fileInput.current.value = "";
   }
 
+  async function spustitAiRozbor() {
+    setAiBezi(true);
+    setAiChyba(null);
+    setAiRozbor(null);
+    try {
+      const r = await fetch("/api/ai-rozbor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: auto.otomoto_url }),
+      });
+      const j = await r.json();
+      if (!r.ok) setAiChyba(j.error || "Neznámá chyba.");
+      else setAiRozbor(j.text);
+    } catch (e: any) {
+      setAiChyba("Chyba sítě: " + e.message);
+    } finally {
+      setAiBezi(false);
+    }
+  }
+
+  function pridatRozborDoPoznamek() {
+    if (!aiRozbor) return;
+    setPole("poznamky", (auto.poznamky ? auto.poznamky + "\n\n" : "") + "--- AI rozbor ---\n" + aiRozbor);
+    setAiRozbor(null);
+  }
+
   async function smazatFotku(cesta: string) {
     await supabase.storage.from("auta-fotky").remove([cesta]);
     const fotky = auto.fotky.filter((f) => f !== cesta);
@@ -149,6 +178,24 @@ export default function AutoDetail({
           <Pole label="Link na Otomoto inzerát">
             <input className={input} value={auto.otomoto_url} onChange={(e) => setPole("otomoto_url", e.target.value)} />
           </Pole>
+          <button
+            type="button" onClick={spustitAiRozbor} disabled={aiBezi || !auto.otomoto_url}
+            className="mt-2 rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 transition hover:bg-accent2/10 disabled:opacity-40"
+          >
+            {aiBezi ? "Analyzuji..." : "🤖 AI rozbor inzerátu"}
+          </button>
+          {aiChyba && <p className="mt-2 text-sm text-red-400">{aiChyba}</p>}
+          {aiRozbor && (
+            <div className="mt-3 rounded-lg border border-border bg-panel2 p-4">
+              <p className="whitespace-pre-wrap text-sm text-zinc-200">{aiRozbor}</p>
+              <button
+                type="button" onClick={pridatRozborDoPoznamek}
+                className="mt-3 rounded-lg border border-accent px-3 py-1.5 text-xs text-accent hover:bg-accent/10"
+              >
+                Přidat do poznámek
+              </button>
+            </div>
+          )}
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Pole label="Cena koupeno (Kč)">

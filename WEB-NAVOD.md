@@ -79,3 +79,22 @@ Potřebuje to dvě nové tabulky + Storage bucket navíc. Spusť znovu SQL:
 
 Žádné nové GitHub secrets ani Vercel env proměnné nejsou potřeba – fotky
 i tabulky používají stejné Supabase přihlášení, co už web má.
+
+## Aktualizace – AI rozbor inzerátu
+U pole "Link na Otomoto inzerát" (na stránce auta) přibylo tlačítko
+**🤖 AI rozbor inzerátu** – stáhne inzerát a Claude napíše shrnutí, typické
+známé závady, red flags a doporučení koupit/nekoupit.
+
+Potřebuje to API klíč (jen na serveru, nikdy ve webu/prohlížeči):
+1. **https://console.anthropic.com** → založ účet (nový účet dostane malý
+   free trial kredit – stačí na hodně testování, žádný "navždy zdarma" tier
+   ale neexistuje).
+2. **API Keys → Create Key**, zkopíruj hodnotu (začíná `sk-ant-...`).
+3. Ve **Vercelu** → CarFlip projekt → **Settings → Environment Variables**:
+   - Name: `ANTHROPIC_API_KEY`
+   - Value: ten klíč z kroku 2
+   - Environments: Production + Preview
+4. **Redeploy** (Vercel → Deployments → ⋯ → Redeploy), ať se proměnná použije.
+
+Cena: i bez kreditu řádově desetiny Kč na jeden rozbor (model Claude Opus 4.8).
+Sleduj spotřebu v **console.anthropic.com → Usage**.
