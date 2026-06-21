@@ -66,3 +66,16 @@ uživatelů webu):
 - Tvůj osobní bot (`carflip.yml`) běží dál nezávisle, nic se mu nezmění.
 - Pole "Oblasti" ve webu je nepovinné (prázdné = hledá v celém Polsku) –
   pro konkrétní město stačí zadat název a slug (např. `wroclaw`) + okruh km.
+
+## Aktualizace – účetní modul (auta, náklady, fotky)
+Přibyla záložka **Moje auta** vedle Nastavení – ke každému autu na flipu si
+napíšeš poznámky, náklady (dovoz, STK, pojistka…) a přiložíš fotky.
+
+Potřebuje to dvě nové tabulky + Storage bucket navíc. Spusť znovu SQL:
+1. Supabase → **SQL Editor** → New query.
+2. Otevři znovu `supabase/schema.sql` (má teď víc řádků než předtím),
+   zkopíruj **celý** obsah, vlož, **Run**. (Je to bezpečné spustit znovu i
+   nad existující databází – nic nepřepíše/nesmaže.)
+
+Žádné nové GitHub secrets ani Vercel env proměnné nejsou potřeba – fotky
+i tabulky používají stejné Supabase přihlášení, co už web má.

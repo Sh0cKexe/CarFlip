@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import Nav from "@/app/components/Nav";
+import { Sekce, Pole, input } from "@/app/components/FormUI";
 
 type Oblast = { nazev: string; mesto_slug: string; okruh_km: number };
 
@@ -49,7 +50,6 @@ const ZNAME_ZNACKY = [
 ].sort();
 
 export default function DashboardForm({ email, nastaveni }: { email: string; nastaveni: Nastaveni | null }) {
-  const router = useRouter();
   const supabase = createClient();
 
   const [n, setN] = useState<Nastaveni>(
@@ -148,26 +148,9 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
     }
   }
 
-  async function odhlasit() {
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
-  }
-
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <header className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-2xl">🚗</span>
-          <h1 className="text-xl font-semibold tracking-tight">CarFlip</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-zinc-500">{email}</span>
-          <button onClick={odhlasit} className="rounded-lg border border-border px-3 py-1.5 text-sm text-zinc-300 hover:bg-panel2">
-            Odhlásit
-          </button>
-        </div>
-      </header>
+      <Nav email={email} />
 
       <Sekce titulek="Telegram bot" badge={n.aktivni ? { text: "aktivní", tone: "green" } : { text: "pozastaveno", tone: "zinc" }}>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -325,36 +308,3 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
   );
 }
 
-function Sekce({
-  titulek, children, badge,
-}: { titulek: string; children: React.ReactNode; badge?: { text: string; tone: "green" | "zinc" } }) {
-  return (
-    <section className="mb-6 rounded-2xl border border-border bg-panel p-6">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-base font-semibold text-zinc-100">{titulek}</h2>
-        {badge && (
-          <span
-            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              badge.tone === "green" ? "bg-accent/15 text-accent" : "bg-zinc-700/40 text-zinc-400"
-            }`}
-          >
-            {badge.text}
-          </span>
-        )}
-      </div>
-      {children}
-    </section>
-  );
-}
-
-function Pole({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-1 block text-xs text-zinc-400">{label}</label>
-      {children}
-    </div>
-  );
-}
-
-const input =
-  "w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-accent2 focus:ring-2";

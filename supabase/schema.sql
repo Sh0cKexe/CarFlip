@@ -60,3 +60,83 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ---------------------------------------------------------------------
+-- Ucetni modul: auta na flipu, naklady k nim, fotky (Storage).
+-- Spustit znovu cely tento soubor v SQL editoru - prikazy jsou idempotentni.
+-- ---------------------------------------------------------------------
+
+create table if not exists public.auta (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  titulek text not null default '',
+  otomoto_url text not null default '',
+  stav text not null default 'koupeno',
+  cena_koupeno_kc integer,
+  cena_prodano_kc integer,
+  poznamky text not null default '',
+  fotky jsonb not null default '[]'::jsonb,
+  vytvoreno timestamptz not null default now()
+);
+
+create table if not exists public.naklady (
+  id uuid primary key default gen_random_uuid(),
+  auto_id uuid not null references public.auta (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  popis text not null default '',
+  castka_kc integer not null default 0,
+  datum date not null default current_date
+);
+
+alter table public.auta enable row level security;
+alter table public.naklady enable row level security;
+
+drop policy if exists "auta_select_own" on public.auta;
+create policy "auta_select_own" on public.auta
+  for select using (auth.uid() = user_id);
+drop policy if exists "auta_insert_own" on public.auta;
+create policy "auta_insert_own" on public.auta
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "auta_update_own" on public.auta;
+create policy "auta_update_own" on public.auta
+  for update using (auth.uid() = user_id);
+drop policy if exists "auta_delete_own" on public.auta;
+create policy "auta_delete_own" on public.auta
+  for delete using (auth.uid() = user_id);
+
+drop policy if exists "naklady_select_own" on public.naklady;
+create policy "naklady_select_own" on public.naklady
+  for select using (auth.uid() = user_id);
+drop policy if exists "naklady_insert_own" on public.naklady;
+create policy "naklady_insert_own" on public.naklady
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "naklady_update_own" on public.naklady;
+create policy "naklady_update_own" on public.naklady
+  for update using (auth.uid() = user_id);
+drop policy if exists "naklady_delete_own" on public.naklady;
+create policy "naklady_delete_own" on public.naklady
+  for delete using (auth.uid() = user_id);
+
+-- Storage bucket pro fotky aut (privatni - pristup jen pres podepsane URL/RLS).
+insert into storage.buckets (id, name, public)
+values ('auta-fotky', 'auta-fotky', false)
+on conflict (id) do nothing;
+
+drop policy if exists "auta_fotky_select_own" on storage.objects;
+create policy "auta_fotky_select_own" on storage.objects
+  for select using (
+    bucket_id = 'auta-fotky'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+drop policy if exists "auta_fotky_insert_own" on storage.objects;
+create policy "auta_fotky_insert_own" on storage.objects
+  for insert with check (
+    bucket_id = 'auta-fotky'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+drop policy if exists "auta_fotky_delete_own" on storage.objects;
+create policy "auta_fotky_delete_own" on storage.objects
+  for delete using (
+    bucket_id = 'auta-fotky'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
