@@ -86,15 +86,17 @@ MIN_ROZUMNA_CENA = {"cz": 25000, "sk": 1000}
 ZAOKROUHLENI_STROPU = {"cz": 20000, "sk": 500}
 
 
+def _preloz_model(model, trh="cz"):
+    """Prelozi slova modelu (napr. 'seria' -> 'rada'/'rad') podle trhu."""
+    preklad = MODEL_PREKLAD.get(trh, MODEL_PREKLAD["cz"])
+    model = (model or "").strip().lower()
+    return " ".join(preklad.get(s, s) for s in model.split())
+
+
 def _ceske_hledani(znacka, model, trh="cz"):
     """Sestavi vyhledavaci dotaz pro Bazos."""
     znacka = (znacka or "").strip().lower()
-    model = (model or "").strip().lower()
-    preklad = MODEL_PREKLAD.get(trh, MODEL_PREKLAD["cz"])
-    slova = []
-    for s in model.split():
-        slova.append(preklad.get(s, s))
-    model_cz = " ".join(slova)
+    model_cz = _preloz_model(model, trh=trh)
     return (znacka + " " + model_cz).strip()
 
 
@@ -248,7 +250,9 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5, t
         r = _stahni_stranku(session, url, params)
         if r is None:
             break
-        r.encoding = "windows-1250"
+        # Bazos byval windows-1250, dnes posila UTF-8 (s charset v headeru) -
+        # spoleham na apparent_encoding (detekce z obsahu), ne natvrdo 1250.
+        r.encoding = r.apparent_encoding
         soup = BeautifulSoup(r.text, "lxml")
         bloky = soup.select("div.inzeraty")
         if not bloky:
@@ -320,7 +324,10 @@ def odhad_ceny(znacka, model, rok=None, najezd_km=None, cena_anchor_czk=None,
     # 0) NAZEV inzeratu musi obsahovat hledany model (ne jen popis).
     #    Tim vyradime jine modely, ktere se jen zminily v textu
     #    (napr. Skoda Octavia, kdyz hledame Seat Ibiza).
-    model_tokeny = [t for t in _bez_diakritiky(model).split() if len(t) >= 2]
+    #    POZOR: tokeny musi byt PRELOZENE (napr. "seria" -> "rada"/"rad"),
+    #    jinak titulek v cestine/slovenstine slovo "seria" nikdy neobsahuje
+    #    a filtr by vyradil skoro vse.
+    model_tokeny = [t for t in _bez_diakritiky(_preloz_model(model, trh=trh)).split() if len(t) >= 2]
     if model_tokeny:
         vybrane = [x for x in syrove
                    if all(tok in _bez_diakritiky(x["titulek"]) for tok in model_tokeny)]
