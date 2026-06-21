@@ -179,3 +179,35 @@ create policy "ai_rozbory_insert_own" on public.ai_rozbory
 drop policy if exists "ai_rozbory_delete_own" on public.ai_rozbory;
 create policy "ai_rozbory_delete_own" on public.ai_rozbory
   for delete using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- Invite kody a prodluzitelny pristup (paywall gate).
+-- invite_kody: zadne RLS policy -> nedostupne z webu (anon/auth klic),
+-- jen service key (registracni route) a ty v Supabase Table Editoru.
+-- pristup: jen "select vlastniho radku" policy - zapis/prodlouzeni jen
+-- service key nebo ty v Table Editoru, NIKDY z webu (aby si uzivatel
+-- nemohl sam prodlouzit pristup pres browser konzoli).
+-- ---------------------------------------------------------------------
+
+create table if not exists public.invite_kody (
+  kod text primary key,
+  dny_platnosti integer not null default 30,
+  pouzil_user_id uuid references auth.users (id) on delete set null,
+  pouzito_kdy timestamptz,
+  vytvoreno timestamptz not null default now()
+);
+
+alter table public.invite_kody enable row level security;
+-- Zamerne zadna policy - tabulka je nedostupna z webu, jen service key.
+
+create table if not exists public.pristup (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  pristup_do timestamptz not null,
+  vytvoreno timestamptz not null default now()
+);
+
+alter table public.pristup enable row level security;
+
+drop policy if exists "pristup_select_own" on public.pristup;
+create policy "pristup_select_own" on public.pristup
+  for select using (auth.uid() = user_id);

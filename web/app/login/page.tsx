@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
 import Logo from "@/app/components/Logo";
@@ -9,11 +9,21 @@ import Logo from "@/app/components/Logo";
 const LANG_KLIC = "carflip_lang";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginFormulare />
+    </Suspense>
+  );
+}
+
+function LoginFormulare() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [heslo, setHeslo] = useState("");
+  const [kod, setKod] = useState("");
   const [zprava, setZprava] = useState<string | null>(null);
   const [pracuje, setPracuje] = useState(false);
   const [trh, setTrh] = useState<Trh>("cz");
@@ -22,6 +32,8 @@ export default function LoginPage() {
   useEffect(() => {
     const ulozeny = localStorage.getItem(LANG_KLIC);
     if (ulozeny === "cz" || ulozeny === "sk") setTrh(ulozeny);
+    if (searchParams.get("vyprselo")) setZprava(t.pristupVyprsel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function zmenitJazyk(novy: Trh) {
@@ -40,10 +52,17 @@ export default function LoginPage() {
         router.push("/dashboard");
         router.refresh();
       } else {
-        const { error } = await supabase.auth.signUp({ email, password: heslo });
+        const r = await fetch("/api/registrace", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, heslo, kod }),
+        });
+        const j = await r.json();
+        if (!r.ok) throw new Error(j.error || "Registrace se nezdařila.");
+        const { error } = await supabase.auth.signInWithPassword({ email, password: heslo });
         if (error) throw error;
-        setZprava(t.registraceOk);
-        setMode("login");
+        router.push("/dashboard");
+        router.refresh();
       }
     } catch (err: any) {
       setZprava("Chyba: " + (err?.message || String(err)));
@@ -116,8 +135,20 @@ export default function LoginPage() {
           minLength={6}
           value={heslo}
           onChange={(e) => setHeslo(e.target.value)}
-          className="mb-6 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
+          className={`w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2 ${mode === "register" ? "mb-4" : "mb-6"}`}
         />
+
+        {mode === "register" && (
+          <>
+            <label className="mb-1 block text-xs text-zinc-400">{t.inviteKod}</label>
+            <input
+              required
+              value={kod}
+              onChange={(e) => setKod(e.target.value)}
+              className="mb-6 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
+            />
+          </>
+        )}
 
         <button
           type="submit"

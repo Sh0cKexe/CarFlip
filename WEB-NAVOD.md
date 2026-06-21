@@ -126,3 +126,35 @@ Drobnost k vědomí: hledání srovnatelných inzerátů na Bazoši je u někter
 přeložených slov u modelu (např. "BMW Seria 3") přísnější filtr, který může
 u takových modelů vracet méně/žádné srovnání – netýká se to multi-stát
 změny, je to starší chování, které lze doladit později.
+
+## Aktualizace – invite kódy a prodlužitelný přístup
+Registrace teď NENÍ veřejná pro kohokoliv – nový uživatel potřebuje **invite
+kód**, který mu dáš ty. Kód uděluje přístup na X dní; když si zaplatí dál,
+přístup mu jen **prodloužíš** (žádný nový kód potřeba).
+
+**Nastavení (jednou):**
+1. Spusť znovu `supabase/schema.sql` (přidává tabulky `invite_kody` a `pristup`).
+2. Supabase → **Project Settings → API** → zkopíruj **service_role** klíč
+   (ten citlivý, co se nikdy nesmí dát do webu/repa).
+3. Vercel → projekt → **Settings → Environment Variables** → přidej:
+   - Name: `SUPABASE_SERVICE_KEY`
+   - Value: ten service_role klíč
+   - Environments: Production (Preview nepotřebuješ)
+4. **Redeploy.**
+
+**Jak vytvořit invite kód pro nového zákazníka:**
+1. Supabase → **Table Editor → invite_kody → Insert row**.
+2. `kod`: vymysli si kód (např. `JARDA-2026-04`), `dny_platnosti`: počet dní
+   (např. `30`), zbytek (`pouzil_user_id`, `pouzito_kdy`) nech prázdné.
+3. Pošli zákazníkovi `kod` – při registraci ho zadá do pole "Invite kód".
+   Po použití se kód automaticky označí jako spotřebovaný (nejde použít znovu).
+
+**Jak prodloužit přístup (zákazník zaplatil další měsíc):**
+1. Supabase → **Table Editor → pristup** → najdi řádek podle `user_id`
+   (pokud nevíš který, mrkni do **Authentication → Users** na jeho e-mail/ID).
+2. Uprav `pristup_do` na nové datum v budoucnu → uložit.
+3. Hotovo – žádný nový kód, žádný zásah na webu. Pokud byl mezitím odhlášený
+   (přístup vypršel), stačí se znovu přihlásit.
+
+Uživatelé, kteří se zaregistrovali PŘED touto změnou, nemají v `pristup`
+žádný řádek – nejsou tím omezeni (pokračují bez expirace).

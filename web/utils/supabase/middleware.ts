@@ -26,11 +26,28 @@ export async function updateSession(request: NextRequest) {
   );
 
   const { data: { user } } = await supabase.auth.getUser();
+  const chranenaCesta = request.nextUrl.pathname.startsWith("/dashboard")
+    || request.nextUrl.pathname.startsWith("/auta");
 
-  if (!user && request.nextUrl.pathname.startsWith("/dashboard")) {
+  if (!user && chranenaCesta) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  if (user && chranenaCesta) {
+    const { data: pristup } = await supabase
+      .from("pristup")
+      .select("pristup_do")
+      .eq("user_id", user.id)
+      .single();
+    if (pristup && new Date(pristup.pristup_do) < new Date()) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("vyprselo", "1");
+      return NextResponse.redirect(url);
+    }
   }
 
   if (user && request.nextUrl.pathname === "/login") {

@@ -16,6 +16,8 @@ const CS = {
   prihlasitSe: "Přihlásit se",
   vytvoritUcet: "Vytvořit účet",
   registraceOk: "Registrace OK. Pokud projekt vyžaduje potvrzení e-mailu, zkontroluj schránku, jinak se hned přihlas.",
+  inviteKod: "Invite kód",
+  pristupVyprsel: "Přístup vypršel. Pro prodloužení kontaktuj administrátora.",
 
   telegramBot: "Telegram bot",
   aktivni: "aktivní",
@@ -133,6 +135,8 @@ const SK: typeof CS = {
   prihlasitSe: "Prihlásiť sa",
   vytvoritUcet: "Vytvoriť účet",
   registraceOk: "Registrácia OK. Ak projekt vyžaduje potvrdenie e-mailu, skontroluj schránku, inak sa hneď prihlás.",
+  inviteKod: "Invite kód",
+  pristupVyprsel: "Prístup vypršal. Pre predĺženie kontaktuj administrátora.",
 
   telegramBot: "Telegram bot",
   aktivni: "aktívny",
