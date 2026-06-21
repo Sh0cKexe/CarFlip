@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "CarFlip",
-  description: "CarFlip - hlídání ziskových aut",
+  title: "FlipniTo",
+  description: "FlipniTo - hlídání ziskových aut",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
