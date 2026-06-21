@@ -35,13 +35,17 @@ alter table public.nastaveni enable row level security;
 alter table public.videno enable row level security;
 
 -- Uzivatel (anon klic + auth) vidi a upravuje JEN svuj radek.
+drop policy if exists "nastaveni_select_own" on public.nastaveni;
 create policy "nastaveni_select_own" on public.nastaveni
   for select using (auth.uid() = user_id);
+drop policy if exists "nastaveni_update_own" on public.nastaveni;
 create policy "nastaveni_update_own" on public.nastaveni
   for update using (auth.uid() = user_id);
+drop policy if exists "nastaveni_insert_own" on public.nastaveni;
 create policy "nastaveni_insert_own" on public.nastaveni
   for insert with check (auth.uid() = user_id);
 
+drop policy if exists "videno_select_own" on public.videno;
 create policy "videno_select_own" on public.videno
   for select using (auth.uid() = user_id);
 
