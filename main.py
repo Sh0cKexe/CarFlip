@@ -174,13 +174,15 @@ def _problem_v_popisu(popis_pl):
     return False
 
 
-def zpracuj_auto(auto, cfg, kurz_pln):
+def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
+                  oznac_videno=databaze.oznac_videno):
     """Vyhodnoti jedno auto. Vraci True pokud bylo poslano upozorneni.
-    Auto, ktere uz bylo videno (v databazi), preskoci - aby upozorneni
-    nechodilo dvakrat."""
-    if databaze.uz_videno(auto["id"]):
+    Auto, ktere uz bylo videno, preskoci - aby upozorneni nechodilo dvakrat.
+    uz_videno/oznac_videno jsou vymenitelne (sqlite lokalne, Supabase v cloudu),
+    aby stejnou logiku sdilel legacy i multi-tenant cloud rezim."""
+    if uz_videno(auto["id"]):
         return False
-    databaze.oznac_videno(auto["id"])
+    oznac_videno(auto["id"])
 
     if not auto.get("cena_pln") or not auto.get("znacka"):
         return False
@@ -248,7 +250,8 @@ def zpracuj_auto(auto, cfg, kurz_pln):
 MAX_STRAN_PRVNI = 25
 
 
-def jeden_beh(cfg, prvni_beh):
+def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
+              oznac_videno=databaze.oznac_videno):
     kurz_pln = kurz.kurz_pln_czk()
     print("Kurz: 1 PLN =", round(kurz_pln, 3), "Kc")
     filtry = cfg["filtry"]
@@ -266,7 +269,7 @@ def jeden_beh(cfg, prvni_beh):
             print("  nalezeno {} inzeratu".format(len(auta)))
             for auto in auta:
                 try:
-                    if zpracuj_auto(auto, cfg, kurz_pln):
+                    if zpracuj_auto(auto, cfg, kurz_pln, uz_videno, oznac_videno):
                         poslano += 1
                 except Exception as e:
                     print("  chyba u auta:", e)

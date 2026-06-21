@@ -1,0 +1,37 @@
+name: CarFlip cloud (multi-tenant)
+
+# Tohle je NOVY beh navic k puvodnimu "CarFlip hlidani" (ten zustava beze zmeny
+# pro tveho osobniho bota). Tento beh projede VSECHNY aktivni uzivatele webu
+# (nastaveni + videno ulozene ve Supabase, ne v gitu).
+#
+# Spousti se stejne jako puvodni - externim budikem (cron-job.org) přes
+# workflow_dispatch. Az bude web/Supabase hotovy, nastav v cron-job.org druhy
+# job, ktery bude volat:
+#   POST .../actions/workflows/carflip-cloud.yml/dispatches {"ref":"main"}
+on:
+  workflow_dispatch: {}
+
+concurrency:
+  group: carflip-cloud
+  cancel-in-progress: false
+
+jobs:
+  hlidat_cloud:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stahnout kod
+        uses: actions/checkout@v4
+
+      - name: Nainstalovat Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Nainstalovat knihovny
+        run: pip install -r requirements-server.txt
+
+      - name: Spustit CarFlip cloud (vsichni uzivatele)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python main_cloud.py
