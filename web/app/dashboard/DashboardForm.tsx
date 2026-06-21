@@ -30,11 +30,23 @@ type Nastaveni = {
   aktivni: boolean;
 };
 
+// Kompletni seznam znacek (slugy presne jako v URL Otomoto.pl/osobowe/<slug>).
 const ZNAME_ZNACKY = [
-  "volkswagen", "audi", "skoda", "seat", "bmw", "opel", "renault",
-  "peugeot", "citroen", "ford", "toyota", "hyundai", "kia", "volvo",
-  "mazda", "nissan", "fiat",
-];
+  "abarth", "acura", "aixam", "alfa-romeo", "alpine", "asia", "aston-martin",
+  "audi", "austin", "baw", "bentley", "bmw", "brilliance", "buick", "byd",
+  "cadillac", "casalini", "chatenet", "chevrolet", "chrysler", "citroen",
+  "cupra", "dacia", "daewoo", "daihatsu", "dodge", "dr-automobiles",
+  "ds-automobiles", "ferrari", "fiat", "fisker", "ford", "gaz", "gmc",
+  "great-wall", "honda", "hummer", "hyundai", "infiniti", "isuzu", "iveco",
+  "jaguar", "jeep", "kia", "ktm", "lada", "lamborghini", "lancia",
+  "land-rover", "leapmotor", "lexus", "ligier", "lincoln", "lotus",
+  "mahindra", "maserati", "maxus", "maybach", "mazda", "mclaren",
+  "mercedes-benz", "mg", "microcar", "mini", "mitsubishi", "morgan",
+  "nissan", "oldsmobile", "opel", "peugeot", "plymouth", "polestar",
+  "pontiac", "porsche", "renault", "rolls-royce", "rover", "saab", "seat",
+  "skoda", "smart", "ssangyong", "subaru", "suzuki", "tata", "tesla",
+  "toyota", "uaz", "volkswagen", "volvo", "zastava",
+].sort();
 
 export default function DashboardForm({ email, nastaveni }: { email: string; nastaveni: Nastaveni | null }) {
   const router = useRouter();
@@ -60,8 +72,13 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [testuje, setTestuje] = useState(false);
+  const [hledatZnacku, setHledatZnacku] = useState("");
 
   const vybraneZname = useMemo(() => new Set(n.filtry.znacky), [n.filtry.znacky]);
+  const filtrovaneZname = useMemo(
+    () => ZNAME_ZNACKY.filter((z) => z.includes(hledatZnacku.trim().toLowerCase())),
+    [hledatZnacku]
+  );
 
   function setFiltr<K extends keyof Filtry>(klic: K, hodnota: Filtry[K]) {
     setN({ ...n, filtry: { ...n.filtry, [klic]: hodnota } });
@@ -185,9 +202,22 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
       </Sekce>
 
       <Sekce titulek="Filtry aut">
-        <p className="mb-2 text-xs text-zinc-400">Značky</p>
-        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {ZNAME_ZNACKY.map((z) => (
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-xs text-zinc-400">
+            Značky <span className="text-zinc-600">({vybraneZname.size} vybráno)</span>
+          </p>
+          <input
+            placeholder="hledat značku..."
+            value={hledatZnacku}
+            onChange={(e) => setHledatZnacku(e.target.value)}
+            className="w-44 rounded-lg border border-border bg-bg px-3 py-1.5 text-xs outline-none ring-accent2 focus:ring-2"
+          />
+        </div>
+        <div className="mb-4 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border bg-panel2/40 p-2 sm:grid-cols-4">
+          {filtrovaneZname.length === 0 && (
+            <p className="col-span-full py-4 text-center text-sm text-zinc-500">Žádná značka neodpovídá hledání.</p>
+          )}
+          {filtrovaneZname.map((z) => (
             <label
               key={z}
               className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
@@ -199,7 +229,7 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
             </label>
           ))}
         </div>
-        <Pole label="Další značky (čárkou, malými písmeny)">
+        <Pole label="Další značky, co v seznamu nejsou (čárkou, malými písmeny)">
           <input className={input} value={vlastniZnacky} onChange={(e) => ulozitVlastniZnacky(e.target.value)} />
         </Pole>
 
