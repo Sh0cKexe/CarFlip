@@ -1,11 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
 import Nav from "@/app/components/Nav";
 import { Sekce, Pole, input } from "@/app/components/FormUI";
 
-type Oblast = { nazev: string; mesto_slug: string; okruh_km: number };
+const MapaOkruhy = dynamic(() => import("@/app/components/MapaOkruhy"), { ssr: false });
+
+type Oblast = { nazev: string; mesto_slug: string; okruh_km: number; lat?: number; lon?: number };
 
 type Filtry = {
   znacky: string[];
@@ -100,6 +103,22 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
 
   function pridatOblast() {
     setFiltr("oblasti", [...n.filtry.oblasti, { nazev: "", mesto_slug: "", okruh_km: 50 }]);
+  }
+  async function pridatOblastZMapy(lat: number, lon: number) {
+    const r = await fetch("/api/geokod", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lat, lon }),
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      setZprava("Geokódování: " + (j.error || "nepodařilo se najít město."));
+      return;
+    }
+    setFiltr("oblasti", [
+      ...n.filtry.oblasti,
+      { nazev: j.nazev, mesto_slug: j.slug, okruh_km: 50, lat, lon },
+    ]);
   }
   function odebratOblast(i: number) {
     setFiltr("oblasti", n.filtry.oblasti.filter((_, idx) => idx !== i));
@@ -254,7 +273,10 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
           </Pole>
         </div>
 
-        <p className="mb-2 mt-6 text-xs text-zinc-400">Oblasti v Polsku (prázdné = celé Polsko)</p>
+        <p className="mb-2 mt-6 text-xs text-zinc-400">
+          Oblasti v Polsku (prázdné = celé Polsko) – klikni do mapy, vznikne nová oblast
+        </p>
+        <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
         <div className="space-y-3">
           {n.filtry.oblasti.map((o, i) => (
             <div key={i} className="grid grid-cols-[1fr_1fr_100px_auto] items-end gap-2 rounded-lg border border-border bg-panel2 p-3">

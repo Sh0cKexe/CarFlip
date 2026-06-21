@@ -98,3 +98,11 @@ Potřebuje to API klíč (jen na serveru, nikdy ve webu/prohlížeči):
 
 Cena: i bez kreditu řádově desetiny Kč na jeden rozbor (model Claude Opus 4.8).
 Sleduj spotřebu v **console.anthropic.com → Usage**.
+
+## Aktualizace – klikací mapa pro oblasti
+V Nastavení u "Oblasti v Polsku" je teď mapa – klikneš do ní a vznikne nová
+oblast (kruh) s automaticky doplněným názvem města a slugem. Lze přidat víc
+oblastí najednou (víc klepnutí = víc kruhů), okruh (km) každé jde upravit
+číslem pod mapou. Používá OpenStreetMap/Nominatim, žádný klíč ani platba
+potřeba. Staré oblasti zadané ručně (bez kliku do mapy) se dál zobrazí v
+seznamu, jen se nekreslí jako kruh.
