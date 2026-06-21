@@ -59,8 +59,8 @@ export default function LoginPage() {
       >
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent2 text-base font-bold text-white">
-              F
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent2 text-lg">
+              🚗
             </span>
             <h1 className="text-xl font-semibold tracking-tight text-zinc-100">FlipniTo</h1>
           </div>

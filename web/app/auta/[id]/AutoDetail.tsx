@@ -14,6 +14,8 @@ type Auto = {
   stav: string;
   cena_koupeno_kc: number | null;
   cena_prodano_kc: number | null;
+  datum_koupeno: string | null;
+  datum_prodano: string | null;
   poznamky: string;
   fotky: string[];
 };
@@ -70,6 +72,8 @@ export default function AutoDetail({
         stav: auto.stav,
         cena_koupeno_kc: auto.cena_koupeno_kc,
         cena_prodano_kc: auto.cena_prodano_kc,
+        datum_koupeno: auto.datum_koupeno,
+        datum_prodano: auto.datum_prodano,
         poznamky: auto.poznamky,
       })
       .eq("id", auto.id);
@@ -210,6 +214,20 @@ export default function AutoDetail({
             <input
               type="number" className={input} value={auto.cena_prodano_kc ?? ""}
               onChange={(e) => setPole("cena_prodano_kc", e.target.value ? Number(e.target.value) : null)}
+            />
+          </Pole>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Pole label={t.datumKoupeno}>
+            <input
+              type="date" className={input} value={auto.datum_koupeno ?? ""}
+              onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
+            />
+          </Pole>
+          <Pole label={t.datumProdano}>
+            <input
+              type="date" className={input} value={auto.datum_prodano ?? ""}
+              onChange={(e) => setPole("datum_prodano", e.target.value || null)}
             />
           </Pole>
         </div>

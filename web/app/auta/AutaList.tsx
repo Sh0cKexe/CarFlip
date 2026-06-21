@@ -13,9 +13,16 @@ export type Auto = {
   stav: string;
   cena_koupeno_kc: number | null;
   cena_prodano_kc: number | null;
+  datum_koupeno: string | null;
+  datum_prodano: string | null;
   poznamky: string;
   fotky: string[];
 };
+
+function formatDatum(d: string | null): string {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("cs-CZ");
+}
 
 const STAV_BARVA: Record<string, string> = {
   koupeno: "bg-accent2/15 text-accent2",
@@ -84,7 +91,15 @@ export default function AutaList({
                   </span>
                 </div>
                 <div className="space-y-1 text-sm text-zinc-400">
-                  {a.cena_koupeno_kc != null && <p>{t.koupenoZa} {a.cena_koupeno_kc.toLocaleString("cs-CZ")} {t.mena}</p>}
+                  {a.cena_koupeno_kc != null && (
+                    <p>
+                      {t.koupenoZa} {a.cena_koupeno_kc.toLocaleString("cs-CZ")} {t.mena}
+                      {a.datum_koupeno && <span className="text-zinc-500"> · {formatDatum(a.datum_koupeno)}</span>}
+                    </p>
+                  )}
+                  {a.stav === "prodano" && a.datum_prodano && (
+                    <p className="text-zinc-500">{t.datumProdano}: {formatDatum(a.datum_prodano)}</p>
+                  )}
                   {naklady > 0 && <p>{t.naklady}: {naklady.toLocaleString("cs-CZ")} {t.mena}</p>}
                   {zisk != null && (
                     <p className={zisk >= 0 ? "font-medium text-accent" : "font-medium text-red-400"}>

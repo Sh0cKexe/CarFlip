@@ -23,7 +23,14 @@ type Filtry = {
   min_cena_pln: number;
 };
 
-type Nastaveni = { user_id: string; filtry: Filtry; trh: Trh };
+type Nastaveni = {
+  user_id: string;
+  filtry: Filtry;
+  trh: Trh;
+  min_zisk_kc: number;
+  naklady_dovoz_kc: number;
+  min_srovnani: number;
+};
 
 const ZNAME_ZNACKY = [
   "abarth", "acura", "aixam", "alfa-romeo", "alpine", "asia", "aston-martin",
@@ -52,12 +59,10 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
         min_rok: 2003, max_najezd_nafta: 250000, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
       },
+      min_zisk_kc: 20000, naklady_dovoz_kc: 10000, min_srovnani: 3,
     }
   );
   const t = T(n.trh);
-  const [vlastniZnacky, setVlastniZnacky] = useState(
-    () => n.filtry.znacky.filter((z) => !ZNAME_ZNACKY.includes(z)).join(", ")
-  );
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
@@ -77,13 +82,6 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
     if (aktualni.has(znacka)) aktualni.delete(znacka);
     else aktualni.add(znacka);
     setFiltr("znacky", Array.from(aktualni));
-  }
-
-  function ulozitVlastniZnacky(text: string) {
-    setVlastniZnacky(text);
-    const vlastni = text.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-    const zname = n.filtry.znacky.filter((z) => ZNAME_ZNACKY.includes(z));
-    setFiltr("znacky", Array.from(new Set([...zname, ...vlastni])));
   }
 
   function pridatOblast() {
@@ -119,7 +117,12 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
     setZprava(null);
     const { error } = await supabase
       .from("nastaveni")
-      .update({ filtry: n.filtry })
+      .update({
+        filtry: n.filtry,
+        min_zisk_kc: n.min_zisk_kc,
+        naklady_dovoz_kc: n.naklady_dovoz_kc,
+        min_srovnani: n.min_srovnani,
+      })
       .eq("user_id", n.user_id);
     setUklada(false);
     setZprava(error ? t.chybaUkladani + error.message : t.ulozeno);
@@ -131,10 +134,10 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
       <main className="flex-1 px-8 py-8">
         <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
 
-        <Sekce titulek={t.filtryAut}>
+        <Sekce titulek={t.znacky}>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs text-zinc-400">
-              {t.znacky} <span className="text-zinc-600">({vybraneZname.size} {t.vybrano})</span>
+            <p className="text-xs text-zinc-300">
+              {vybraneZname.size} {t.vybrano}
             </p>
             <input
               placeholder={t.hledatZnacku}
@@ -143,7 +146,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
               className="w-44 rounded-lg border border-border bg-bg px-3 py-1.5 text-xs outline-none ring-accent2 focus:ring-2"
             />
           </div>
-          <div className="mb-4 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border bg-panel2/40 p-2 sm:grid-cols-4">
+          <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border bg-panel2/40 p-2 sm:grid-cols-4">
             {filtrovaneZname.length === 0 && (
               <p className="col-span-full py-4 text-center text-sm text-zinc-500">{t.zadnaZnacka}</p>
             )}
@@ -159,11 +162,10 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
               </label>
             ))}
           </div>
-          <Pole label={t.dalsiZnacky}>
-            <input className={input} value={vlastniZnacky} onChange={(e) => ulozitVlastniZnacky(e.target.value)} />
-          </Pole>
+        </Sekce>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Sekce titulek={t.filtryAut}>
+          <div className="grid gap-4 sm:grid-cols-2">
             <Pole label={t.palivo}>
               <select className={input} value={n.filtry.palivo} onChange={(e) => setFiltr("palivo", e.target.value)}>
                 <option value="vse">{t.vse}</option>
@@ -200,8 +202,9 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
               <input type="number" className={input} value={n.filtry.max_cena_pln} onChange={(e) => setFiltr("max_cena_pln", Number(e.target.value))} />
             </Pole>
           </div>
+        </Sekce>
 
-          <p className="mb-2 mt-6 text-xs text-zinc-400">{t.oblasti}</p>
+        <Sekce titulek={t.oblasti}>
           <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
           <div className="space-y-3">
             {n.filtry.oblasti.map((o, i) => (
@@ -224,6 +227,20 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
           <button type="button" onClick={pridatOblast} className="mt-3 rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 hover:bg-accent2/10">
             {t.pridatOblast}
           </button>
+        </Sekce>
+
+        <Sekce titulek={t.ziskovost}>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Pole label={`${t.minimalniZisk} (${t.mena})`}>
+              <input type="number" className={input} value={n.min_zisk_kc} onChange={(e) => setN({ ...n, min_zisk_kc: Number(e.target.value) })} />
+            </Pole>
+            <Pole label={`${t.nakladyDovoz} (${t.mena})`}>
+              <input type="number" className={input} value={n.naklady_dovoz_kc} onChange={(e) => setN({ ...n, naklady_dovoz_kc: Number(e.target.value) })} />
+            </Pole>
+            <Pole label={t.minSrovnatelnych}>
+              <input type="number" className={input} value={n.min_srovnani} onChange={(e) => setN({ ...n, min_srovnani: Number(e.target.value) })} />
+            </Pole>
+          </div>
         </Sekce>
 
         <button

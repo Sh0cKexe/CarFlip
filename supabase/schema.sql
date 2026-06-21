@@ -84,8 +84,14 @@ create table if not exists public.auta (
   cena_prodano_kc integer,
   poznamky text not null default '',
   fotky jsonb not null default '[]'::jsonb,
-  vytvoreno timestamptz not null default now()
+  vytvoreno timestamptz not null default now(),
+  datum_koupeno date,
+  datum_prodano date
 );
+
+-- Pro existujici instalace (puvodni create table uz probehl bez datumu):
+alter table public.auta add column if not exists datum_koupeno date;
+alter table public.auta add column if not exists datum_prodano date;
 
 create table if not exists public.naklady (
   id uuid primary key default gen_random_uuid(),

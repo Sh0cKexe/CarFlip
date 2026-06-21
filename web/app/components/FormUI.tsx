@@ -8,7 +8,7 @@ export function Sekce({
         {badge && (
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              badge.tone === "green" ? "bg-accent/15 text-accent" : "bg-zinc-700/40 text-zinc-400"
+              badge.tone === "green" ? "bg-accent/15 text-accent" : "bg-zinc-700/40 text-zinc-300"
             }`}
           >
             {badge.text}
@@ -23,9 +23,30 @@ export function Sekce({
 export function Pole({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="mb-1 block text-xs text-zinc-400">{label}</label>
+      <label className="mb-1 block text-xs text-zinc-300">{label}</label>
       {children}
     </div>
+  );
+}
+
+export function Toggle({
+  checked, onChange, label,
+}: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex cursor-pointer items-center gap-3 text-sm text-zinc-200">
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative h-6 w-11 shrink-0 rounded-full transition ${checked ? "bg-accent" : "bg-zinc-700"}`}
+      >
+        <span
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${checked ? "left-[1.375rem]" : "left-0.5"}`}
+        />
+      </button>
+      {label}
+    </label>
   );
 }
 

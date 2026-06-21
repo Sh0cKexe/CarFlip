@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/app/components/Sidebar";
-import { Sekce, Pole, input } from "@/app/components/FormUI";
+import { Sekce, Pole, input, Toggle } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 type Nastaveni = {
@@ -77,14 +77,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
               <input className={input} value={n.telegram_chat_id} onChange={(e) => setN({ ...n, telegram_chat_id: e.target.value })} />
             </Pole>
           </div>
-          <Pole label={t.dalsiPrijemci}>
-            <input
-              className={input}
-              value={n.dalsi_prijemci.join(", ")}
-              onChange={(e) => setN({ ...n, dalsi_prijemci: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
-            />
-          </Pole>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+          <div className="mt-3 flex flex-wrap items-center gap-4">
             <button
               type="button"
               onClick={testSpojeni}
@@ -93,10 +86,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
             >
               {testuje ? t.testuji : t.testSpojeni}
             </button>
-            <label className="flex items-center gap-2 text-sm text-zinc-300">
-              <input type="checkbox" checked={n.aktivni} onChange={(e) => setN({ ...n, aktivni: e.target.checked })} />
-              {t.botAktivni}
-            </label>
+            <Toggle checked={n.aktivni} onChange={(v) => setN({ ...n, aktivni: v })} label={t.botAktivni} />
           </div>
         </Sekce>
 
