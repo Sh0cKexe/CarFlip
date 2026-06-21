@@ -127,31 +127,31 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar email={email} trh={n.trh} />
+      <Sidebar email={email} trh={n.trh} userId={n.user_id} />
       <main className="flex-1 px-8 py-8">
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">{t.filtryHledani}</h1>
+        <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
 
         <Sekce titulek={t.filtryAut}>
           <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs text-slate-500">
-              {t.znacky} <span className="text-slate-400">({vybraneZname.size} {t.vybrano})</span>
+            <p className="text-xs text-zinc-400">
+              {t.znacky} <span className="text-zinc-600">({vybraneZname.size} {t.vybrano})</span>
             </p>
             <input
               placeholder={t.hledatZnacku}
               value={hledatZnacku}
               onChange={(e) => setHledatZnacku(e.target.value)}
-              className="w-44 rounded-lg border border-border bg-white px-3 py-1.5 text-xs outline-none ring-accent2 focus:ring-2"
+              className="w-44 rounded-lg border border-border bg-bg px-3 py-1.5 text-xs outline-none ring-accent2 focus:ring-2"
             />
           </div>
-          <div className="mb-4 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border bg-panel2 p-2 sm:grid-cols-4">
+          <div className="mb-4 grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border bg-panel2/40 p-2 sm:grid-cols-4">
             {filtrovaneZname.length === 0 && (
-              <p className="col-span-full py-4 text-center text-sm text-slate-400">{t.zadnaZnacka}</p>
+              <p className="col-span-full py-4 text-center text-sm text-zinc-500">{t.zadnaZnacka}</p>
             )}
             {filtrovaneZname.map((z) => (
               <label
                 key={z}
                 className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
-                  vybraneZname.has(z) ? "border-accent bg-accent/10 text-accent" : "border-border bg-white text-slate-600 hover:border-slate-400"
+                  vybraneZname.has(z) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
                 }`}
               >
                 <input type="checkbox" checked={vybraneZname.has(z)} onChange={() => prepnoutZnacku(z)} className="hidden" />
@@ -201,7 +201,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
             </Pole>
           </div>
 
-          <p className="mb-2 mt-6 text-xs text-slate-500">{t.oblasti}</p>
+          <p className="mb-2 mt-6 text-xs text-zinc-400">{t.oblasti}</p>
           <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
           <div className="space-y-3">
             {n.filtry.oblasti.map((o, i) => (
@@ -215,7 +215,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
                 <Pole label={t.okruhKm}>
                   <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
                 </Pole>
-                <button type="button" onClick={() => odebratOblast(i)} className="h-fit rounded-lg border border-red-300 px-3 py-2 text-sm text-red-600 hover:bg-red-50">
+                <button type="button" onClick={() => odebratOblast(i)} className="h-fit rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10">
                   {t.smazat}
                 </button>
               </div>
@@ -234,7 +234,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
           {uklada ? t.ukladam : t.ulozitNastaveni}
         </button>
         {zprava && (
-          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") || zprava.startsWith("Geo") ? "text-red-600" : "text-accent"}`}>{zprava}</p>
+          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") || zprava.startsWith("Geo") ? "text-red-400" : "text-accent"}`}>{zprava}</p>
         )}
       </main>
     </div>

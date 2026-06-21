@@ -40,9 +40,9 @@ export default function ZiskovostForm({ email, nastaveni }: { email: string; nas
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar email={email} trh={n.trh} />
+      <Sidebar email={email} trh={n.trh} userId={n.user_id} />
       <main className="flex-1 px-8 py-8">
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">{t.ziskovost}</h1>
+        <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.ziskovost}</h1>
 
         <Sekce titulek={t.ziskovost}>
           <div className="grid gap-4 sm:grid-cols-3">
@@ -66,7 +66,7 @@ export default function ZiskovostForm({ email, nastaveni }: { email: string; nas
           {uklada ? t.ukladam : t.ulozitNastaveni}
         </button>
         {zprava && (
-          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") ? "text-red-600" : "text-accent"}`}>{zprava}</p>
+          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>
         )}
       </main>
     </div>

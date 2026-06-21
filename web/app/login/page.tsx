@@ -58,9 +58,11 @@ export default function LoginPage() {
         className="w-full max-w-sm rounded-2xl border border-border bg-panel p-8 shadow-xl"
       >
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🚗</span>
-            <h1 className="text-xl font-semibold tracking-tight text-slate-900">CarFlip</h1>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-accent to-accent2 text-base font-bold text-white">
+              F
+            </span>
+            <h1 className="text-xl font-semibold tracking-tight text-zinc-100">FlipniTo</h1>
           </div>
           <div className="flex gap-1">
             <button
@@ -83,7 +85,7 @@ export default function LoginPage() {
             type="button"
             onClick={() => setMode("login")}
             className={`rounded-md py-2 transition ${
-              mode === "login" ? "bg-accent2 text-white" : "text-slate-500 hover:text-slate-800"
+              mode === "login" ? "bg-accent2 text-white" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             {t.prihlasit}
@@ -92,30 +94,30 @@ export default function LoginPage() {
             type="button"
             onClick={() => setMode("register")}
             className={`rounded-md py-2 transition ${
-              mode === "register" ? "bg-accent2 text-white" : "text-slate-500 hover:text-slate-800"
+              mode === "register" ? "bg-accent2 text-white" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             {t.registrovat}
           </button>
         </div>
 
-        <label className="mb-1 block text-xs text-slate-500">{t.email}</label>
+        <label className="mb-1 block text-xs text-zinc-400">{t.email}</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-accent2 focus:ring-2"
+          className="mb-4 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
         />
 
-        <label className="mb-1 block text-xs text-slate-500">{t.heslo}</label>
+        <label className="mb-1 block text-xs text-zinc-400">{t.heslo}</label>
         <input
           type="password"
           required
           minLength={6}
           value={heslo}
           onChange={(e) => setHeslo(e.target.value)}
-          className="mb-6 w-full rounded-lg border border-border bg-white px-3 py-2.5 text-sm text-slate-900 outline-none ring-accent2 focus:ring-2"
+          className="mb-6 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
         />
 
         <button
@@ -127,7 +129,7 @@ export default function LoginPage() {
         </button>
 
         {zprava && (
-          <p className={`mt-4 text-sm ${zprava.startsWith("Chyba") ? "text-red-600" : "text-accent"}`}>
+          <p className={`mt-4 text-sm ${zprava.startsWith("Chyba") ? "text-red-400" : "text-accent"}`}>
             {zprava}
           </p>
         )}

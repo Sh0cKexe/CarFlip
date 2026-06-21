@@ -154,11 +154,11 @@ export default function AutoDetail({
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar email={email} trh={trh} />
+      <Sidebar email={email} trh={trh} userId={userId} />
       <main className="flex-1 px-8 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <a href="/auta" className="text-sm text-slate-500 hover:text-slate-800">{t.zpetNaAuta}</a>
-        <button onClick={smazatAuto} className="rounded-lg border border-red-300 px-3 py-1.5 text-sm text-red-600 hover:bg-red-50">
+        <a href="/auta" className="text-sm text-zinc-400 hover:text-zinc-200">{t.zpetNaAuta}</a>
+        <button onClick={smazatAuto} className="rounded-lg border border-red-500/40 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10">
           {t.smazatAuto}
         </button>
       </div>
@@ -186,10 +186,10 @@ export default function AutoDetail({
           >
             {aiBezi ? t.analyzuji : t.aiRozbor}
           </button>
-          {aiChyba && <p className="mt-2 text-sm text-red-600">{aiChyba}</p>}
+          {aiChyba && <p className="mt-2 text-sm text-red-400">{aiChyba}</p>}
           {aiRozbor && (
             <div className="mt-3 rounded-lg border border-border bg-panel2 p-4">
-              <p className="whitespace-pre-wrap text-sm text-slate-700">{aiRozbor}</p>
+              <p className="whitespace-pre-wrap text-sm text-zinc-200">{aiRozbor}</p>
               <button
                 type="button" onClick={pridatRozborDoPoznamek}
                 className="mt-3 rounded-lg border border-accent px-3 py-1.5 text-xs text-accent hover:bg-accent/10"
@@ -228,7 +228,7 @@ export default function AutoDetail({
           >
             {uklada ? t.ukladam : t.ulozit}
           </button>
-          {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-600" : "text-accent"}`}>{zprava}</p>}
+          {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>}
         </div>
       </Sekce>
 
@@ -239,10 +239,10 @@ export default function AutoDetail({
         <div className="space-y-2">
           {naklady.map((n) => (
             <div key={n.id} className="flex items-center justify-between rounded-lg border border-border bg-panel2 px-4 py-2">
-              <span className="text-sm text-slate-700">{n.popis}</span>
+              <span className="text-sm text-zinc-200">{n.popis}</span>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-slate-500">{n.castka_kc.toLocaleString("cs-CZ")} {t.mena}</span>
-                <button onClick={() => smazatNaklad(n.id)} className="text-xs text-red-600 hover:underline">{t.smazatMale}</button>
+                <span className="text-sm text-zinc-400">{n.castka_kc.toLocaleString("cs-CZ")} {t.mena}</span>
+                <button onClick={() => smazatNaklad(n.id)} className="text-xs text-red-400 hover:underline">{t.smazatMale}</button>
               </div>
             </div>
           ))}
@@ -262,7 +262,7 @@ export default function AutoDetail({
           </button>
         </div>
         {zisk != null && (
-          <p className={`mt-4 text-sm font-medium ${zisk >= 0 ? "text-accent" : "text-red-600"}`}>
+          <p className={`mt-4 text-sm font-medium ${zisk >= 0 ? "text-accent" : "text-red-400"}`}>
             {t.cistyZisk} {zisk.toLocaleString("cs-CZ")} {t.mena}
           </p>
         )}
@@ -285,8 +285,8 @@ export default function AutoDetail({
             </div>
           ))}
         </div>
-        <input ref={fileInput} type="file" accept="image/*" multiple onChange={(e) => nahratFotky(e.target.files)} disabled={nahravam} className="text-sm text-slate-500" />
-        {nahravam && <p className="mt-2 text-sm text-slate-500">{t.nahravam}</p>}
+        <input ref={fileInput} type="file" accept="image/*" multiple onChange={(e) => nahratFotky(e.target.files)} disabled={nahravam} className="text-sm text-zinc-500" />
+        {nahravam && <p className="mt-2 text-sm text-zinc-500">{t.nahravam}</p>}
       </Sekce>
       </main>
     </div>

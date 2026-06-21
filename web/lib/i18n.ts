@@ -29,6 +29,13 @@ const CS = {
   trh: "Trh",
   trhCesko: "🇨🇿 Česko",
   trhSlovensko: "🇸🇰 Slovensko",
+  trhKratceCz: "CS-CZK",
+  trhKratceSk: "SK-EUR",
+  trhInfo: "SK-EUR: bot hledá a srovnává ceny na slovenském trhu (bazos.sk) v euro. CS-CZK: český trh (bazos.cz) v Kč.",
+
+  prehled: "Přehled",
+  celkovyZisk: "Celkový zisk z prodaných aut",
+  pocetAutCelkem: "Aut celkem",
 
   filtryAut: "Filtry aut",
   znacky: "Značky",
@@ -132,6 +139,13 @@ const SK: typeof CS = {
   trh: "Trh",
   trhCesko: "🇨🇿 Česko",
   trhSlovensko: "🇸🇰 Slovensko",
+  trhKratceCz: "CS-CZK",
+  trhKratceSk: "SK-EUR",
+  trhInfo: "SK-EUR: bot hľadá a porovnáva ceny na slovenskom trhu (bazos.sk) v euro. CS-CZK: český trh (bazos.cz) v Kč.",
+
+  prehled: "Prehľad",
+  celkovyZisk: "Celkový zisk z predaných áut",
+  pocetAutCelkem: "Áut celkom",
 
   filtryAut: "Filtre áut",
   znacky: "Značky",

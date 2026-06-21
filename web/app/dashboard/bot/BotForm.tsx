@@ -38,7 +38,6 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
         telegram_chat_id: n.telegram_chat_id,
         dalsi_prijemci: n.dalsi_prijemci,
         aktivni: n.aktivni,
-        trh: n.trh,
       })
       .eq("user_id", n.user_id);
     setUklada(false);
@@ -65,19 +64,11 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar email={email} trh={n.trh} />
+      <Sidebar email={email} trh={n.trh} userId={n.user_id} />
       <main className="flex-1 px-8 py-8">
-        <h1 className="mb-6 text-xl font-semibold text-slate-900">{t.nastaveniBota}</h1>
+        <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>
-          <div className="mb-4">
-            <Pole label={t.trh}>
-              <select className={input} value={n.trh} onChange={(e) => setN({ ...n, trh: e.target.value as Trh })}>
-                <option value="cz">{t.trhCesko}</option>
-                <option value="sk">{t.trhSlovensko}</option>
-              </select>
-            </Pole>
-          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Pole label={t.tokenBota}>
               <input className={input} value={n.telegram_token} onChange={(e) => setN({ ...n, telegram_token: e.target.value })} />
@@ -102,7 +93,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
             >
               {testuje ? t.testuji : t.testSpojeni}
             </button>
-            <label className="flex items-center gap-2 text-sm text-slate-600">
+            <label className="flex items-center gap-2 text-sm text-zinc-300">
               <input type="checkbox" checked={n.aktivni} onChange={(e) => setN({ ...n, aktivni: e.target.checked })} />
               {t.botAktivni}
             </label>
@@ -117,7 +108,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
           {uklada ? t.ukladam : t.ulozitNastaveni}
         </button>
         {zprava && (
-          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") ? "text-red-600" : "text-accent"}`}>{zprava}</p>
+          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>
         )}
       </main>
     </div>
