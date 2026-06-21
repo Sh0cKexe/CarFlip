@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 
@@ -30,6 +30,12 @@ type Nastaveni = {
   aktivni: boolean;
 };
 
+const ZNAME_ZNACKY = [
+  "volkswagen", "audi", "skoda", "seat", "bmw", "opel", "renault",
+  "peugeot", "citroen", "ford", "toyota", "hyundai", "kia", "volvo",
+  "mazda", "nissan", "fiat",
+];
+
 export default function DashboardForm({ email, nastaveni }: { email: string; nastaveni: Nastaveni | null }) {
   const router = useRouter();
   const supabase = createClient();
@@ -48,12 +54,31 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
       min_zisk_kc: 20000, naklady_dovoz_kc: 10000, min_srovnani: 3, aktivni: true,
     }
   );
+  const [vlastniZnacky, setVlastniZnacky] = useState(
+    () => n.filtry.znacky.filter((z) => !ZNAME_ZNACKY.includes(z)).join(", ")
+  );
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [testuje, setTestuje] = useState(false);
 
+  const vybraneZname = useMemo(() => new Set(n.filtry.znacky), [n.filtry.znacky]);
+
   function setFiltr<K extends keyof Filtry>(klic: K, hodnota: Filtry[K]) {
     setN({ ...n, filtry: { ...n.filtry, [klic]: hodnota } });
+  }
+
+  function prepnoutZnacku(znacka: string) {
+    const aktualni = new Set(n.filtry.znacky);
+    if (aktualni.has(znacka)) aktualni.delete(znacka);
+    else aktualni.add(znacka);
+    setFiltr("znacky", Array.from(aktualni));
+  }
+
+  function ulozitVlastniZnacky(text: string) {
+    setVlastniZnacky(text);
+    const vlastni = text.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const zname = n.filtry.znacky.filter((z) => ZNAME_ZNACKY.includes(z));
+    setFiltr("znacky", Array.from(new Set([...zname, ...vlastni])));
   }
 
   function pridatOblast() {
@@ -92,14 +117,11 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
     setTestuje(true);
     setZprava(null);
     try {
-      const r = await fetch(
-        `https://api.telegram.org/bot${n.telegram_token}/sendMessage`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ chat_id: n.telegram_chat_id, text: "✅ CarFlip – test spojení funguje!" }),
-        }
-      );
+      const r = await fetch(`https://api.telegram.org/bot${n.telegram_token}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: n.telegram_chat_id, text: "✅ CarFlip – test spojení funguje!" }),
+      });
       const j = await r.json();
       setZprava(j.ok ? "Test OK, zpráva odeslána na Telegram." : "Telegram chyba: " + (j.description || "neznámá"));
     } catch (e: any) {
@@ -116,118 +138,193 @@ export default function DashboardForm({ email, nastaveni }: { email: string; nas
   }
 
   return (
-    <main style={{ maxWidth: 720, margin: "0 auto", padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1>CarFlip nastavení</h1>
-        <div>
-          <span style={{ marginRight: 12, color: "#999" }}>{email}</span>
-          <button onClick={odhlasit} style={ghostBtn}>Odhlásit</button>
+    <main className="mx-auto max-w-4xl px-4 py-8">
+      <header className="mb-8 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🚗</span>
+          <h1 className="text-xl font-semibold tracking-tight">CarFlip</h1>
         </div>
-      </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-zinc-500">{email}</span>
+          <button onClick={odhlasit} className="rounded-lg border border-border px-3 py-1.5 text-sm text-zinc-300 hover:bg-panel2">
+            Odhlásit
+          </button>
+        </div>
+      </header>
 
-      <Sekce titulek="Telegram bot">
-        <Pole label="Token bota">
-          <input style={input} value={n.telegram_token} onChange={(e) => setN({ ...n, telegram_token: e.target.value })} />
-        </Pole>
-        <Pole label="Tvoje chat ID">
-          <input style={input} value={n.telegram_chat_id} onChange={(e) => setN({ ...n, telegram_chat_id: e.target.value })} />
-        </Pole>
+      <Sekce titulek="Telegram bot" badge={n.aktivni ? { text: "aktivní", tone: "green" } : { text: "pozastaveno", tone: "zinc" }}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Pole label="Token bota">
+            <input className={input} value={n.telegram_token} onChange={(e) => setN({ ...n, telegram_token: e.target.value })} />
+          </Pole>
+          <Pole label="Tvoje chat ID">
+            <input className={input} value={n.telegram_chat_id} onChange={(e) => setN({ ...n, telegram_chat_id: e.target.value })} />
+          </Pole>
+        </div>
         <Pole label="Další příjemci (chat ID, čárkou)">
-          <input style={input} value={n.dalsi_prijemci.join(", ")}
-            onChange={(e) => setN({ ...n, dalsi_prijemci: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })} />
+          <input
+            className={input}
+            value={n.dalsi_prijemci.join(", ")}
+            onChange={(e) => setN({ ...n, dalsi_prijemci: e.target.value.split(",").map((s) => s.trim()).filter(Boolean) })}
+          />
         </Pole>
-        <button type="button" onClick={testSpojeni} disabled={testuje || !n.telegram_token || !n.telegram_chat_id} style={ghostBtn}>
-          {testuje ? "Testuji..." : "Test spojení"}
-        </button>
-        <label style={{ display: "block", marginTop: 12 }}>
-          <input type="checkbox" checked={n.aktivni} onChange={(e) => setN({ ...n, aktivni: e.target.checked })} /> Bot aktivní (hledat a posílat)
-        </label>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={testSpojeni}
+            disabled={testuje || !n.telegram_token || !n.telegram_chat_id}
+            className="rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 transition hover:bg-accent2/10 disabled:opacity-40"
+          >
+            {testuje ? "Testuji..." : "Test spojení"}
+          </button>
+          <label className="flex items-center gap-2 text-sm text-zinc-300">
+            <input type="checkbox" checked={n.aktivni} onChange={(e) => setN({ ...n, aktivni: e.target.checked })} />
+            Bot aktivní (hledat a posílat)
+          </label>
+        </div>
       </Sekce>
 
       <Sekce titulek="Filtry aut">
-        <Pole label="Značky (čárkou, malými písmeny, např. skoda, volkswagen)">
-          <input style={input} value={n.filtry.znacky.join(", ")}
-            onChange={(e) => setFiltr("znacky", e.target.value.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean))} />
+        <p className="mb-2 text-xs text-zinc-400">Značky</p>
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {ZNAME_ZNACKY.map((z) => (
+            <label
+              key={z}
+              className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                vybraneZname.has(z) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
+              }`}
+            >
+              <input type="checkbox" checked={vybraneZname.has(z)} onChange={() => prepnoutZnacku(z)} className="hidden" />
+              {z}
+            </label>
+          ))}
+        </div>
+        <Pole label="Další značky (čárkou, malými písmeny)">
+          <input className={input} value={vlastniZnacky} onChange={(e) => ulozitVlastniZnacky(e.target.value)} />
         </Pole>
-        <Pole label="Palivo">
-          <select style={input} value={n.filtry.palivo} onChange={(e) => setFiltr("palivo", e.target.value)}>
-            <option value="vse">vše</option>
-            <option value="benzin">benzín</option>
-            <option value="diesel">diesel</option>
-          </select>
-        </Pole>
-        <Pole label="Převodovka">
-          <select style={input} value={n.filtry.prevodovka} onChange={(e) => setFiltr("prevodovka", e.target.value)}>
-            <option value="vse">vše</option>
-            <option value="manual">manuál</option>
-            <option value="automat">automat</option>
-          </select>
-        </Pole>
-        <Radek>
-          <Pole label="Rok od"><input type="number" style={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} /></Pole>
-          <Pole label="Max nájezd diesel (km)"><input type="number" style={input} value={n.filtry.max_najezd_nafta} onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))} /></Pole>
-          <Pole label="Max nájezd benzín (km)"><input type="number" style={input} value={n.filtry.max_najezd_benzin} onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))} /></Pole>
-        </Radek>
-        <Radek>
-          <Pole label="Cena PL od (PLN)"><input type="number" style={input} value={n.filtry.min_cena_pln} onChange={(e) => setFiltr("min_cena_pln", Number(e.target.value))} /></Pole>
-          <Pole label="Cena PL do (PLN)"><input type="number" style={input} value={n.filtry.max_cena_pln} onChange={(e) => setFiltr("max_cena_pln", Number(e.target.value))} /></Pole>
-        </Radek>
 
-        <p style={{ marginTop: 16, marginBottom: 4, fontWeight: 600 }}>Oblasti v Polsku (prázdné = celé Polsko)</p>
-        {n.filtry.oblasti.map((o, i) => (
-          <Radek key={i}>
-            <Pole label="Název"><input style={input} value={o.nazev} onChange={(e) => upravitOblast(i, "nazev", e.target.value)} /></Pole>
-            <Pole label="Slug města (např. wroclaw)"><input style={input} value={o.mesto_slug} onChange={(e) => upravitOblast(i, "mesto_slug", e.target.value)} /></Pole>
-            <Pole label="Okruh (km)"><input type="number" style={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} /></Pole>
-            <button type="button" onClick={() => odebratOblast(i)} style={ghostBtn}>Smazat</button>
-          </Radek>
-        ))}
-        <button type="button" onClick={pridatOblast} style={ghostBtn}>+ Přidat oblast</button>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Pole label="Palivo">
+            <select className={input} value={n.filtry.palivo} onChange={(e) => setFiltr("palivo", e.target.value)}>
+              <option value="vse">vše</option>
+              <option value="benzin">benzín</option>
+              <option value="diesel">diesel</option>
+            </select>
+          </Pole>
+          <Pole label="Převodovka">
+            <select className={input} value={n.filtry.prevodovka} onChange={(e) => setFiltr("prevodovka", e.target.value)}>
+              <option value="vse">vše</option>
+              <option value="manual">manuál</option>
+              <option value="automat">automat</option>
+            </select>
+          </Pole>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <Pole label="Rok od">
+            <input type="number" className={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} />
+          </Pole>
+          <Pole label="Max nájezd diesel (km)">
+            <input type="number" className={input} value={n.filtry.max_najezd_nafta} onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))} />
+          </Pole>
+          <Pole label="Max nájezd benzín (km)">
+            <input type="number" className={input} value={n.filtry.max_najezd_benzin} onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))} />
+          </Pole>
+        </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <Pole label="Cena PL od (PLN)">
+            <input type="number" className={input} value={n.filtry.min_cena_pln} onChange={(e) => setFiltr("min_cena_pln", Number(e.target.value))} />
+          </Pole>
+          <Pole label="Cena PL do (PLN)">
+            <input type="number" className={input} value={n.filtry.max_cena_pln} onChange={(e) => setFiltr("max_cena_pln", Number(e.target.value))} />
+          </Pole>
+        </div>
+
+        <p className="mb-2 mt-6 text-xs text-zinc-400">Oblasti v Polsku (prázdné = celé Polsko)</p>
+        <div className="space-y-3">
+          {n.filtry.oblasti.map((o, i) => (
+            <div key={i} className="grid grid-cols-[1fr_1fr_100px_auto] items-end gap-2 rounded-lg border border-border bg-panel2 p-3">
+              <Pole label="Název">
+                <input className={input} value={o.nazev} onChange={(e) => upravitOblast(i, "nazev", e.target.value)} />
+              </Pole>
+              <Pole label="Slug města">
+                <input className={input} value={o.mesto_slug} onChange={(e) => upravitOblast(i, "mesto_slug", e.target.value)} />
+              </Pole>
+              <Pole label="Okruh (km)">
+                <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
+              </Pole>
+              <button type="button" onClick={() => odebratOblast(i)} className="h-fit rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10">
+                Smazat
+              </button>
+            </div>
+          ))}
+        </div>
+        <button type="button" onClick={pridatOblast} className="mt-3 rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 hover:bg-accent2/10">
+          + Přidat oblast
+        </button>
       </Sekce>
 
       <Sekce titulek="Ziskovost">
-        <Radek>
-          <Pole label="Minimální zisk (Kč)"><input type="number" style={input} value={n.min_zisk_kc} onChange={(e) => setN({ ...n, min_zisk_kc: Number(e.target.value) })} /></Pole>
-          <Pole label="Náklady dovoz (Kč)"><input type="number" style={input} value={n.naklady_dovoz_kc} onChange={(e) => setN({ ...n, naklady_dovoz_kc: Number(e.target.value) })} /></Pole>
-          <Pole label="Min. srovnatelných inzerátů"><input type="number" style={input} value={n.min_srovnani} onChange={(e) => setN({ ...n, min_srovnani: Number(e.target.value) })} /></Pole>
-        </Radek>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Pole label="Minimální zisk (Kč)">
+            <input type="number" className={input} value={n.min_zisk_kc} onChange={(e) => setN({ ...n, min_zisk_kc: Number(e.target.value) })} />
+          </Pole>
+          <Pole label="Náklady dovoz (Kč)">
+            <input type="number" className={input} value={n.naklady_dovoz_kc} onChange={(e) => setN({ ...n, naklady_dovoz_kc: Number(e.target.value) })} />
+          </Pole>
+          <Pole label="Min. srovnatelných inzerátů">
+            <input type="number" className={input} value={n.min_srovnani} onChange={(e) => setN({ ...n, min_srovnani: Number(e.target.value) })} />
+          </Pole>
+        </div>
       </Sekce>
 
-      <button onClick={ulozit} disabled={uklada} style={saveBtn}>{uklada ? "Ukládám..." : "Uložit nastavení"}</button>
-      {zprava && <p style={{ color: zprava.startsWith("Chyba") ? "#f87171" : "#4ade80" }}>{zprava}</p>}
+      <div className="sticky bottom-4 mt-8 flex items-center gap-4 rounded-xl border border-border bg-panel/95 p-4 backdrop-blur">
+        <button
+          onClick={ulozit}
+          disabled={uklada}
+          className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-60"
+        >
+          {uklada ? "Ukládám..." : "Uložit nastavení"}
+        </button>
+        {zprava && (
+          <p className={`text-sm ${zprava.startsWith("Chyba") ? "text-red-400" : "text-emerald-400"}`}>{zprava}</p>
+        )}
+      </div>
     </main>
   );
 }
 
-function Sekce({ titulek, children }: { titulek: string; children: React.ReactNode }) {
+function Sekce({
+  titulek, children, badge,
+}: { titulek: string; children: React.ReactNode; badge?: { text: string; tone: "green" | "zinc" } }) {
   return (
-    <section style={{ background: "#1a1d24", borderRadius: 12, padding: 20, marginTop: 20 }}>
-      <h2 style={{ marginTop: 0, fontSize: 18 }}>{titulek}</h2>
+    <section className="mb-6 rounded-2xl border border-border bg-panel p-6">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-semibold text-zinc-100">{titulek}</h2>
+        {badge && (
+          <span
+            className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+              badge.tone === "green" ? "bg-accent/15 text-accent" : "bg-zinc-700/40 text-zinc-400"
+            }`}
+          >
+            {badge.text}
+          </span>
+        )}
+      </div>
       {children}
     </section>
   );
 }
-function Radek({ children }: { children: React.ReactNode }) {
-  return <div style={{ display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" }}>{children}</div>;
-}
+
 function Pole({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div style={{ marginBottom: 12, flex: "1 1 160px" }}>
-      <label style={{ display: "block", fontSize: 13, marginBottom: 4, color: "#aaa" }}>{label}</label>
+    <div>
+      <label className="mb-1 block text-xs text-zinc-400">{label}</label>
       {children}
     </div>
   );
 }
 
-const input: React.CSSProperties = {
-  width: "100%", padding: 8, borderRadius: 8, border: "1px solid #333",
-  background: "#11141a", color: "#eee", boxSizing: "border-box",
-};
-const ghostBtn: React.CSSProperties = {
-  padding: "8px 14px", borderRadius: 8, border: "1px solid #3b82f6",
-  background: "transparent", color: "#3b82f6", cursor: "pointer",
-};
-const saveBtn: React.CSSProperties = {
-  marginTop: 20, padding: "12px 24px", borderRadius: 8, border: "none",
-  background: "#22c55e", color: "#06210f", fontWeight: 600, cursor: "pointer", fontSize: 16,
-};
+const input =
+  "w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-zinc-100 outline-none ring-accent2 focus:ring-2";
