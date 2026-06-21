@@ -106,3 +106,23 @@ oblastí najednou (víc klepnutí = víc kruhů), okruh (km) každé jde upravit
 číslem pod mapou. Používá OpenStreetMap/Nominatim, žádný klíč ani platba
 potřeba. Staré oblasti zadané ručně (bez kliku do mapy) se dál zobrazí v
 seznamu, jen se nekreslí jako kruh.
+
+## Aktualizace – multi-stát CZ/SK
+V Nastavení nahoře (sekce Telegram bot) je nový přepínač **Trh: 🇨🇿 Česko /
+🇸🇰 Slovensko**. Řídí najednou tři věci:
+- jazyk webu i telegram zpráv (čeština/slovenština)
+- měnu (Kč/€)
+- odkud se berou srovnatelné ceny: 🇨🇿 = bazos.cz, 🇸🇰 = **bazos.sk** (reálný
+  slovenský trh, ne jen přepočet kurzem)
+
+Na přihlašovací stránce je navíc malý jazykový přepínač (🇨🇿/🇸🇰) jen pro
+vzhled stránky před přihlášením – ten se neukládá k účtu, jen do prohlížeče.
+
+Spusť znovu `supabase/schema.sql` (přidává sloupec `trh` do `nastaveni`,
+existující uživatelé dostanou výchozí `'cz'`, nic se nerozbije). Žádné nové
+GitHub secrety ani Vercel proměnné nejsou potřeba.
+
+Drobnost k vědomí: hledání srovnatelných inzerátů na Bazoši je u některých
+přeložených slov u modelu (např. "BMW Seria 3") přísnější filtr, který může
+u takových modelů vracet méně/žádné srovnání – netýká se to multi-stát
+změny, je to starší chování, které lze doladit později.

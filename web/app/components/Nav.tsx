@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { T, type Trh } from "@/lib/i18n";
 
-export default function Nav({ email }: { email: string }) {
+export default function Nav({ email, trh }: { email: string; trh?: Trh }) {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
+  const t = T(trh);
 
   async function odhlasit() {
     await supabase.auth.signOut();
@@ -33,14 +35,14 @@ export default function Nav({ email }: { email: string }) {
           <span className="text-2xl">🚗</span> CarFlip
         </span>
         <nav className="flex items-center gap-1 rounded-lg bg-panel2 p-1">
-          {odkaz("/dashboard", "Nastavení")}
-          {odkaz("/auta", "Moje auta")}
+          {odkaz("/dashboard", t.nastaveni)}
+          {odkaz("/auta", t.mojeAuta)}
         </nav>
       </div>
       <div className="flex items-center gap-4">
         <span className="text-sm text-zinc-500">{email}</span>
         <button onClick={odhlasit} className="rounded-lg border border-border px-3 py-1.5 text-sm text-zinc-300 hover:bg-panel2">
-          Odhlásit
+          {t.odhlasit}
         </button>
       </div>
     </header>

@@ -22,5 +22,19 @@ export default async function AutoDetailPage({ params }: { params: Promise<{ id:
     .eq("auto_id", id)
     .order("datum", { ascending: false });
 
-  return <AutoDetail email={user.email ?? ""} userId={user.id} auto={auto} naklady={naklady ?? []} />;
+  const { data: nastaveni } = await supabase
+    .from("nastaveni")
+    .select("trh")
+    .eq("user_id", user.id)
+    .single();
+
+  return (
+    <AutoDetail
+      email={user.email ?? ""}
+      userId={user.id}
+      auto={auto}
+      naklady={naklady ?? []}
+      trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
+    />
+  );
 }

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { T, type Trh } from "@/lib/i18n";
+
+const LANG_KLIC = "carflip_lang";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +15,18 @@ export default function LoginPage() {
   const [heslo, setHeslo] = useState("");
   const [zprava, setZprava] = useState<string | null>(null);
   const [pracuje, setPracuje] = useState(false);
+  const [trh, setTrh] = useState<Trh>("cz");
+  const t = T(trh);
+
+  useEffect(() => {
+    const ulozeny = localStorage.getItem(LANG_KLIC);
+    if (ulozeny === "cz" || ulozeny === "sk") setTrh(ulozeny);
+  }, []);
+
+  function zmenitJazyk(novy: Trh) {
+    setTrh(novy);
+    localStorage.setItem(LANG_KLIC, novy);
+  }
 
   async function odeslat(e: React.FormEvent) {
     e.preventDefault();
@@ -26,7 +41,7 @@ export default function LoginPage() {
       } else {
         const { error } = await supabase.auth.signUp({ email, password: heslo });
         if (error) throw error;
-        setZprava("Registrace OK. Pokud projekt vyžaduje potvrzení e-mailu, zkontroluj schránku, jinak se hned přihlas.");
+        setZprava(t.registraceOk);
         setMode("login");
       }
     } catch (err: any) {
@@ -42,9 +57,25 @@ export default function LoginPage() {
         onSubmit={odeslat}
         className="w-full max-w-sm rounded-2xl border border-border bg-panel p-8 shadow-xl shadow-black/40"
       >
-        <div className="mb-6 flex items-center gap-2">
-          <span className="text-2xl">🚗</span>
-          <h1 className="text-xl font-semibold tracking-tight">CarFlip</h1>
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🚗</span>
+            <h1 className="text-xl font-semibold tracking-tight">CarFlip</h1>
+          </div>
+          <div className="flex gap-1">
+            <button
+              type="button" onClick={() => zmenitJazyk("cz")}
+              className={`rounded-md px-2 py-1 text-lg ${trh === "cz" ? "bg-panel2" : "opacity-50"}`}
+            >
+              🇨🇿
+            </button>
+            <button
+              type="button" onClick={() => zmenitJazyk("sk")}
+              className={`rounded-md px-2 py-1 text-lg ${trh === "sk" ? "bg-panel2" : "opacity-50"}`}
+            >
+              🇸🇰
+            </button>
+          </div>
         </div>
 
         <div className="mb-6 grid grid-cols-2 rounded-lg bg-panel2 p-1 text-sm">
@@ -55,7 +86,7 @@ export default function LoginPage() {
               mode === "login" ? "bg-accent2 text-white" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            Přihlásit
+            {t.prihlasit}
           </button>
           <button
             type="button"
@@ -64,11 +95,11 @@ export default function LoginPage() {
               mode === "register" ? "bg-accent2 text-white" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            Registrovat
+            {t.registrovat}
           </button>
         </div>
 
-        <label className="mb-1 block text-xs text-zinc-400">E-mail</label>
+        <label className="mb-1 block text-xs text-zinc-400">{t.email}</label>
         <input
           type="email"
           required
@@ -77,7 +108,7 @@ export default function LoginPage() {
           className="mb-4 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
         />
 
-        <label className="mb-1 block text-xs text-zinc-400">Heslo</label>
+        <label className="mb-1 block text-xs text-zinc-400">{t.heslo}</label>
         <input
           type="password"
           required
@@ -92,7 +123,7 @@ export default function LoginPage() {
           disabled={pracuje}
           className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-60"
         >
-          {pracuje ? "Pracuji..." : mode === "login" ? "Přihlásit se" : "Vytvořit účet"}
+          {pracuje ? t.pracuji : mode === "login" ? t.prihlasitSe : t.vytvoritUcet}
         </button>
 
         {zprava && (

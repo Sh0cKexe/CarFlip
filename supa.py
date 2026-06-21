@@ -30,6 +30,7 @@ def nacti_uzivatele(sb):
             "naklady_dovoz_kc": r["naklady_dovoz_kc"],
             "min_srovnani": r["min_srovnani"],
             "filtry": r["filtry"],
+            "trh": r.get("trh") or "cz",
         }
         uzivatele.append({"user_id": r["user_id"], "cfg": cfg})
     return uzivatele

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import Nav from "@/app/components/Nav";
 import { Sekce, Pole, input } from "@/app/components/FormUI";
+import { T, type Trh } from "@/lib/i18n";
 
 type Auto = {
   id: string;
@@ -19,11 +20,12 @@ type Auto = {
 type Naklad = { id: string; auto_id: string; popis: string; castka_kc: number; datum: string };
 
 export default function AutoDetail({
-  email, userId, auto: autoVychozi, naklady: nakladyVychozi,
-}: { email: string; userId: string; auto: Auto; naklady: Naklad[] }) {
+  email, userId, auto: autoVychozi, naklady: nakladyVychozi, trh,
+}: { email: string; userId: string; auto: Auto; naklady: Naklad[]; trh: Trh }) {
   const router = useRouter();
   const supabase = createClient();
   const fileInput = useRef<HTMLInputElement>(null);
+  const t = T(trh);
 
   const [auto, setAuto] = useState<Auto>(autoVychozi);
   const [naklady, setNaklady] = useState<Naklad[]>(nakladyVychozi);
@@ -72,11 +74,11 @@ export default function AutoDetail({
       })
       .eq("id", auto.id);
     setUklada(false);
-    setZprava(error ? "Chyba při ukládání: " + error.message : "Uloženo.");
+    setZprava(error ? t.chybaUkladani + error.message : t.ulozeno);
   }
 
   async function smazatAuto() {
-    if (!confirm("Smazat tohle auto i se všemi náklady a fotkami?")) return;
+    if (!confirm(t.potvrditSmazani)) return;
     if (auto.fotky.length > 0) await supabase.storage.from("auta-fotky").remove(auto.fotky);
     await supabase.from("auta").delete().eq("id", auto.id);
     router.push("/auta");
@@ -128,10 +130,10 @@ export default function AutoDetail({
         body: JSON.stringify({ url: auto.otomoto_url }),
       });
       const j = await r.json();
-      if (!r.ok) setAiChyba(j.error || "Neznámá chyba.");
+      if (!r.ok) setAiChyba(j.error || t.neznama);
       else setAiRozbor(j.text);
     } catch (e: any) {
-      setAiChyba("Chyba sítě: " + e.message);
+      setAiChyba(t.chybaSite + e.message);
     } finally {
       setAiBezi(false);
     }
@@ -152,37 +154,37 @@ export default function AutoDetail({
 
   return (
     <main className="mx-auto max-w-4xl px-4 py-8">
-      <Nav email={email} />
+      <Nav email={email} trh={trh} />
 
       <div className="mb-6 flex items-center justify-between">
-        <a href="/auta" className="text-sm text-zinc-400 hover:text-zinc-200">← Zpět na moje auta</a>
+        <a href="/auta" className="text-sm text-zinc-400 hover:text-zinc-200">{t.zpetNaAuta}</a>
         <button onClick={smazatAuto} className="rounded-lg border border-red-500/40 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10">
-          Smazat auto
+          {t.smazatAuto}
         </button>
       </div>
 
-      <Sekce titulek="Základní info">
+      <Sekce titulek={t.zakladniInfo}>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Pole label="Název / model">
+          <Pole label={t.nazevModel}>
             <input className={input} value={auto.titulek} onChange={(e) => setPole("titulek", e.target.value)} />
           </Pole>
-          <Pole label="Stav">
+          <Pole label={t.stav}>
             <select className={input} value={auto.stav} onChange={(e) => setPole("stav", e.target.value)}>
-              <option value="koupeno">koupeno</option>
-              <option value="inzerce">v inzerci</option>
-              <option value="prodano">prodáno</option>
+              <option value="koupeno">{t.koupeno}</option>
+              <option value="inzerce">{t.vInzerci}</option>
+              <option value="prodano">{t.prodano}</option>
             </select>
           </Pole>
         </div>
         <div className="mt-4">
-          <Pole label="Link na Otomoto inzerát">
+          <Pole label={t.linkOtomoto}>
             <input className={input} value={auto.otomoto_url} onChange={(e) => setPole("otomoto_url", e.target.value)} />
           </Pole>
           <button
             type="button" onClick={spustitAiRozbor} disabled={aiBezi || !auto.otomoto_url}
             className="mt-2 rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 transition hover:bg-accent2/10 disabled:opacity-40"
           >
-            {aiBezi ? "Analyzuji..." : "🤖 AI rozbor inzerátu"}
+            {aiBezi ? t.analyzuji : t.aiRozbor}
           </button>
           {aiChyba && <p className="mt-2 text-sm text-red-400">{aiChyba}</p>}
           {aiRozbor && (
@@ -192,19 +194,19 @@ export default function AutoDetail({
                 type="button" onClick={pridatRozborDoPoznamek}
                 className="mt-3 rounded-lg border border-accent px-3 py-1.5 text-xs text-accent hover:bg-accent/10"
               >
-                Přidat do poznámek
+                {t.pridatDoPoznamek}
               </button>
             </div>
           )}
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Pole label="Cena koupeno (Kč)">
+          <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
             <input
               type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
               onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
             />
           </Pole>
-          <Pole label="Cena prodáno (Kč)">
+          <Pole label={`${t.cenaProdano} (${t.mena})`}>
             <input
               type="number" className={input} value={auto.cena_prodano_kc ?? ""}
               onChange={(e) => setPole("cena_prodano_kc", e.target.value ? Number(e.target.value) : null)}
@@ -212,7 +214,7 @@ export default function AutoDetail({
           </Pole>
         </div>
         <div className="mt-4">
-          <Pole label="Poznámky">
+          <Pole label={t.poznamky}>
             <textarea
               className={input + " min-h-[100px]"} value={auto.poznamky}
               onChange={(e) => setPole("poznamky", e.target.value)}
@@ -224,49 +226,49 @@ export default function AutoDetail({
             onClick={ulozit} disabled={uklada}
             className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-black transition hover:brightness-110 disabled:opacity-60"
           >
-            {uklada ? "Ukládám..." : "Uložit"}
+            {uklada ? t.ukladam : t.ulozit}
           </button>
-          {zprava && <p className={`text-sm ${zprava.startsWith("Chyba") ? "text-red-400" : "text-emerald-400"}`}>{zprava}</p>}
+          {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-emerald-400"}`}>{zprava}</p>}
         </div>
       </Sekce>
 
       <Sekce
-        titulek="Náklady"
-        badge={{ text: `${sumaNakladu.toLocaleString("cs-CZ")} Kč celkem`, tone: "zinc" }}
+        titulek={t.naklady}
+        badge={{ text: `${sumaNakladu.toLocaleString("cs-CZ")} ${t.mena} ${t.celkem}`, tone: "zinc" }}
       >
         <div className="space-y-2">
           {naklady.map((n) => (
             <div key={n.id} className="flex items-center justify-between rounded-lg border border-border bg-panel2 px-4 py-2">
               <span className="text-sm text-zinc-200">{n.popis}</span>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-zinc-400">{n.castka_kc.toLocaleString("cs-CZ")} Kč</span>
-                <button onClick={() => smazatNaklad(n.id)} className="text-xs text-red-400 hover:underline">smazat</button>
+                <span className="text-sm text-zinc-400">{n.castka_kc.toLocaleString("cs-CZ")} {t.mena}</span>
+                <button onClick={() => smazatNaklad(n.id)} className="text-xs text-red-400 hover:underline">{t.smazatMale}</button>
               </div>
             </div>
           ))}
         </div>
         <div className="mt-4 flex items-end gap-2">
-          <Pole label="Popis (např. Dovoz, STK, pojistka)">
+          <Pole label={t.popisNakladu}>
             <input className={input} value={novyNaklad.popis} onChange={(e) => setNovyNaklad({ ...novyNaklad, popis: e.target.value })} />
           </Pole>
-          <Pole label="Částka (Kč)">
+          <Pole label={`${t.castka} (${t.mena})`}>
             <input
               type="number" className={input} value={novyNaklad.castka_kc}
               onChange={(e) => setNovyNaklad({ ...novyNaklad, castka_kc: e.target.value })}
             />
           </Pole>
           <button onClick={pridatNaklad} className="h-fit rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 hover:bg-accent2/10">
-            + Přidat
+            {t.pridat}
           </button>
         </div>
         {zisk != null && (
           <p className={`mt-4 text-sm font-medium ${zisk >= 0 ? "text-accent" : "text-red-400"}`}>
-            Čistý zisk: {zisk.toLocaleString("cs-CZ")} Kč
+            {t.cistyZisk} {zisk.toLocaleString("cs-CZ")} {t.mena}
           </p>
         )}
       </Sekce>
 
-      <Sekce titulek="Fotky">
+      <Sekce titulek={t.fotky}>
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {auto.fotky.map((cesta) => (
             <div key={cesta} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-panel2">
@@ -284,7 +286,7 @@ export default function AutoDetail({
           ))}
         </div>
         <input ref={fileInput} type="file" accept="image/*" multiple onChange={(e) => nahratFotky(e.target.files)} disabled={nahravam} className="text-sm text-zinc-400" />
-        {nahravam && <p className="mt-2 text-sm text-zinc-500">Nahrávám...</p>}
+        {nahravam && <p className="mt-2 text-sm text-zinc-500">{t.nahravam}</p>}
       </Sekce>
     </main>
   );

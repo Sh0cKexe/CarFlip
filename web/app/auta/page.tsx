@@ -18,6 +18,12 @@ export default async function AutaPage() {
     .select("auto_id, castka_kc")
     .eq("user_id", user.id);
 
+  const { data: nastaveni } = await supabase
+    .from("nastaveni")
+    .select("trh")
+    .eq("user_id", user.id)
+    .single();
+
   const nakladySuma: Record<string, number> = {};
   (naklady ?? []).forEach((row) => {
     nakladySuma[row.auto_id] = (nakladySuma[row.auto_id] ?? 0) + (row.castka_kc ?? 0);
@@ -29,6 +35,7 @@ export default async function AutaPage() {
       userId={user.id}
       auta={(auta ?? []) as Auto[]}
       nakladySuma={nakladySuma}
+      trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
     />
   );
 }

@@ -21,8 +21,12 @@ create table if not exists public.nastaveni (
   naklady_dovoz_kc integer not null default 10000,
   min_srovnani integer not null default 3,
   aktivni boolean not null default true,
-  vytvoreno timestamptz not null default now()
+  vytvoreno timestamptz not null default now(),
+  trh text not null default 'cz'
 );
+
+-- Pro existujici instalace (puvodni create table uz probehl bez "trh"):
+alter table public.nastaveni add column if not exists trh text not null default 'cz';
 
 create table if not exists public.videno (
   user_id uuid not null references auth.users (id) on delete cascade,

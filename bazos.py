@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Odhad prodejni ceny auta v CR podle inzeratu na Bazosi (auto.bazos.cz).
+Odhad prodejni ceny auta podle inzeratu na Bazosi (auto.bazos.cz / auto.bazos.sk).
 
 Postup:
 1) Sestavime ceske hledani (napr. "Seria 3" z Otomoto -> "rada 3").
@@ -70,23 +70,30 @@ HEADERS = {
                   "Chrome/124.0 Safari/537.36",
 }
 
-# Preklad polskych nazvu modelu na ceske hledani na Bazosi
+# Preklad polskych nazvu modelu na hledani na Bazosi (cz/sk se v par slovech lisi)
 MODEL_PREKLAD = {
-    "seria": "rada",     # BMW Seria 3 -> rada 3
-    "klasa": "trida",    # Mercedes Klasa C -> trida C
+    "cz": {"seria": "rada", "klasa": "trida"},    # BMW Seria 3 -> rada 3, Mercedes Klasa C -> trida C
+    "sk": {"seria": "rad", "klasa": "trieda"},    # BMW Seria 3 -> rad 3, Mercedes Klasa C -> trieda C
 }
 
-# Pod touto cenou to nejspis nejsou auta, ale dily/doplnky
-MIN_ROZUMNA_CENA = 25000
+# Domena Bazose podle cilového trhu
+DOMENA = {"cz": "auto.bazos.cz", "sk": "auto.bazos.sk"}
+
+# Pod touto cenou to nejspis nejsou auta, ale dily/doplnky (v mene daneho trhu)
+MIN_ROZUMNA_CENA = {"cz": 25000, "sk": 1000}
+
+# Krok zaokrouhleni cenoveho stropu (kvuli cache) - Kc vs EUR maji jiny rad
+ZAOKROUHLENI_STROPU = {"cz": 20000, "sk": 500}
 
 
-def _ceske_hledani(znacka, model):
+def _ceske_hledani(znacka, model, trh="cz"):
     """Sestavi vyhledavaci dotaz pro Bazos."""
     znacka = (znacka or "").strip().lower()
     model = (model or "").strip().lower()
+    preklad = MODEL_PREKLAD.get(trh, MODEL_PREKLAD["cz"])
     slova = []
     for s in model.split():
-        slova.append(MODEL_PREKLAD.get(s, s))
+        slova.append(preklad.get(s, s))
     model_cz = " ".join(slova)
     return (znacka + " " + model_cz).strip()
 
@@ -210,9 +217,9 @@ def _stahni_stranku(session, url, params, pokusy=2):
     return None
 
 
-def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5):
+def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5, trh="cz"):
     """Stahne inzeraty z Bazose pro dany dotaz (s trvalou cache + ochranou)."""
-    klic = "{}|{}|{}|{}".format(dotaz, cena_od, cena_do, max_stran)
+    klic = "{}|{}|{}|{}|{}".format(trh, dotaz, cena_od, cena_do, max_stran)
 
     # 1) Trvala cache: pokud mame cerstvy zaznam, nechodime na sit
     zaznam = _CACHE.get(klic)
@@ -223,6 +230,7 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5):
     if time.time() < _blok_do[0]:
         return zaznam["data"] if zaznam else []
 
+    domena = DOMENA.get(trh, DOMENA["cz"])
     vysledky = []
     session = requests.Session()
     session.headers.update(HEADERS)
@@ -234,9 +242,9 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5):
         if cena_do:
             params["cenado"] = cena_do
         # Bazos strankuje pres /strana/20/40...
-        url = "https://auto.bazos.cz/"
+        url = "https://{}/".format(domena)
         if strana > 0:
-            url = "https://auto.bazos.cz/{}/".format(strana * 20)
+            url = "https://{}/{}/".format(domena, strana * 20)
         r = _stahni_stranku(session, url, params)
         if r is None:
             break
@@ -253,7 +261,7 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5):
                 continue
             link = nad.get("href", "")
             if link.startswith("/"):
-                link = "https://auto.bazos.cz" + link
+                link = "https://" + domena + link
             titulek = nad.get_text(strip=True)
             popis_text = popis.get_text(" ", strip=True) if popis else ""
             cely = titulek + " " + popis_text
@@ -277,9 +285,13 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5):
 
 def odhad_ceny(znacka, model, rok=None, najezd_km=None, cena_anchor_czk=None,
                palivo=None, objem_l=None,
-               rozsah_let=3, rozsah_km=50000, max_nasobek=2.5, min_pocet=5):
+               rozsah_let=3, rozsah_km=50000, max_nasobek=2.5, min_pocet=5,
+               trh="cz"):
     """
-    Vrati odhad prodejni ceny v CR (median) + srovnatelne inzeraty.
+    Vrati odhad prodejni ceny (median) + srovnatelne inzeraty.
+    trh="cz" -> bazos.cz, Kc; trh="sk" -> bazos.sk, EUR
+    (cena_anchor_czk je v mene daneho trhu, navzdory nazvu - historicky CZK,
+    pro sk se do nej posila castka v EUR).
 
     Pojistky proti nesmyslnym odhadum:
       - rocnik: jen auta +-rozsah_let (vychozi 3 roky)
@@ -292,16 +304,18 @@ def odhad_ceny(znacka, model, rok=None, najezd_km=None, cena_anchor_czk=None,
     Vraci slovnik:
       {median, pocet, ukazky[], dotaz, duvod}
     """
-    dotaz = _ceske_hledani(znacka, model)
+    min_cena = MIN_ROZUMNA_CENA.get(trh, MIN_ROZUMNA_CENA["cz"])
+    zaokrouhleni = ZAOKROUHLENI_STROPU.get(trh, ZAOKROUHLENI_STROPU["cz"])
+    dotaz = _ceske_hledani(znacka, model, trh=trh)
     # Rekneme Bazosi cenovy strop (2.5x cena polskeho auta), aby vracel
     # auta v rozumne cene - jinak by vracel hlavne drahe novejsi kusy a
     # levne srovnatelne by zustaly na dalsich strankach.
-    # Strop zaokrouhlime na 20 000 Kc, aby fungovala cache pro podobna auta.
+    # Strop zaokrouhlime (kvuli cache pro podobna auta).
     cena_do = None
     if cena_anchor_czk:
         cap = cena_anchor_czk * max_nasobek
-        cena_do = int(round(cap / 20000.0) * 20000) or 20000
-    syrove = hledat_inzeraty(dotaz, cena_od=MIN_ROZUMNA_CENA, cena_do=cena_do, max_stran=3)
+        cena_do = int(round(cap / zaokrouhleni) * zaokrouhleni) or zaokrouhleni
+    syrove = hledat_inzeraty(dotaz, cena_od=min_cena, cena_do=cena_do, max_stran=3, trh=trh)
 
     # 0) NAZEV inzeratu musi obsahovat hledany model (ne jen popis).
     #    Tim vyradime jine modely, ktere se jen zminily v textu
@@ -314,7 +328,7 @@ def odhad_ceny(znacka, model, rok=None, najezd_km=None, cena_anchor_czk=None,
         vybrane = list(syrove)
 
     # 1) rozumna cena (vyhozeni dilu/doplnku)
-    vybrane = [x for x in vybrane if x["cena"] and x["cena"] >= MIN_ROZUMNA_CENA]
+    vybrane = [x for x in vybrane if x["cena"] and x["cena"] >= min_cena]
 
     # 2) cenovy strop podle ceny polskeho auta -> vyhodi jine generace
     if cena_anchor_czk:
@@ -371,9 +385,11 @@ def odhad_ceny(znacka, model, rok=None, najezd_km=None, cena_anchor_czk=None,
 
 
 if __name__ == "__main__":
-    import json
-    v = odhad_ceny("BMW", "Seria 3", rok=2018)
-    print("Dotaz:", v["dotaz"])
+    v = odhad_ceny("BMW", "Seria 3", rok=2018, trh="cz")
+    print("Dotaz CZ:", v["dotaz"])
     print("Median CZ:", v["median"], "Kc | z", v["pocet"], "inzeratu")
+    v = odhad_ceny("BMW", "Seria 3", rok=2018, trh="sk")
+    print("Dotaz SK:", v["dotaz"])
+    print("Median SK:", v["median"], "EUR | z", v["pocet"], "inzeratu")
     for u in v["ukazky"]:
         print("  -", u["rok"], "|", u["cena"], "Kc |", u["titulek"][:50], "|", u["url"])

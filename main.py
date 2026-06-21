@@ -33,6 +33,27 @@ CONFIG = os.path.join(os.path.dirname(__file__), "config.json")
 # Vychozi minimalni pocet srovnatelnych CZ inzeratu (lze zmenit v nastaveni)
 MIN_SROVNANI = 5
 
+# Texty zpravy podle cilového trhu (cz = bazos.cz/Kc, sk = bazos.sk/EUR).
+# Nejsou lingvisticky dokonale, jde o funkcni preklad - lze doladit pozdeji.
+TEXTY = {
+    "cz": {
+        "odhad_prodej": "Odhad prodej CZ",
+        "naklady_dovoz": "Náklady dovoz",
+        "popis_prelozeno": "Popis (přeloženo z PL)",
+        "srovnatelna_auta": "Srovnatelná auta na Bazoši",
+        "otevrit": "Otevřít na Otomoto",
+        "mena": "Kč",
+    },
+    "sk": {
+        "odhad_prodej": "Odhad predaja SK",
+        "naklady_dovoz": "Náklady na dovoz",
+        "popis_prelozeno": "Popis (preložené z PL)",
+        "srovnatelna_auta": "Porovnateľné autá na Bazoši",
+        "otevrit": "Otvoriť na Otomoto",
+        "mena": "€",
+    },
+}
+
 
 def nacti_config():
     with open(CONFIG, encoding="utf-8") as f:
@@ -75,16 +96,19 @@ def _motor_text(auto):
     return " | ".join(casti) if casti else "motor neuveden"
 
 
-def naformatuj_zpravu(auto, cena_czk, odhad, zisk, naklady):
+def naformatuj_zpravu(auto, cena_mistni, odhad, zisk, naklady, trh="cz"):
     """Hlavni popisek k fotce."""
+    t = TEXTY.get(trh, TEXTY["cz"])
+    mena = t["mena"]
+    vlajka = "🇸🇰" if trh == "sk" else "🇨🇿"
     radky = [
         "🚗 <b>{}</b>".format(auto["titulek"]),
-        "💰 <b>Zisk: {:,} Kč</b>".format(zisk).replace(",", " "),
+        "💰 <b>Zisk: {:,} {}</b>".format(zisk, mena).replace(",", " "),
         "",
-        "🇵🇱 Cena PL: {:,} PLN  (≈ {:,} Kč)".format(
-            auto["cena_pln"], cena_czk).replace(",", " "),
-        "🇨🇿 Odhad prodej CZ: {:,} Kč".format(odhad["median"]).replace(",", " "),
-        "📦 Náklady dovoz: {:,} Kč".format(naklady).replace(",", " "),
+        "🇵🇱 Cena PL: {:,} PLN  (≈ {:,} {})".format(
+            auto["cena_pln"], cena_mistni, mena).replace(",", " "),
+        "{} {}: {:,} {}".format(vlajka, t["odhad_prodej"], odhad["median"], mena).replace(",", " "),
+        "📦 {}: {:,} {}".format(t["naklady_dovoz"], naklady, mena).replace(",", " "),
         "",
         "📅 {} | {:,} km | {} | {}".format(
             auto.get("rok") or "?",
@@ -97,25 +121,26 @@ def naformatuj_zpravu(auto, cena_czk, odhad, zisk, naklady):
     if auto.get("mesto"):
         radky.append("📍 {}".format(auto["mesto"]))
     radky.append("")
-    radky.append("🔗 <a href=\"{}\">Otevřít na Otomoto</a>".format(auto["url"]))
+    radky.append("🔗 <a href=\"{}\">{}</a>".format(auto["url"], t["otevrit"]))
     return "\n".join(radky)
 
 
-def naformatuj_detail(popis_cz, odhad):
-    """Druha zprava: prelozeny popis + srovnatelne CZ inzeraty."""
+def naformatuj_detail(popis_cz, odhad, trh="cz"):
+    """Druha zprava: prelozeny popis + srovnatelne inzeraty."""
+    t = TEXTY.get(trh, TEXTY["cz"])
+    mena = t["mena"]
     radky = []
     if popis_cz:
-        radky.append("📝 <b>Popis (přeloženo z PL):</b>")
+        radky.append("📝 <b>{}:</b>".format(t["popis_prelozeno"]))
         radky.append(popis_cz[:3000])
         radky.append("")
     if odhad["ukazky"]:
-        radky.append("🔎 <b>Srovnatelná auta na Bazoši ({} ks):</b>".format(
-            odhad["pocet"]))
+        radky.append("🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], odhad["pocet"]))
         for u in odhad["ukazky"]:
             rok = u.get("rok") or "?"
             najezd = "{:,} km".format(u["najezd"]).replace(",", " ") if u.get("najezd") else "? km"
-            radky.append("• {} | {} | {:,} Kč – <a href=\"{}\">{}</a>".format(
-                rok, najezd, u["cena"], u["url"], u["titulek"][:42]).replace(",", " "))
+            radky.append("• {} | {} | {:,} {} – <a href=\"{}\">{}</a>".format(
+                rok, najezd, u["cena"], mena, u["url"], u["titulek"][:42]).replace(",", " "))
     return "\n".join(radky)
 
 
@@ -195,20 +220,22 @@ def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
     if not _najezd_ok(auto, cfg["filtry"]):
         return False
 
+    trh = cfg.get("trh", "cz")
     min_srovnani = cfg.get("min_srovnani", MIN_SROVNANI)
-    cena_czk = int(auto["cena_pln"] * kurz_pln)
+    cena_mistni = int(auto["cena_pln"] * kurz_pln)
     odhad = bazos.odhad_ceny(auto["znacka"], auto.get("model"),
                              rok=auto.get("rok"),
                              najezd_km=auto.get("najezd_km"),
-                             cena_anchor_czk=cena_czk,
+                             cena_anchor_czk=cena_mistni,
                              palivo=auto.get("palivo_kod"),
                              objem_l=auto.get("objem_l"),
-                             min_pocet=min_srovnani)
+                             min_pocet=min_srovnani,
+                             trh=trh)
     if not odhad["median"] or odhad["pocet"] < min_srovnani:
         return False  # malo dat = neduveryhodny odhad, radsi neposilame
 
     naklady = cfg["naklady_dovoz_kc"]
-    zisk = odhad["median"] - cena_czk - naklady
+    zisk = odhad["median"] - cena_mistni - naklady
 
     if zisk < cfg["min_zisk_kc"]:
         return False
@@ -231,9 +258,9 @@ def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
     token = cfg["telegram"]["token"]
     prijemci = _prijemci(cfg)
 
-    popisek = naformatuj_zpravu(auto, cena_czk, odhad, zisk, naklady)
+    popisek = naformatuj_zpravu(auto, cena_mistni, odhad, zisk, naklady, trh=trh)
     popis_cz = preklad.prelozit(plny_popis)
-    detail = naformatuj_detail(popis_cz, odhad)
+    detail = naformatuj_detail(popis_cz, odhad, trh=trh)
 
     # Posleme vsem prijemcum (tobe i pripadnym kamaradum)
     for cid in prijemci:
@@ -252,8 +279,9 @@ MAX_STRAN_PRVNI = 25
 
 def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
               oznac_videno=databaze.oznac_videno):
-    kurz_pln = kurz.kurz_pln_czk()
-    print("Kurz: 1 PLN =", round(kurz_pln, 3), "Kc")
+    trh = cfg.get("trh", "cz")
+    kurz_pln = kurz.kurz_pln_eur() if trh == "sk" else kurz.kurz_pln_czk()
+    print("Kurz: 1 PLN =", round(kurz_pln, 4), TEXTY.get(trh, TEXTY["cz"])["mena"])
     filtry = cfg["filtry"]
     znacky = filtry.get("znacky", [])
     # Okruhy (oblasti). Kdyz zadny neni, hledame v celem Polsku (None).
