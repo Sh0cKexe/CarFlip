@@ -47,7 +47,11 @@ export async function POST(req: Request) {
   const pristupDo = new Date();
   pristupDo.setDate(pristupDo.getDate() + kodRadek.dny_platnosti);
 
-  await admin.from("pristup").insert({ user_id: novyUzivatel.user.id, pristup_do: pristupDo.toISOString() });
+  await admin.from("pristup").insert({
+    user_id: novyUzivatel.user.id,
+    email,
+    pristup_do: pristupDo.toISOString(),
+  });
   await admin.from("invite_kody").update({
     pouzil_user_id: novyUzivatel.user.id,
     pouzito_kdy: new Date().toISOString(),

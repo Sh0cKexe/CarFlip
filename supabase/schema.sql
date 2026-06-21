@@ -202,9 +202,13 @@ alter table public.invite_kody enable row level security;
 
 create table if not exists public.pristup (
   user_id uuid primary key references auth.users (id) on delete cascade,
+  email text not null default '',
   pristup_do timestamptz not null,
   vytvoreno timestamptz not null default now()
 );
+
+-- Pro existujici instalace (puvodni create table uz probehl bez emailu):
+alter table public.pristup add column if not exists email text not null default '';
 
 alter table public.pristup enable row level security;
 
