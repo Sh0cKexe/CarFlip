@@ -2,10 +2,10 @@
 @config "../tailwind.config.js";
 
 body {
-  background: #0b0d12;
-  color: #e7e9ee;
+  background: #f4f6f9;
+  color: #0f172a;
 }
 
 input[type="checkbox"] {
-  accent-color: #22c55e;
+  accent-color: #16a34a;
 }

@@ -3,6 +3,8 @@ export type Trh = "cz" | "sk";
 const CS = {
   mena: "Kč",
   nastaveni: "Nastavení",
+  nastaveniBota: "Nastavení bota",
+  filtryHledani: "Filtry hledání",
   mojeAuta: "Moje auta",
   odhlasit: "Odhlásit",
 
@@ -104,6 +106,8 @@ const CS = {
 const SK: typeof CS = {
   mena: "€",
   nastaveni: "Nastavenia",
+  nastaveniBota: "Nastavenia bota",
+  filtryHledani: "Filtre hľadania",
   mojeAuta: "Moje autá",
   odhlasit: "Odhlásiť",
 
