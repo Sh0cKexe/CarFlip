@@ -53,7 +53,7 @@ def posli_test(token, chat_id):
     try:
         r = requests.post(url, data={
             "chat_id": chat_id,
-            "text": "✅ <b>CarFlip</b> – test spojení funguje!",
+            "text": "✅ <b>FlipniTo</b> – test spojení funguje!",
             "parse_mode": "HTML",
         }, timeout=20)
         j = r.json()

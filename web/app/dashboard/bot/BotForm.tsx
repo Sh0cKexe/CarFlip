@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/app/components/Sidebar";
-import { Sekce, Pole, input, Toggle, btnPrimary, btnGhost } from "@/app/components/FormUI";
+import { Sekce, Pole, Toggle, LockInput, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 type Nastaveni = {
@@ -51,7 +51,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
       const r = await fetch(`https://api.telegram.org/bot${n.telegram_token}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: n.telegram_chat_id, text: "✅ CarFlip – test spojení funguje!" }),
+        body: JSON.stringify({ chat_id: n.telegram_chat_id, text: "✅ FlipniTo – test spojení funguje!" }),
       });
       const j = await r.json();
       setZprava(j.ok ? t.testOk : t.telegramChyba + (j.description || t.neznama));
@@ -71,10 +71,10 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Pole label={t.tokenBota}>
-              <input className={input} value={n.telegram_token} onChange={(e) => setN({ ...n, telegram_token: e.target.value })} />
+              <LockInput value={n.telegram_token} onChange={(v) => setN({ ...n, telegram_token: v })} />
             </Pole>
             <Pole label={t.tvojeChatId}>
-              <input className={input} value={n.telegram_chat_id} onChange={(e) => setN({ ...n, telegram_chat_id: e.target.value })} />
+              <LockInput value={n.telegram_chat_id} onChange={(v) => setN({ ...n, telegram_chat_id: v })} />
             </Pole>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-4">

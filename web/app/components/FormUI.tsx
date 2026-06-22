@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 
 export function Sekce({
@@ -59,6 +60,31 @@ export function Toggle({
       </button>
       {label}
     </label>
+  );
+}
+
+export function LockInput({
+  value, onChange, type = "text",
+}: { value: string; onChange: (v: string) => void; type?: string }) {
+  const [zamceno, setZamceno] = useState(value.length > 0);
+  return (
+    <div className="relative">
+      <input
+        type={type}
+        value={value}
+        readOnly={zamceno}
+        onChange={(e) => onChange(e.target.value)}
+        className={`${input} pr-9 ${zamceno ? "cursor-not-allowed text-zinc-500" : ""}`}
+      />
+      <button
+        type="button"
+        onClick={() => setZamceno(!zamceno)}
+        title={zamceno ? "Odemknout pro úpravu" : "Zamknout proti náhodné změně"}
+        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-sm text-zinc-400 transition hover:text-accent2"
+      >
+        {zamceno ? "🔒" : "🔓"}
+      </button>
+    </div>
   );
 }
 

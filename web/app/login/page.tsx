@@ -37,11 +37,6 @@ function LoginFormulare() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function zmenitJazyk(novy: Trh) {
-    setTrh(novy);
-    localStorage.setItem(LANG_KLIC, novy);
-  }
-
   async function odeslat(e: React.FormEvent) {
     e.preventDefault();
     setZprava(null);
@@ -81,22 +76,8 @@ function LoginFormulare() {
         onSubmit={odeslat}
         className="glass w-full max-w-sm rounded-2xl border border-border p-8 shadow-glow-lg"
       >
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6 flex items-center justify-center">
           <Logo height={34} />
-          <div className="flex gap-1">
-            <button
-              type="button" onClick={() => zmenitJazyk("cz")}
-              className={`rounded-md px-2 py-1 text-lg transition ${trh === "cz" ? "bg-panel2" : "opacity-50 hover:opacity-80"}`}
-            >
-              🇨🇿
-            </button>
-            <button
-              type="button" onClick={() => zmenitJazyk("sk")}
-              className={`rounded-md px-2 py-1 text-lg transition ${trh === "sk" ? "bg-panel2" : "opacity-50 hover:opacity-80"}`}
-            >
-              🇸🇰
-            </button>
-          </div>
         </div>
 
         <div className="relative mb-6 grid grid-cols-2 rounded-lg bg-panel2 p-1 text-sm">
