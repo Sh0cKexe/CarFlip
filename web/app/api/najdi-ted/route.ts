@@ -9,13 +9,15 @@ export async function POST() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "Nepřihlášen." }, { status: 401 });
 
+  const jeOwner = !!process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL;
+
   const { data: nastaveni } = await supabase
     .from("nastaveni")
     .select("posledni_najdi_ted")
     .eq("user_id", user.id)
     .single();
 
-  if (nastaveni?.posledni_najdi_ted) {
+  if (!jeOwner && nastaveni?.posledni_najdi_ted) {
     const uplynuloMs = Date.now() - new Date(nastaveni.posledni_najdi_ted).getTime();
     const zbyvaMinut = COOLDOWN_MINUT - Math.floor(uplynuloMs / 60000);
     if (zbyvaMinut > 0) {
