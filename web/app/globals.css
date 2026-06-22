@@ -18,6 +18,11 @@ input[type="checkbox"] {
   accent-color: #22c55e;
 }
 
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 ::selection {
   background: rgba(34, 197, 94, 0.35);
   color: #fff;

@@ -11,7 +11,7 @@ export default function Logo({ height = 32 }: { height?: number }) {
       className="flex shrink-0 items-center"
       style={{ height }}
     >
-      <img src="/logo-flipnito.png" alt="FlipniTo" style={{ height, width: "auto" }} />
+      <img src="/logo-flipnito.png" alt="FlipniTo" draggable={false} style={{ height, width: "auto" }} />
     </motion.span>
   );
 }

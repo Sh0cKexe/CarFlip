@@ -122,7 +122,7 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
                       className="h-full w-full"
                     />
                   </div>
-                  <p className="mt-3 text-sm text-zinc-400">{t.navodVideoPopisek}</p>
+                  <p className="mt-3 text-sm font-semibold text-white">{t.navodVideoPopisek}</p>
                 </div>
               </motion.div>
             )}
