@@ -117,14 +117,14 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
             rel="noreferrer"
             className="flex items-center gap-2 text-sm font-medium text-zinc-200 transition hover:text-accent2"
           >
-            💬 Diskord komunita
+            💬 Discord komunita
           </a>
-          <p className="mt-1 text-xs text-zinc-400">Nejde link? Discord: {DISCORD_HANDLE}</p>
+          <p className="mt-1 text-sm font-medium text-accent2/80">Nejde link? Discord: {DISCORD_HANDLE}</p>
         </div>
-        <div className="shrink-0 border-t border-sidebar2 bg-sidebar2/40 px-5 py-5">
-          <div className="mb-4">
-            <div className="group relative mb-1.5 flex items-center gap-1.5">
-              <span className="text-sm text-zinc-300">{t.trh}</span>
+        <div className="shrink-0 border-t border-sidebar2 bg-sidebar2/40 px-5 py-4">
+          <div className="mb-3">
+            <div className="group relative mb-1 flex items-center gap-1.5">
+              <span className="text-xs text-zinc-300">{t.trh}</span>
               <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-zinc-400 text-[10px] text-zinc-300">
                 i
               </span>
@@ -133,7 +133,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
               </div>
             </div>
             <select
-              className="w-full rounded-lg border border-zinc-600 bg-sidebar2 px-3 py-2.5 text-sm text-white outline-none transition focus:border-accent2/60"
+              className="w-full rounded-lg border border-zinc-600 bg-sidebar2 px-2.5 py-2 text-sm text-white outline-none transition focus:border-accent2/60"
               value={trh ?? "cz"}
               onChange={(e) => zmenitTrh(e.target.value as Trh)}
             >
@@ -141,15 +141,15 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
               <option value="sk">{t.trhKratceSk}</option>
             </select>
           </div>
-          <p className="mb-1 truncate text-sm text-zinc-300">{email}</p>
+          <p className="mb-1 truncate text-xs text-zinc-300">{email}</p>
           {dnyDoVyprseni !== null && (
-            <p className={`mb-3 text-sm font-medium ${dnyDoVyprseni <= 3 ? "text-red-400" : "text-zinc-400"}`}>
+            <p className={`mb-2 text-xs font-medium ${dnyDoVyprseni <= 3 ? "text-red-400" : "text-zinc-400"}`}>
               {dnyDoVyprseni <= 0 ? t.vyprsiDnes : `${dnyDoVyprseni} ${t.dniDoVyprseniPredlozka}`}
             </p>
           )}
           <button
             onClick={odhlasit}
-            className="w-full rounded-lg border border-zinc-600 px-3 py-2.5 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-sidebar2 hover:text-white active:scale-[0.98]"
+            className="w-full rounded-lg border border-zinc-600 px-3 py-2 text-sm font-medium text-zinc-100 transition hover:border-zinc-500 hover:bg-sidebar2 hover:text-white active:scale-[0.98]"
           >
             {t.odhlasit}
           </button>

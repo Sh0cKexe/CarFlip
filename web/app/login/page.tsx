@@ -72,7 +72,7 @@ function LoginFormulare() {
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="fixed bottom-4 left-4 flex max-w-[80vw] flex-col gap-0.5 text-xs text-zinc-500 sm:max-w-none sm:flex-row sm:items-center sm:gap-1.5">
         <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="transition hover:text-accent2">
-          💬 Diskord komunita
+          💬 Discord komunita
         </a>
         <span className="hidden sm:inline">·</span>
         <span>Nejde link? Discord: {DISCORD_HANDLE}</span>
