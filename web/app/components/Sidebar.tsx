@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
@@ -12,6 +13,16 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   const pathname = usePathname();
   const supabase = createClient();
   const t = T(trh);
+  const [dnyDoVyprseni, setDnyDoVyprseni] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase.from("pristup").select("pristup_do").eq("user_id", userId).single().then(({ data }) => {
+      if (!data) return;
+      const ms = new Date(data.pristup_do).getTime() - Date.now();
+      setDnyDoVyprseni(Math.ceil(ms / (1000 * 60 * 60 * 24)));
+    });
+  }, [userId, supabase]);
 
   async function odhlasit() {
     await supabase.auth.signOut();
@@ -82,7 +93,12 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
             <option value="sk">{t.trhKratceSk}</option>
           </select>
         </div>
-        <p className="mb-2 truncate text-xs text-zinc-400">{email}</p>
+        <p className="mb-1 truncate text-xs text-zinc-400">{email}</p>
+        {dnyDoVyprseni !== null && (
+          <p className={`mb-2 text-xs ${dnyDoVyprseni <= 3 ? "text-red-400" : "text-zinc-500"}`}>
+            {dnyDoVyprseni <= 0 ? t.vyprsiDnes : `${dnyDoVyprseni} ${t.dniDoVyprseniPredlozka}`}
+          </p>
+        )}
         <button
           onClick={odhlasit}
           className="w-full rounded-lg border border-sidebar2 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-600 hover:bg-sidebar2 hover:text-white active:scale-[0.98]"
