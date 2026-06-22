@@ -219,9 +219,13 @@ def _stahni_stranku(session, url, params, pokusy=2):
     return None
 
 
-def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5, trh="cz"):
-    """Stahne inzeraty z Bazose pro dany dotaz (s trvalou cache + ochranou)."""
-    klic = "{}|{}|{}|{}|{}".format(trh, dotaz, cena_od, cena_do, max_stran)
+def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5,
+                     trh="cz", lokalita=None, okruh_km=None):
+    """Stahne inzeraty z Bazose pro dany dotaz (s trvalou cache + ochranou).
+
+    lokalita/okruh_km = nazev mesta + polomer v km (bazos pole hlokalita/
+    humkreis na webu) - kdyz lokalita neni, hleda se po celem trhu."""
+    klic = "{}|{}|{}|{}|{}|{}|{}".format(trh, dotaz, cena_od, cena_do, max_stran, lokalita, okruh_km)
 
     # 1) Trvala cache: pokud mame cerstvy zaznam, nechodime na sit
     zaznam = _CACHE.get(klic)
@@ -243,6 +247,9 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5, t
             params["cenaod"] = cena_od
         if cena_do:
             params["cenado"] = cena_do
+        if lokalita:
+            params["hlokalita"] = lokalita
+            params["humkreis"] = okruh_km or 25
         # Bazos strankuje pres /strana/20/40...
         url = "https://{}/".format(domena)
         if strana > 0:
@@ -389,6 +396,81 @@ def odhad_ceny(znacka, model, rok=None, najezd_km=None, cena_anchor_czk=None,
 
     return {"median": median, "pocet": len(ceny),
             "ukazky": ukazky, "dotaz": dotaz, "duvod": "ok"}
+
+
+def _model_anchor(titulek, znacka):
+    """Odhadne nazev modelu z titulku (slovo hned za znackou) - Bazos
+    nema samostatne pole model jako Otomoto, jen volny text titulku.
+    'Skoda Fabia III Kombi...' + znacka='skoda' -> 'fabia'."""
+    bez = _bez_diakritiky(titulek)
+    znacka_bd = _bez_diakritiky(znacka)
+    tokeny = [t for t in re.split(r"\s+", bez) if t]
+    for i, t in enumerate(tokeny):
+        if znacka_bd in t or t in znacka_bd:
+            if i + 1 < len(tokeny):
+                return tokeny[i + 1]
+            break
+    return tokeny[0] if tokeny else ""
+
+
+def najdi_podhodnocene(znacka, filtry, trh="cz", min_zisk_kc=0, naklady_dovoz_kc=0,
+                        min_srovnani=5, lokalita=None, okruh_km=None, max_stran=3):
+    """Najde podhodnocene inzeraty PRIMO na Bazosi - misto importu ze
+    zahranici srovnava kazdy inzerat s ostatnimi srovnatelnymi NA STEJNEM
+    trhu (cz nebo sk). Kandidat se vyradi ze sve vlastni srovnavaci skupiny
+    (porovnani podle url), aby nezkresloval median sam sebou.
+
+    filtry["cena_{trh}"] = {"min":.., "max":..} urcuje cenovy rozsah hledani
+    (v mene daneho trhu - Kc pro cz, EUR pro sk).
+
+    Vraci list inzeratu (stejne klice jako hledat_inzeraty + median_trh,
+    zisk, pocet_srovnani), serazeny od nejvyssiho zisku."""
+    min_cena = MIN_ROZUMNA_CENA.get(trh, MIN_ROZUMNA_CENA["cz"])
+    rozsah_cena = filtry.get("cena_{}".format(trh)) or {}
+    cena_od = rozsah_cena.get("min") or min_cena
+    cena_do = rozsah_cena.get("max")
+
+    syrove = hledat_inzeraty(znacka, cena_od=cena_od, cena_do=cena_do,
+                              max_stran=max_stran, trh=trh,
+                              lokalita=lokalita, okruh_km=okruh_km)
+
+    obohacene = []
+    for x in syrove:
+        if not x.get("cena") or x["cena"] < min_cena:
+            continue
+        cely = (x.get("titulek") or "") + " " + (x.get("popis") or "")
+        obohacene.append(dict(
+            x, _palivo=_palivo_z_textu(cely), _objem=_objem_z_textu(cely),
+            _model=_model_anchor(x.get("titulek") or "", znacka),
+        ))
+
+    min_rok = filtry.get("min_rok")
+    if min_rok:
+        obohacene = [x for x in obohacene if not x["rok"] or x["rok"] >= min_rok]
+
+    vysledky = []
+    for kandidat in obohacene:
+        # Srovnatelne = stejny (+-1 rok) rocnik a (pokud zname) stejne palivo,
+        # bez sebe sama.
+        srovnatelne = [
+            x for x in obohacene
+            if x["url"] != kandidat["url"]
+            and x["_model"] == kandidat["_model"]
+            and x["rok"] and kandidat["rok"] and abs(x["rok"] - kandidat["rok"]) <= 1
+            and (not x["_palivo"] or not kandidat["_palivo"] or x["_palivo"] == kandidat["_palivo"])
+        ]
+        if len(srovnatelne) < min_srovnani:
+            continue
+        median = int(statistics.median(x["cena"] for x in srovnatelne))
+        zisk = median - kandidat["cena"] - naklady_dovoz_kc
+        if zisk < min_zisk_kc:
+            continue
+        vysledky.append(dict(
+            kandidat, median_trh=median, zisk=zisk, pocet_srovnani=len(srovnatelne),
+        ))
+
+    vysledky.sort(key=lambda x: -x["zisk"])
+    return vysledky
 
 
 if __name__ == "__main__":

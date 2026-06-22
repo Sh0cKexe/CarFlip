@@ -15,7 +15,10 @@ create table if not exists public.nastaveni (
     "max_najezd_nafta": 250000,
     "max_najezd_benzin": 200000,
     "max_cena_pln": 12501,
-    "min_cena_pln": 0
+    "min_cena_pln": 0,
+    "zdroje": ["pl"],
+    "cena_cz": {"min": 0, "max": null},
+    "cena_sk": {"min": 0, "max": null}
   }'::jsonb,
   min_zisk_kc integer not null default 20000,
   naklady_dovoz_kc integer not null default 10000,
@@ -27,6 +30,18 @@ create table if not exists public.nastaveni (
 
 -- Pro existujici instalace (puvodni create table uz probehl bez "trh"):
 alter table public.nastaveni add column if not exists trh text not null default 'cz';
+
+-- Pro existujici instalace: doplnit nove klice do filtry jsonb (zdrojove trhy
+-- PL/CZ/SK - Faze 1 multi-market). Vychozi zdroje=["pl"] zachovava soucasne
+-- chovani beze zmeny, dokud si uzivatel sam nezapne CZ/SK v nastaveni.
+-- Oblast (v poli "oblasti") nese navic "zeme": "pl"|"cz"|"sk" - nepotrebuje
+-- migraci, je to jen konvence pri zapisu noveho zaznamu z webu.
+update public.nastaveni
+set filtry = filtry
+  || jsonb_build_object('zdroje', coalesce(filtry->'zdroje', '["pl"]'::jsonb))
+  || jsonb_build_object('cena_cz', coalesce(filtry->'cena_cz', '{"min": 0, "max": null}'::jsonb))
+  || jsonb_build_object('cena_sk', coalesce(filtry->'cena_sk', '{"min": 0, "max": null}'::jsonb))
+where not (filtry ? 'zdroje') or not (filtry ? 'cena_cz') or not (filtry ? 'cena_sk');
 
 create table if not exists public.videno (
   user_id uuid not null references auth.users (id) on delete cascade,

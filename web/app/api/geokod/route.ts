@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 
-// Port geokod.py: prevod kliknuteho bodu na mape -> nejblizsi polske mesto.
+// Port geokod.py: prevod kliknuteho bodu na mape -> nejblizsi mesto.
 // Pouziva OpenStreetMap Nominatim (zdarma, bez klice).
+// "zeme" urcuje, ve kterem jazyce se ma vratit nazev mesta - duleziti pro
+// Polsko, kde nazev musi byt v polstine, aby slug sedl na Otomoto URL
+// (mesto_slug). Pro CZ/SK pouzivame cestinu/slovenstinu (Bazos lokalita pole).
+
+const JAZYK_PODLE_ZEME: Record<string, string> = { pl: "pl", cz: "cs", sk: "sk" };
 
 const SPECIAL: Record<string, string> = { ł: "l", Ł: "l" };
 
@@ -16,11 +21,12 @@ function slug(text: string): string {
 }
 
 export async function POST(req: Request) {
-  let lat: number, lon: number;
+  let lat: number, lon: number, zeme: string;
   try {
     const body = await req.json();
     lat = Number(body.lat);
     lon = Number(body.lon);
+    zeme = typeof body.zeme === "string" && JAZYK_PODLE_ZEME[body.zeme] ? body.zeme : "pl";
   } catch {
     return NextResponse.json({ error: "Chybný požadavek." }, { status: 400 });
   }
@@ -29,7 +35,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=pl&zoom=10`;
+    const jazyk = JAZYK_PODLE_ZEME[zeme];
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${jazyk}&zoom=10`;
     const r = await fetch(url, {
       headers: { "User-Agent": "CarFlip/1.0 (osobni nastroj na auta)" },
     });
@@ -41,7 +48,7 @@ export async function POST(req: Request) {
     for (const klic of ["city", "town", "village", "municipality", "county"]) {
       if (adr[klic]) {
         const nazev = adr[klic] as string;
-        return NextResponse.json({ nazev, slug: slug(nazev) });
+        return NextResponse.json({ nazev, slug: slug(nazev), zeme });
       }
     }
     return NextResponse.json({ error: "Pro tento bod se nepodařilo najít město." }, { status: 404 });

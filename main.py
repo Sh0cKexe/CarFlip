@@ -144,6 +144,26 @@ def naformatuj_detail(popis_cz, odhad, trh="cz"):
     return "\n".join(radky)
 
 
+def naformatuj_zpravu_domaci(nalez, trh="cz"):
+    """Zprava pro nalez PRIMO na domacim trhu (Bazos cz/sk) - podhodnoceny
+    inzerat, ne import ze zahranici."""
+    t = TEXTY.get(trh, TEXTY["cz"])
+    mena = t["mena"]
+    najezd = "{:,} km".format(nalez["najezd"]).replace(",", " ") if nalez.get("najezd") else "? km"
+    radky = [
+        "🔎 <b>{}</b>".format(nalez["titulek"]),
+        "💰 <b>Zisk: {:,} {}</b>".format(nalez["zisk"], mena).replace(",", " "),
+        "",
+        "Cena: {:,} {} (medián trhu: {:,} {}, {} srovnatelných)".format(
+            nalez["cena"], mena, nalez["median_trh"], mena, nalez["pocet_srovnani"]
+        ).replace(",", " "),
+        "📅 {} | {}".format(nalez.get("rok") or "?", najezd),
+        "",
+        "<a href=\"{}\">Otevřít inzerát</a>".format(nalez["url"]),
+    ]
+    return "\n".join(radky)
+
+
 # Plynove palivo (nechceme)
 PLYN = ("lpg", "cng")
 
@@ -273,6 +293,26 @@ def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
     return True
 
 
+def zpracuj_auto_domaci(nalez, cfg, trh, uz_videno=databaze.uz_videno,
+                         oznac_videno=databaze.oznac_videno):
+    """Vyhodnoti jeden nalez primo z Bazose (cz/sk jako ZDROJ, ne import) -
+    bazos.najdi_podhodnocene uz spocitala zisk/median, tady jen dedup a
+    odeslani. ad_id je prefixovany 'bazos_{trh}_', aby nekolidoval s
+    Otomoto cisly id ve stejne videno databazi."""
+    ad_id = "bazos_{}_{}".format(trh, nalez["url"])
+    if uz_videno(ad_id):
+        return False
+    oznac_videno(ad_id)
+
+    print("  >>> NALEZ (Bazos {}): {} | zisk {}".format(trh.upper(), nalez["titulek"], nalez["zisk"]))
+    token = cfg["telegram"]["token"]
+    prijemci = _prijemci(cfg)
+    popisek = naformatuj_zpravu_domaci(nalez, trh=trh)
+    for cid in prijemci:
+        tg.posli_zpravu(token, cid, popisek)
+    return True
+
+
 # Kolik stranek projet pri PRVNIM behu (cely trh). 1 stranka = 32 aut.
 MAX_STRAN_PRVNI = 25
 
@@ -284,24 +324,64 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
     print("Kurz: 1 PLN =", round(kurz_pln, 4), TEXTY.get(trh, TEXTY["cz"])["mena"])
     filtry = cfg["filtry"]
     znacky = filtry.get("znacky", [])
-    # Okruhy (oblasti). Kdyz zadny neni, hledame v celem Polsku (None).
-    okruhy = filtry.get("oblasti") or [None]
-    # PRVNI beh = projedeme CELY trh (vsechny stranky), pak uz jen 32 nejnovejsich.
+    # Zdrojove trhy: "pl" (Otomoto, import) + volitelne "cz"/"sk" (Bazos
+    # primo jako zdroj, srovnani uvnitr stejneho trhu). Vychozi ["pl"]
+    # zachovava puvodni chovani pro vsechny existujici uzivatele.
+    zdroje = filtry.get("zdroje") or ["pl"]
+    # Okruhy (oblasti) - kazda nese "zeme" (pl/cz/sk); stare zaznamy bez
+    # "zeme" se beru jako "pl" (zpetna kompatibilita).
+    vsechny_okruhy = filtry.get("oblasti") or []
+    # PRVNI beh = projedeme CELY trh (vsechny stranky), pak uz jen nejnovejsi.
     max_stran = MAX_STRAN_PRVNI if prvni_beh else 1
     poslano = 0
-    for znacka in znacky:
-        for okruh in okruhy:
-            kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cele Polsko"
-            print("Kontroluji:", znacka, "|", kde)
-            auta = otomoto.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh)
-            print("  nalezeno {} inzeratu".format(len(auta)))
-            for auto in auta:
+
+    if "pl" in zdroje:
+        okruhy_pl = [o for o in vsechny_okruhy if o.get("zeme", "pl") == "pl"] or [None]
+        for znacka in znacky:
+            for okruh in okruhy_pl:
+                kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cele Polsko"
+                print("Kontroluji (PL):", znacka, "|", kde)
+                auta = otomoto.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh)
+                print("  nalezeno {} inzeratu".format(len(auta)))
+                for auto in auta:
+                    try:
+                        if zpracuj_auto(auto, cfg, kurz_pln, uz_videno, oznac_videno):
+                            poslano += 1
+                    except Exception as e:
+                        print("  chyba u auta:", e)
+                time.sleep(1)
+
+    for domaci_trh in ("cz", "sk"):
+        if domaci_trh not in zdroje:
+            continue
+        okruhy_dom = [o for o in vsechny_okruhy if o.get("zeme") == domaci_trh] or [None]
+        min_srovnani = cfg.get("min_srovnani", MIN_SROVNANI)
+        for znacka in znacky:
+            for okruh in okruhy_dom:
+                kde = okruh.get("nazev", "?") if okruh else "cely trh {}".format(domaci_trh.upper())
+                print("Kontroluji (Bazos {}):".format(domaci_trh.upper()), znacka, "|", kde)
                 try:
-                    if zpracuj_auto(auto, cfg, kurz_pln, uz_videno, oznac_videno):
-                        poslano += 1
+                    nalezy = bazos.najdi_podhodnocene(
+                        znacka, filtry, trh=domaci_trh,
+                        min_zisk_kc=cfg["min_zisk_kc"],
+                        naklady_dovoz_kc=cfg["naklady_dovoz_kc"],
+                        min_srovnani=min_srovnani,
+                        lokalita=okruh.get("mesto_slug") if okruh else None,
+                        okruh_km=okruh.get("okruh_km") if okruh else None,
+                        max_stran=3 if prvni_beh else 2,
+                    )
                 except Exception as e:
-                    print("  chyba u auta:", e)
-            time.sleep(1)
+                    print("  chyba pri hledani na Bazosi:", e)
+                    nalezy = []
+                print("  nalezeno {} podhodnocenych".format(len(nalezy)))
+                for nalez in nalezy:
+                    try:
+                        if zpracuj_auto_domaci(nalez, cfg, domaci_trh, uz_videno, oznac_videno):
+                            poslano += 1
+                    except Exception as e:
+                        print("  chyba u nalezu:", e)
+                time.sleep(1)
+
     return poslano
 
 
