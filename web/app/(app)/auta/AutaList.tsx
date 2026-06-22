@@ -21,19 +21,13 @@ export type Auto = {
 };
 
 function formatDatum(d: string | null): string {
-  if (!d) return "";
+  if (!d) return "—";
   return new Date(d).toLocaleDateString("cs-CZ");
 }
 
 function kc(n: number, mena: string): string {
   return `${n.toLocaleString("cs-CZ")} ${mena}`;
 }
-
-const PRUH_BARVA: Record<string, string> = {
-  koupeno: "bg-accent2",
-  inzerce: "bg-amber-400",
-  prodano: "bg-accent",
-};
 
 export default function AutaList({
   userId, auta, nakladySuma, trh,
@@ -58,7 +52,10 @@ export default function AutaList({
   const vInzerci = auta.filter((a) => a.stav === "inzerce");
   const prodana = auta.filter((a) => a.stav === "prodano");
 
-  const vazanyKapital = [...koupena, ...vInzerci].reduce((s, a) => s + (a.cena_koupeno_kc ?? 0), 0);
+  const vazanyKapital = [...koupena, ...vInzerci].reduce(
+    (s, a) => s + (a.cena_koupeno_kc ?? 0) + (nakladySuma[a.id] ?? 0),
+    0
+  );
   const celkovyZisk = prodana.reduce((s, a) => {
     if (a.cena_koupeno_kc == null || a.cena_prodano_kc == null) return s;
     return s + (a.cena_prodano_kc - a.cena_koupeno_kc - (nakladySuma[a.id] ?? 0));
@@ -87,7 +84,6 @@ export default function AutaList({
             auta={koupena}
             nakladySuma={nakladySuma}
             t={t}
-            barva="koupeno"
             subtotal={{ label: t.vazanyKapital, hodnota: kc(vazanyKapital, t.mena), tone: "blue" }}
           />
         )}
@@ -98,7 +94,6 @@ export default function AutaList({
             auta={vInzerci}
             nakladySuma={nakladySuma}
             t={t}
-            barva="inzerce"
           />
         )}
         {prodana.length > 0 && (
@@ -108,7 +103,7 @@ export default function AutaList({
             auta={prodana}
             nakladySuma={nakladySuma}
             t={t}
-            barva="prodano"
+            prodano
             subtotal={{
               label: t.zisk,
               hodnota: kc(celkovyZisk, t.mena),
@@ -122,16 +117,17 @@ export default function AutaList({
 }
 
 function SekceAut({
-  ikona, nazev, auta, nakladySuma, t, barva, subtotal,
+  ikona, nazev, auta, nakladySuma, t, subtotal, prodano = false,
 }: {
   ikona: string;
   nazev: string;
   auta: Auto[];
   nakladySuma: Record<string, number>;
   t: ReturnType<typeof T>;
-  barva: string;
   subtotal?: { label: string; hodnota: string; tone: "blue" | "green" | "red" };
+  prodano?: boolean;
 }) {
+  const router = useRouter();
   const toneClass: Record<string, string> = {
     blue: "bg-accent2/15 text-accent2",
     green: "bg-accent/15 text-accent",
@@ -158,60 +154,67 @@ function SekceAut({
         )}
       </div>
 
-      <div className="px-3">
-        {auta.map((a, i) => {
-          const naklady = nakladySuma[a.id] ?? 0;
-          const zisk =
-            a.stav === "prodano" && a.cena_koupeno_kc != null && a.cena_prodano_kc != null
-              ? a.cena_prodano_kc - a.cena_koupeno_kc - naklady
-              : null;
-          return (
-            <motion.a
-              key={a.id}
-              href={`/auta/${a.id}`}
-              initial={{ opacity: 0, x: -6 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: i * 0.04, ease: "easeOut" }}
-              className="group flex items-center gap-4 border-b border-border/40 px-3 py-3.5 transition-colors last:border-0 hover:bg-white/[0.03]"
-            >
-              <span className={`h-8 w-1 shrink-0 rounded-full ${PRUH_BARVA[barva]}`} />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-zinc-100 group-hover:text-white">
-                  {a.titulek || t.bezNazvu}
-                </p>
-                <p className="truncate text-xs text-zinc-500">
-                  {a.stav === "prodano" && a.datum_prodano
-                    ? `${t.datumProdano}: ${formatDatum(a.datum_prodano)}`
-                    : a.datum_koupeno
-                    ? `${t.datumKoupeno}: ${formatDatum(a.datum_koupeno)}`
-                    : ""}
-                </p>
-              </div>
-              <div className="shrink-0 text-right tabular-nums">
-                {a.stav === "prodano" ? (
-                  <>
-                    {zisk != null && (
-                      <p className={`text-sm font-semibold ${zisk >= 0 ? "text-accent" : "text-red-400"}`}>
-                        {kc(zisk, t.mena)}
-                      </p>
-                    )}
-                    {a.cena_prodano_kc != null && (
-                      <p className="text-xs text-zinc-500">{t.prodanoZa} {kc(a.cena_prodano_kc, t.mena)}</p>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {a.cena_koupeno_kc != null && (
-                      <p className="text-sm font-medium text-zinc-200">{kc(a.cena_koupeno_kc, t.mena)}</p>
-                    )}
-                    {naklady > 0 && <p className="text-xs text-zinc-500">{t.naklady}: {kc(naklady, t.mena)}</p>}
-                  </>
-                )}
-              </div>
-              <span className="text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-400">→</span>
-            </motion.a>
-          );
-        })}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/60 text-left text-xs text-zinc-500">
+              <th className="whitespace-nowrap px-4 py-2.5 font-medium">Auto</th>
+              <th className="whitespace-nowrap px-4 py-2.5 font-medium">{prodano ? t.datumProdano : t.datumKoupeno}</th>
+              <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">{t.porizeni}</th>
+              <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">{t.naklady}</th>
+              <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">{t.celkemVAute}</th>
+              {prodano && <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">{t.prodanoZa}</th>}
+              {prodano && <th className="whitespace-nowrap px-4 py-2.5 text-right font-medium">{t.zisk}</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {auta.map((a, i) => {
+              const naklady = nakladySuma[a.id] ?? 0;
+              const celkemVAute = (a.cena_koupeno_kc ?? 0) + naklady;
+              const zisk =
+                prodano && a.cena_koupeno_kc != null && a.cena_prodano_kc != null
+                  ? a.cena_prodano_kc - a.cena_koupeno_kc - naklady
+                  : null;
+              const datum = prodano ? a.datum_prodano : a.datum_koupeno;
+              return (
+                <motion.tr
+                  key={a.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                  onClick={() => router.push(`/auta/${a.id}`)}
+                  className="cursor-pointer border-b border-border/40 transition-colors last:border-0 hover:bg-white/[0.03]"
+                >
+                  <td className="max-w-[180px] truncate px-4 py-3 font-medium text-zinc-100">{a.titulek || t.bezNazvu}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-zinc-400">{formatDatum(datum)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-zinc-300">
+                    {a.cena_koupeno_kc != null ? kc(a.cena_koupeno_kc, t.mena) : "—"}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-zinc-300">
+                    {naklady > 0 ? kc(naklady, t.mena) : "—"}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums font-medium text-zinc-100">
+                    {kc(celkemVAute, t.mena)}
+                  </td>
+                  {prodano && (
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-zinc-300">
+                      {a.cena_prodano_kc != null ? kc(a.cena_prodano_kc, t.mena) : "—"}
+                    </td>
+                  )}
+                  {prodano && (
+                    <td
+                      className={`whitespace-nowrap px-4 py-3 text-right tabular-nums font-semibold ${
+                        zisk == null ? "text-zinc-500" : zisk >= 0 ? "text-accent" : "text-red-400"
+                      }`}
+                    >
+                      {zisk != null ? kc(zisk, t.mena) : "—"}
+                    </td>
+                  )}
+                </motion.tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </motion.section>
   );

@@ -102,6 +102,9 @@ create table if not exists public.naklady (
   datum date not null default current_date
 );
 
+-- Pro existujici instalace (puvodni create table uz probehl bez kategorie):
+alter table public.naklady add column if not exists kategorie text not null default 'ostatni';
+
 alter table public.auta enable row level security;
 alter table public.naklady enable row level security;
 

@@ -94,6 +94,9 @@ const CS = {
   zisk: "Zisk",
   vazanyKapital: "Vázaný kapitál",
   prodanoZa: "Prodáno za",
+  celkemVAute: "Celkem v autě",
+  ziskZtrata: "Zisk / Ztráta",
+  porizeni: "Pořízení",
 
   zakladniInfo: "Základní info",
   nazevModel: "Název / model",
@@ -124,6 +127,19 @@ const CS = {
   zpetNaAuta: "← Zpět na moje auta",
   smazatAuto: "Smazat auto",
   potvrditSmazani: "Smazat tohle auto i se všemi náklady a fotkami?",
+
+  prodatAuto: "Prodat auto",
+  zrusitProdej: "Zrušit prodej",
+  prodejniCena: "Prodejní cena",
+  datumProdeje: "Datum prodeje",
+  oznacitProdano: "Označit jako prodané",
+  zrusit: "Zrušit",
+  kategorie: "Kategorie",
+  katDily: "Díly",
+  katPalivo: "Palivo",
+  katStk: "STK / registrace",
+  katPojisteni: "Pojištění",
+  katOstatni: "Ostatní",
 };
 
 const SK: typeof CS = {
@@ -220,6 +236,9 @@ const SK: typeof CS = {
   zisk: "Zisk",
   vazanyKapital: "Viazaný kapitál",
   prodanoZa: "Predané za",
+  celkemVAute: "Celkom v aute",
+  ziskZtrata: "Zisk / Strata",
+  porizeni: "Obstaranie",
 
   zakladniInfo: "Základné info",
   nazevModel: "Názov / model",
@@ -250,6 +269,19 @@ const SK: typeof CS = {
   zpetNaAuta: "← Späť na moje autá",
   smazatAuto: "Vymazať auto",
   potvrditSmazani: "Vymazať toto auto aj so všetkými nákladmi a fotkami?",
+
+  prodatAuto: "Predať auto",
+  zrusitProdej: "Zrušiť predaj",
+  prodejniCena: "Predajná cena",
+  datumProdeje: "Dátum predaja",
+  oznacitProdano: "Označiť ako predané",
+  zrusit: "Zrušiť",
+  kategorie: "Kategória",
+  katDily: "Diely",
+  katPalivo: "Palivo",
+  katStk: "STK / evidencia",
+  katPojisteni: "Poistenie",
+  katOstatni: "Ostatné",
 };
 
 const I18N: Record<Trh, typeof CS> = { cz: CS, sk: SK };
