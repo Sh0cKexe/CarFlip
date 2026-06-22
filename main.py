@@ -42,6 +42,7 @@ TEXTY = {
         "popis_prelozeno": "Popis (přeloženo z PL)",
         "srovnatelna_auta": "Srovnatelná auta na Bazoši",
         "otevrit": "Otevřít na Otomoto",
+        "otevrit_inzerat": "Otevřít inzerát",
         "mena": "Kč",
     },
     "sk": {
@@ -50,6 +51,7 @@ TEXTY = {
         "popis_prelozeno": "Popis (preložené z PL)",
         "srovnatelna_auta": "Porovnateľné autá na Bazoši",
         "otevrit": "Otvoriť na Otomoto",
+        "otevrit_inzerat": "Otvoriť inzerát",
         "mena": "€",
     },
 }
@@ -146,21 +148,40 @@ def naformatuj_detail(popis_cz, odhad, trh="cz"):
 
 def naformatuj_zpravu_domaci(nalez, trh="cz"):
     """Zprava pro nalez PRIMO na domacim trhu (Bazos cz/sk) - podhodnoceny
-    inzerat, ne import ze zahranici."""
+    inzerat, ne import ze zahranici. Stejna struktura jako naformatuj_zpravu
+    (PL import), jen bez polskych specifik (cena PL, registrace apod.)."""
     t = TEXTY.get(trh, TEXTY["cz"])
     mena = t["mena"]
+    vlajka = "🇸🇰" if trh == "sk" else "🇨🇿"
     najezd = "{:,} km".format(nalez["najezd"]).replace(",", " ") if nalez.get("najezd") else "? km"
     radky = [
         "🔎 <b>{}</b>".format(nalez["titulek"]),
-        "💰 <b>Zisk: {:,} {}</b>".format(nalez["zisk"], mena).replace(",", " "),
+        "💰 <b>Zisk: {:,} {}</b>".format(int(round(nalez["zisk"])), mena).replace(",", " "),
         "",
-        "Cena: {:,} {} (medián trhu: {:,} {} · {} srovnatelných)".format(
-            nalez["cena"], mena, nalez["median_trh"], mena, nalez["pocet_srovnani"]
-        ).replace(",", " "),
+        "💵 Cena: {:,} {}".format(nalez["cena"], mena).replace(",", " "),
+        "{} {}: {:,} {}".format(vlajka, t["odhad_prodej"], nalez["median_trh"], mena).replace(",", " "),
+        "📦 {}: {:,} {}".format(t["naklady_dovoz"], int(round(nalez["naklady"])), mena).replace(",", " "),
+        "",
         "📅 {} | {}".format(nalez.get("rok") or "?", najezd),
         "",
-        "<a href=\"{}\">Otevřít inzerát</a>".format(nalez["url"]),
+        "🔗 <a href=\"{}\">{}</a>".format(nalez["url"], t["otevrit_inzerat"]),
     ]
+    return "\n".join(radky)
+
+
+def naformatuj_detail_domaci(nalez, trh="cz"):
+    """Druha zprava pro domaci nalez: srovnatelne inzeraty na stejnem trhu
+    (stejny ucel jako naformatuj_detail u PL importu)."""
+    t = TEXTY.get(trh, TEXTY["cz"])
+    mena = t["mena"]
+    if not nalez.get("ukazky"):
+        return ""
+    radky = ["🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], nalez["pocet_srovnani"])]
+    for u in nalez["ukazky"]:
+        rok = u.get("rok") or "?"
+        najezd = "{:,} km".format(u["najezd"]).replace(",", " ") if u.get("najezd") else "? km"
+        radky.append("• {} | {} | {:,} {} – <a href=\"{}\">{}</a>".format(
+            rok, najezd, u["cena"], mena, u["url"], u["titulek"][:42]).replace(",", " "))
     return "\n".join(radky)
 
 
@@ -308,8 +329,11 @@ def zpracuj_auto_domaci(nalez, cfg, trh, uz_videno=databaze.uz_videno,
     token = cfg["telegram"]["token"]
     prijemci = _prijemci(cfg)
     popisek = naformatuj_zpravu_domaci(nalez, trh=trh)
+    detail = naformatuj_detail_domaci(nalez, trh=trh)
     for cid in prijemci:
         tg.posli_zpravu(token, cid, popisek)
+        if detail.strip():
+            tg.posli_zpravu(token, cid, detail)
     return True
 
 

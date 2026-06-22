@@ -112,7 +112,8 @@ def _najdi_domaci(cfg, domaci_trh):
                 continue
             for nalez in nalezy:
                 popisek = main.naformatuj_zpravu_domaci(nalez, trh=domaci_trh)
-                vysledky.append((nalez["zisk"], popisek, "", None))
+                detail = main.naformatuj_detail_domaci(nalez, trh=domaci_trh)
+                vysledky.append((nalez["zisk"], popisek, detail, None))
                 print("  >>> {} kandidat: {} | zisk {}".format(
                     domaci_trh.upper(), nalez["titulek"][:40], nalez["zisk"]))
 

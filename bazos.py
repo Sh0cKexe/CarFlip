@@ -18,6 +18,8 @@ import statistics
 import requests
 from bs4 import BeautifulSoup
 
+import kurz
+
 
 def _bez_diakritiky(text):
     """'BMW řada 3' -> 'bmw rada 3' (kvuli porovnavani nazvu)."""
@@ -424,7 +426,17 @@ def najdi_podhodnocene(znacka, filtry, trh="cz", min_zisk_kc=0, naklady_dovoz_kc
     (v mene daneho trhu - Kc pro cz, EUR pro sk).
 
     Vraci list inzeratu (stejne klice jako hledat_inzeraty + median_trh,
-    zisk, pocet_srovnani), serazeny od nejvyssiho zisku."""
+    zisk, pocet_srovnani), serazeny od nejvyssiho zisku.
+
+    POZOR: min_zisk_kc/naklady_dovoz_kc prichazeji VZDY v Kc (stejne jako
+    vsude jinde v aplikaci) - pro trh="sk" se tady prevedou na EUR, jinak
+    by prah v Kc (typicky tisice) byl pro EUR ceny (typicky stovky) zcela
+    nesmyslny a nic by nikdy neprošlo."""
+    if trh == "sk":
+        eur_za_kc = kurz.kurz_pln_eur() / kurz.kurz_pln_czk()
+        min_zisk_kc = min_zisk_kc * eur_za_kc
+        naklady_dovoz_kc = naklady_dovoz_kc * eur_za_kc
+
     min_cena = MIN_ROZUMNA_CENA.get(trh, MIN_ROZUMNA_CENA["cz"])
     rozsah_cena = filtry.get("cena_{}".format(trh)) or {}
     cena_od = rozsah_cena.get("min") or min_cena
@@ -465,8 +477,12 @@ def najdi_podhodnocene(znacka, filtry, trh="cz", min_zisk_kc=0, naklady_dovoz_kc
         zisk = median - kandidat["cena"] - naklady_dovoz_kc
         if zisk < min_zisk_kc:
             continue
+        srovnatelne_sorted = sorted(srovnatelne, key=lambda x: abs(x["cena"] - median))
+        ukazky = [{"titulek": x["titulek"], "url": x["url"], "cena": x["cena"],
+                   "rok": x["rok"], "najezd": x.get("najezd")} for x in srovnatelne_sorted[:5]]
         vysledky.append(dict(
             kandidat, median_trh=median, zisk=zisk, pocet_srovnani=len(srovnatelne),
+            naklady=naklady_dovoz_kc, ukazky=ukazky,
         ))
 
     vysledky.sort(key=lambda x: -x["zisk"])
