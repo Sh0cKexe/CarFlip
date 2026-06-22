@@ -64,7 +64,6 @@ export default function AutoDetail({
   const [upravujiNaklad, setUpravujiNaklad] = useState<string | null>(null);
   const [upravaNaklad, setUpravaNaklad] = useState({ popis: "", castka_kc: "", datum: "" });
   const [lightbox, setLightbox] = useState<number | null>(null);
-  const [poznamkyStav, setPoznamkyStav] = useState<"idle" | "uklada" | "ulozeno">("idle");
 
   useEffect(() => {
     if (lightbox === null) return;
@@ -117,9 +116,7 @@ export default function AutoDetail({
   }
 
   async function ulozitPoznamky() {
-    setPoznamkyStav("uklada");
-    const { error } = await supabase.from("auta").update({ poznamky: auto.poznamky }).eq("id", auto.id);
-    setPoznamkyStav(error ? "idle" : "ulozeno");
+    await supabase.from("auta").update({ poznamky: auto.poznamky }).eq("id", auto.id);
   }
 
   async function smazatAuto() {
@@ -312,6 +309,7 @@ export default function AutoDetail({
           tone={zisk == null ? "neutral" : zisk >= 0 ? "green" : "red"}
         />
       </div>
+      <div className="mb-6 border-t border-border/60" />
 
       <AnimatePresence initial={false}>
         {editOtevreno && (
@@ -436,12 +434,9 @@ export default function AutoDetail({
           className={`${input} min-h-[180px]`}
           value={auto.poznamky}
           placeholder={t.poznamkyPlaceholder}
-          onChange={(e) => { setPole("poznamky", e.target.value); setPoznamkyStav("idle"); }}
+          onChange={(e) => setPole("poznamky", e.target.value)}
           onBlur={ulozitPoznamky}
         />
-        <p className="mt-2 text-xs text-zinc-500">
-          {poznamkyStav === "uklada" ? t.ukladam : poznamkyStav === "ulozeno" ? t.ulozeno : ""}
-        </p>
       </Sekce>
       </div>
       </div>
