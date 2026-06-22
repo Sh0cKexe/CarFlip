@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
+import { DISCORD_URL, DISCORD_HANDLE } from "@/lib/discord";
 import Logo from "@/app/components/Logo";
 
 export default function Sidebar({ email, trh, userId }: { email: string; trh?: Trh; userId?: string }) {
@@ -73,6 +74,17 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
           );
         })}
       </nav>
+      <div className="px-5 pb-3">
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="flex items-center gap-2 text-xs text-zinc-400 transition hover:text-accent2"
+        >
+          💬 Diskord komunita
+        </a>
+        <p className="mt-0.5 text-[11px] text-zinc-600">Nejde link? Discord: {DISCORD_HANDLE}</p>
+      </div>
       <div className="border-t border-sidebar2 px-5 py-4">
         <div className="mb-3">
           <div className="group relative mb-1 flex items-center gap-1.5">

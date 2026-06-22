@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
+import { DISCORD_URL, DISCORD_HANDLE } from "@/lib/discord";
 import Logo from "@/app/components/Logo";
 
 const LANG_KLIC = "carflip_lang";
@@ -69,6 +70,13 @@ function LoginFormulare() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
+      <div className="fixed bottom-4 left-4 text-xs text-zinc-500">
+        <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="transition hover:text-accent2">
+          💬 Diskord komunita
+        </a>
+        <span className="mx-1.5">·</span>
+        <span>Nejde link? Discord: {DISCORD_HANDLE}</span>
+      </div>
       <motion.form
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
