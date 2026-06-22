@@ -64,6 +64,7 @@ export default function AutoDetail({
   const [upravujiNaklad, setUpravujiNaklad] = useState<string | null>(null);
   const [upravaNaklad, setUpravaNaklad] = useState({ popis: "", castka_kc: "", datum: "" });
   const [lightbox, setLightbox] = useState<number | null>(null);
+  const [poznamkyStav, setPoznamkyStav] = useState<"idle" | "uklada" | "ulozeno">("idle");
 
   useEffect(() => {
     if (lightbox === null) return;
@@ -113,6 +114,12 @@ export default function AutoDetail({
       .eq("id", auto.id);
     setUklada(false);
     setZprava(error ? t.chybaUkladani + error.message : t.ulozeno);
+  }
+
+  async function ulozitPoznamky() {
+    setPoznamkyStav("uklada");
+    const { error } = await supabase.from("auta").update({ poznamky: auto.poznamky }).eq("id", auto.id);
+    setPoznamkyStav(error ? "idle" : "ulozeno");
   }
 
   async function smazatAuto() {
@@ -346,14 +353,6 @@ export default function AutoDetail({
                   />
                 </Pole>
               </div>
-              <div className="mt-4">
-                <Pole label={t.poznamky}>
-                  <textarea
-                    className={input + " min-h-[100px]"} value={auto.poznamky}
-                    onChange={(e) => setPole("poznamky", e.target.value)}
-                  />
-                </Pole>
-              </div>
               <div className="mt-4 flex items-center gap-4">
                 <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
                   {uklada ? t.ukladam : t.ulozit}
@@ -365,12 +364,8 @@ export default function AutoDetail({
         )}
       </AnimatePresence>
 
-      {auto.poznamky && (
-        <Sekce titulek={t.poznamky}>
-          <p className="whitespace-pre-wrap text-sm text-zinc-200">{auto.poznamky}</p>
-        </Sekce>
-      )}
-
+      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="lg:col-span-2">
       <Sekce
         titulek={t.naklady}
         badge={{ text: `${sumaNakladu.toLocaleString("cs-CZ")} ${t.mena} ${t.celkem}`, tone: "zinc" }}
@@ -433,6 +428,23 @@ export default function AutoDetail({
         </div>
         {nakladChyba && <p className="mt-2 text-sm text-red-400">Chyba: {nakladChyba}</p>}
       </Sekce>
+      </div>
+
+      <div>
+      <Sekce titulek={t.poznamky}>
+        <textarea
+          className={`${input} min-h-[180px]`}
+          value={auto.poznamky}
+          placeholder={t.poznamkyPlaceholder}
+          onChange={(e) => { setPole("poznamky", e.target.value); setPoznamkyStav("idle"); }}
+          onBlur={ulozitPoznamky}
+        />
+        <p className="mt-2 text-xs text-zinc-500">
+          {poznamkyStav === "uklada" ? t.ukladam : poznamkyStav === "ulozeno" ? t.ulozeno : ""}
+        </p>
+      </Sekce>
+      </div>
+      </div>
 
       <Sekce titulek={t.ukoly}>
         <div className="space-y-1.5">
