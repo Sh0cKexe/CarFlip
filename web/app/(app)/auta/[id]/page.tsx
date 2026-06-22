@@ -22,6 +22,12 @@ export default async function AutoDetailPage({ params }: { params: Promise<{ id:
     .eq("auto_id", id)
     .order("datum", { ascending: false });
 
+  const { data: ukoly } = await supabase
+    .from("ukoly")
+    .select("*")
+    .eq("auto_id", id)
+    .order("vytvoreno", { ascending: true });
+
   const { data: nastaveni } = await supabase
     .from("nastaveni")
     .select("trh")
@@ -33,6 +39,7 @@ export default async function AutoDetailPage({ params }: { params: Promise<{ id:
       userId={user.id}
       auto={auto}
       naklady={naklady ?? []}
+      ukoly={ukoly ?? []}
       trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
     />
   );

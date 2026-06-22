@@ -19,10 +19,16 @@ type Auto = {
   poznamky: string;
   fotky: string[];
 };
-type Naklad = { id: string; auto_id: string; popis: string; castka_kc: number; datum: string; kategorie: string };
+type Naklad = { id: string; auto_id: string; popis: string; castka_kc: number; datum: string };
+type Ukol = { id: string; auto_id: string; text: string; hotovo: boolean };
 
 function kc(n: number, mena: string): string {
   return `${n.toLocaleString("cs-CZ")} ${mena}`;
+}
+
+function formatDatum(d: string | null): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("cs-CZ");
 }
 
 function dnesIso(): string {
@@ -30,32 +36,27 @@ function dnesIso(): string {
 }
 
 export default function AutoDetail({
-  userId, auto: autoVychozi, naklady: nakladyVychozi, trh,
-}: { userId: string; auto: Auto; naklady: Naklad[]; trh: Trh }) {
+  userId, auto: autoVychozi, naklady: nakladyVychozi, ukoly: ukolyVychozi, trh,
+}: { userId: string; auto: Auto; naklady: Naklad[]; ukoly: Ukol[]; trh: Trh }) {
   const router = useRouter();
   const supabase = createClient();
   const fileInput = useRef<HTMLInputElement>(null);
   const t = T(trh);
 
-  const KATEGORIE = [
-    { value: "dily", label: t.katDily },
-    { value: "palivo", label: t.katPalivo },
-    { value: "stk", label: t.katStk },
-    { value: "pojisteni", label: t.katPojisteni },
-    { value: "ostatni", label: t.katOstatni },
-  ];
-
   const [auto, setAuto] = useState<Auto>(autoVychozi);
   const [naklady, setNaklady] = useState<Naklad[]>(nakladyVychozi);
-  const [novyNaklad, setNovyNaklad] = useState({ popis: "", castka_kc: "", kategorie: "ostatni" });
+  const [novyNaklad, setNovyNaklad] = useState({ popis: "", castka_kc: "", datum: dnesIso() });
   const [fotoUrls, setFotoUrls] = useState<Record<string, string>>({});
   const [uklada, setUklada] = useState(false);
   const [nahravam, setNahravam] = useState(false);
   const [zprava, setZprava] = useState<string | null>(null);
+  const [editOtevreno, setEditOtevreno] = useState(false);
   const [prodejOtevren, setProdejOtevren] = useState(false);
   const [prodejCena, setProdejCena] = useState("");
   const [prodejDatum, setProdejDatum] = useState(dnesIso());
   const [prodavam, setProdavam] = useState(false);
+  const [ukoly, setUkoly] = useState<Ukol[]>(ukolyVychozi);
+  const [novyUkol, setNovyUkol] = useState("");
 
   const sumaNakladu = naklady.reduce((s, n) => s + (n.castka_kc || 0), 0);
   const celkemVAute = (auto.cena_koupeno_kc ?? 0) + sumaNakladu;
@@ -130,19 +131,43 @@ export default function AutoDetail({
       .from("naklady")
       .insert({
         auto_id: auto.id, user_id: userId, popis: novyNaklad.popis,
-        castka_kc: castka, kategorie: novyNaklad.kategorie,
+        castka_kc: castka, datum: novyNaklad.datum,
       })
-      .select("*")
+      .select("id, auto_id, popis, castka_kc, datum")
       .single();
     if (!error && data) {
       setNaklady([data as Naklad, ...naklady]);
-      setNovyNaklad({ popis: "", castka_kc: "", kategorie: "ostatni" });
+      setNovyNaklad({ popis: "", castka_kc: "", datum: dnesIso() });
     }
   }
 
   async function smazatNaklad(id: string) {
     await supabase.from("naklady").delete().eq("id", id);
     setNaklady(naklady.filter((n) => n.id !== id));
+  }
+
+  async function pridatUkol() {
+    if (!novyUkol.trim()) return;
+    const { data, error } = await supabase
+      .from("ukoly")
+      .insert({ auto_id: auto.id, user_id: userId, text: novyUkol.trim() })
+      .select("id, auto_id, text, hotovo")
+      .single();
+    if (!error && data) {
+      setUkoly([...ukoly, data as Ukol]);
+      setNovyUkol("");
+    }
+  }
+
+  async function prepnoutUkol(ukol: Ukol) {
+    const hotovo = !ukol.hotovo;
+    await supabase.from("ukoly").update({ hotovo }).eq("id", ukol.id);
+    setUkoly(ukoly.map((u) => (u.id === ukol.id ? { ...u, hotovo } : u)));
+  }
+
+  async function smazatUkol(id: string) {
+    await supabase.from("ukoly").delete().eq("id", id);
+    setUkoly(ukoly.filter((u) => u.id !== id));
   }
 
   async function nahratFotky(files: FileList | null) {
@@ -174,9 +199,9 @@ export default function AutoDetail({
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4 }}
-        className="mb-6 flex items-center justify-between"
+        className="mb-4 flex items-center justify-between"
       >
-        <a href="/auta" className="text-sm text-zinc-400 transition hover:text-zinc-200">{t.zpetNaAuta}</a>
+        <a href="/auta" className="text-sm text-zinc-300 transition hover:text-white">{t.zpetNaAuta}</a>
         <div className="flex items-center gap-3">
           {auto.stav === "prodano" ? (
             <button onClick={zrusitProdej} className={btnGhost}>{t.zrusitProdej}</button>
@@ -186,6 +211,24 @@ export default function AutoDetail({
           <button onClick={smazatAuto} className={btnDanger}>{t.smazatAuto}</button>
         </div>
       </motion.div>
+
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold text-white">{auto.titulek || t.bezNazvu}</h1>
+        <button onClick={() => setEditOtevreno(!editOtevreno)} className={btnGhost}>
+          ✎ {t.upravit}
+        </button>
+      </div>
+      <p className="mb-6 text-sm text-zinc-300">
+        {t.datumKoupeno}: <span className="text-white">{formatDatum(auto.datum_koupeno)}</span>
+        {" · "}
+        {t.cenaKoupeno}: <span className="text-white">{kc(auto.cena_koupeno_kc ?? 0, t.mena)}</span>
+        {auto.stav === "prodano" && auto.datum_prodano && (
+          <>
+            {" · "}{t.prodanoZa} <span className="text-white">{kc(auto.cena_prodano_kc ?? 0, t.mena)}</span>
+            {" "}({formatDatum(auto.datum_prodano)})
+          </>
+        )}
+      </p>
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatKarta label={t.porizeni} hodnota={kc(auto.cena_koupeno_kc ?? 0, t.mena)} />
@@ -197,58 +240,71 @@ export default function AutoDetail({
           tone={zisk == null ? "neutral" : zisk >= 0 ? "green" : "red"}
         />
       </div>
-      {auto.stav === "prodano" && auto.datum_prodano && (
-        <p className="mb-6 -mt-3 text-sm text-zinc-400">
-          {t.prodanoZa} {kc(auto.cena_prodano_kc ?? 0, t.mena)} · {new Date(auto.datum_prodano).toLocaleDateString("cs-CZ")}
-        </p>
-      )}
 
-      <Sekce titulek={t.zakladniInfo}>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Pole label={t.nazevModel}>
-            <input className={input} value={auto.titulek} onChange={(e) => setPole("titulek", e.target.value)} />
-          </Pole>
-          <Pole label={t.stav}>
-            <select
-              className={input}
-              value={auto.stav === "prodano" ? "koupeno" : auto.stav}
-              onChange={(e) => setPole("stav", e.target.value)}
-              disabled={auto.stav === "prodano"}
-            >
-              <option value="koupeno">{t.koupeno}</option>
-              <option value="inzerce">{t.vInzerci}</option>
-            </select>
-          </Pole>
-        </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
-            <input
-              type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
-              onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
-            />
-          </Pole>
-          <Pole label={t.datumKoupeno}>
-            <input
-              type="date" className={input} value={auto.datum_koupeno ?? ""}
-              onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
-            />
-          </Pole>
-        </div>
-        <div className="mt-4">
-          <Pole label={t.poznamky}>
-            <textarea
-              className={input + " min-h-[100px]"} value={auto.poznamky}
-              onChange={(e) => setPole("poznamky", e.target.value)}
-            />
-          </Pole>
-        </div>
-        <div className="mt-4 flex items-center gap-4">
-          <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
-            {uklada ? t.ukladam : t.ulozit}
-          </button>
-          {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>}
-        </div>
-      </Sekce>
+      <AnimatePresence initial={false}>
+        {editOtevreno && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <Sekce titulek={t.zakladniInfo}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Pole label={t.nazevModel}>
+                  <input className={input} value={auto.titulek} onChange={(e) => setPole("titulek", e.target.value)} />
+                </Pole>
+                <Pole label={t.stav}>
+                  <select
+                    className={input}
+                    value={auto.stav === "prodano" ? "koupeno" : auto.stav}
+                    onChange={(e) => setPole("stav", e.target.value)}
+                    disabled={auto.stav === "prodano"}
+                  >
+                    <option value="koupeno">{t.koupeno}</option>
+                    <option value="inzerce">{t.vInzerci}</option>
+                  </select>
+                </Pole>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
+                  <input
+                    type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
+                    onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
+                  />
+                </Pole>
+                <Pole label={t.datumKoupeno}>
+                  <input
+                    type="date" className={input} value={auto.datum_koupeno ?? ""}
+                    onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
+                  />
+                </Pole>
+              </div>
+              <div className="mt-4">
+                <Pole label={t.poznamky}>
+                  <textarea
+                    className={input + " min-h-[100px]"} value={auto.poznamky}
+                    onChange={(e) => setPole("poznamky", e.target.value)}
+                  />
+                </Pole>
+              </div>
+              <div className="mt-4 flex items-center gap-4">
+                <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
+                  {uklada ? t.ukladam : t.ulozit}
+                </button>
+                {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>}
+              </div>
+            </Sekce>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {auto.poznamky && (
+        <Sekce titulek={t.poznamky}>
+          <p className="whitespace-pre-wrap text-sm text-zinc-200">{auto.poznamky}</p>
+        </Sekce>
+      )}
 
       <Sekce
         titulek={t.naklady}
@@ -257,14 +313,12 @@ export default function AutoDetail({
         <div className="space-y-2">
           {naklady.map((n) => (
             <div key={n.id} className="flex items-center justify-between rounded-lg border border-border bg-panel2 px-4 py-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-zinc-200">{n.popis}</span>
-                <span className="rounded-full bg-zinc-700/40 px-2 py-0.5 text-xs text-zinc-400">
-                  {KATEGORIE.find((k) => k.value === n.kategorie)?.label ?? n.kategorie}
-                </span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-100">{n.popis}</span>
+                <span className="text-xs text-zinc-400">{formatDatum(n.datum)}</span>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-sm text-zinc-400">{kc(n.castka_kc, t.mena)}</span>
+                <span className="text-sm font-medium text-zinc-200">{kc(n.castka_kc, t.mena)}</span>
                 <button onClick={() => smazatNaklad(n.id)} className="text-xs text-red-400 hover:underline">{t.smazatMale}</button>
               </div>
             </div>
@@ -274,14 +328,11 @@ export default function AutoDetail({
           <Pole label={t.popisNakladu}>
             <input className={input} value={novyNaklad.popis} onChange={(e) => setNovyNaklad({ ...novyNaklad, popis: e.target.value })} />
           </Pole>
-          <Pole label={t.kategorie}>
-            <select
-              className={input}
-              value={novyNaklad.kategorie}
-              onChange={(e) => setNovyNaklad({ ...novyNaklad, kategorie: e.target.value })}
-            >
-              {KATEGORIE.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
-            </select>
+          <Pole label={t.datum}>
+            <input
+              type="date" className={input} value={novyNaklad.datum}
+              onChange={(e) => setNovyNaklad({ ...novyNaklad, datum: e.target.value })}
+            />
           </Pole>
           <Pole label={`${t.castka} (${t.mena})`}>
             <input
@@ -292,6 +343,44 @@ export default function AutoDetail({
           <button onClick={pridatNaklad} className={`h-fit ${btnGhost}`}>
             {t.pridat}
           </button>
+        </div>
+      </Sekce>
+
+      <Sekce titulek={t.ukoly}>
+        <div className="space-y-1.5">
+          {ukoly.length === 0 && <p className="text-sm text-zinc-500">{t.zadneUkoly}</p>}
+          {ukoly.map((u) => (
+            <div key={u.id} className="group flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-white/[0.03]">
+              <button
+                type="button"
+                onClick={() => prepnoutUkol(u)}
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+                  u.hotovo ? "border-accent bg-accent text-white" : "border-zinc-500 text-transparent"
+                }`}
+              >
+                ✓
+              </button>
+              <span className={`flex-1 text-sm ${u.hotovo ? "text-zinc-500 line-through" : "text-zinc-100"}`}>
+                {u.text}
+              </span>
+              <button
+                onClick={() => smazatUkol(u.id)}
+                className="text-xs text-red-400 opacity-0 transition hover:underline group-hover:opacity-100"
+              >
+                {t.smazatMale}
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 flex items-end gap-2">
+          <input
+            className={input}
+            placeholder={t.novyUkol}
+            value={novyUkol}
+            onChange={(e) => setNovyUkol(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && pridatUkol()}
+          />
+          <button onClick={pridatUkol} className={`h-fit ${btnGhost}`}>{t.pridat}</button>
         </div>
       </Sekce>
 
@@ -379,7 +468,7 @@ function StatKarta({
       transition={{ duration: 0.35 }}
       className={`glass rounded-xl border p-4 ${zvyrazneno ? "border-accent2/40 shadow-glow-blue" : "border-border"}`}
     >
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="text-xs uppercase tracking-wide text-zinc-400">{label}</p>
       <p className={`mt-1 text-lg font-semibold tabular-nums ${toneClass}`}>{hodnota}</p>
     </motion.div>
   );

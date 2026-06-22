@@ -105,8 +105,18 @@ create table if not exists public.naklady (
 -- Pro existujici instalace (puvodni create table uz probehl bez kategorie):
 alter table public.naklady add column if not exists kategorie text not null default 'ostatni';
 
+create table if not exists public.ukoly (
+  id uuid primary key default gen_random_uuid(),
+  auto_id uuid not null references public.auta (id) on delete cascade,
+  user_id uuid not null references auth.users (id) on delete cascade,
+  text text not null default '',
+  hotovo boolean not null default false,
+  vytvoreno timestamptz not null default now()
+);
+
 alter table public.auta enable row level security;
 alter table public.naklady enable row level security;
+alter table public.ukoly enable row level security;
 
 drop policy if exists "auta_select_own" on public.auta;
 create policy "auta_select_own" on public.auta
@@ -132,6 +142,19 @@ create policy "naklady_update_own" on public.naklady
   for update using (auth.uid() = user_id);
 drop policy if exists "naklady_delete_own" on public.naklady;
 create policy "naklady_delete_own" on public.naklady
+  for delete using (auth.uid() = user_id);
+
+drop policy if exists "ukoly_select_own" on public.ukoly;
+create policy "ukoly_select_own" on public.ukoly
+  for select using (auth.uid() = user_id);
+drop policy if exists "ukoly_insert_own" on public.ukoly;
+create policy "ukoly_insert_own" on public.ukoly
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "ukoly_update_own" on public.ukoly;
+create policy "ukoly_update_own" on public.ukoly
+  for update using (auth.uid() = user_id);
+drop policy if exists "ukoly_delete_own" on public.ukoly;
+create policy "ukoly_delete_own" on public.ukoly
   for delete using (auth.uid() = user_id);
 
 -- Storage bucket pro fotky aut (privatni - pristup jen pres podepsane URL/RLS).

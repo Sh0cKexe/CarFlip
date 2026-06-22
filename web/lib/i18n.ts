@@ -134,12 +134,15 @@ const CS = {
   datumProdeje: "Datum prodeje",
   oznacitProdano: "Označit jako prodané",
   zrusit: "Zrušit",
-  kategorie: "Kategorie",
-  katDily: "Díly",
-  katPalivo: "Palivo",
-  katStk: "STK / registrace",
-  katPojisteni: "Pojištění",
-  katOstatni: "Ostatní",
+  datum: "Datum",
+
+  novyAutoNazev: "Název auta",
+  vytvoritAuto: "Vytvořit auto",
+  zalozitProjekt: "Nový projekt — auto",
+  upravit: "Upravit",
+  ukoly: "Úkoly",
+  novyUkol: "Co je potřeba udělat...",
+  zadneUkoly: "Zatím žádné úkoly.",
 };
 
 const SK: typeof CS = {
@@ -276,12 +279,15 @@ const SK: typeof CS = {
   datumProdeje: "Dátum predaja",
   oznacitProdano: "Označiť ako predané",
   zrusit: "Zrušiť",
-  kategorie: "Kategória",
-  katDily: "Diely",
-  katPalivo: "Palivo",
-  katStk: "STK / evidencia",
-  katPojisteni: "Poistenie",
-  katOstatni: "Ostatné",
+  datum: "Dátum",
+
+  novyAutoNazev: "Názov auta",
+  vytvoritAuto: "Vytvoriť auto",
+  zalozitProjekt: "Nový projekt — auto",
+  upravit: "Upraviť",
+  ukoly: "Úlohy",
+  novyUkol: "Čo treba urobiť...",
+  zadneUkoly: "Zatiaľ žiadne úlohy.",
 };
 
 const I18N: Record<Trh, typeof CS> = { cz: CS, sk: SK };

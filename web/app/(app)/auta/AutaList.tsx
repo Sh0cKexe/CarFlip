@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
-import { btnPrimary } from "@/app/components/FormUI";
+import { Pole, input, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
+
+function dnesIso(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export type Auto = {
   id: string;
@@ -35,13 +39,25 @@ export default function AutaList({
   const router = useRouter();
   const supabase = createClient();
   const [vytvarim, setVytvarim] = useState(false);
+  const [modalOtevren, setModalOtevren] = useState(false);
+  const [novyNazev, setNovyNazev] = useState("");
+  const [novyDatum, setNovyDatum] = useState(dnesIso());
+  const [novaCena, setNovaCena] = useState("");
+  const [novaPoznamka, setNovaPoznamka] = useState("");
   const t = T(trh);
 
-  async function pridatAuto() {
+  async function vytvoritAuto() {
+    if (!novyNazev.trim()) return;
     setVytvarim(true);
     const { data, error } = await supabase
       .from("auta")
-      .insert({ user_id: userId, titulek: "Nové auto" })
+      .insert({
+        user_id: userId,
+        titulek: novyNazev.trim(),
+        datum_koupeno: novyDatum,
+        cena_koupeno_kc: novaCena ? Number(novaCena) : null,
+        poznamky: novaPoznamka,
+      })
       .select("id")
       .single();
     setVytvarim(false);
@@ -65,8 +81,8 @@ export default function AutaList({
     <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-zinc-100">{t.mojeAuta}</h1>
-        <button onClick={pridatAuto} disabled={vytvarim} className={btnPrimary}>
-          {vytvarim ? t.vytvarim : t.pridatAuto}
+        <button onClick={() => setModalOtevren(true)} className={btnPrimary}>
+          {t.pridatAuto}
         </button>
       </div>
 
@@ -112,6 +128,60 @@ export default function AutaList({
           />
         )}
       </div>
+
+      <AnimatePresence>
+        {modalOtevren && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+            onClick={() => setModalOtevren(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass w-full max-w-md rounded-2xl border border-border p-6 shadow-glow-lg"
+            >
+              <h2 className="mb-4 text-base font-semibold text-zinc-100">{t.zalozitProjekt}</h2>
+              <div className="space-y-4">
+                <Pole label={t.novyAutoNazev}>
+                  <input
+                    autoFocus className={input} value={novyNazev}
+                    onChange={(e) => setNovyNazev(e.target.value)}
+                  />
+                </Pole>
+                <Pole label={t.datumKoupeno}>
+                  <input
+                    type="date" className={input} value={novyDatum}
+                    onChange={(e) => setNovyDatum(e.target.value)}
+                  />
+                </Pole>
+                <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
+                  <input
+                    type="number" className={input} value={novaCena}
+                    onChange={(e) => setNovaCena(e.target.value)}
+                  />
+                </Pole>
+                <Pole label={t.poznamky}>
+                  <textarea
+                    className={`${input} min-h-[80px]`} value={novaPoznamka}
+                    onChange={(e) => setNovaPoznamka(e.target.value)}
+                  />
+                </Pole>
+              </div>
+              <div className="mt-5 flex justify-end gap-3">
+                <button onClick={() => setModalOtevren(false)} className={btnGhost}>{t.zrusit}</button>
+                <button onClick={vytvoritAuto} disabled={vytvarim || !novyNazev.trim()} className={btnPrimary}>
+                  {vytvarim ? t.vytvarim : t.vytvoritAuto}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
