@@ -65,6 +65,10 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
     <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
       <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
+        <Sekce titulek={t.navodBota}>
+          <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">{t.navodPopis}</p>
+        </Sekce>
+
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Pole label={t.tokenBota}>
