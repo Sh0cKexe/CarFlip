@@ -30,11 +30,9 @@ export default async function DashboardPage() {
 
   let celkovyZisk = 0;
   let pocetKoupeno = 0;
-  let pocetInzerce = 0;
   let pocetProdano = 0;
   (auta ?? []).forEach((a) => {
     if (a.stav === "koupeno") pocetKoupeno++;
-    if (a.stav === "inzerce") pocetInzerce++;
     if (a.stav === "prodano") {
       pocetProdano++;
       if (a.cena_koupeno_kc != null && a.cena_prodano_kc != null) {
@@ -48,7 +46,6 @@ export default async function DashboardPage() {
       trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
       pocetAutCelkem={(auta ?? []).length}
       pocetKoupeno={pocetKoupeno}
-      pocetInzerce={pocetInzerce}
       pocetProdano={pocetProdano}
       celkovyZisk={celkovyZisk}
     />

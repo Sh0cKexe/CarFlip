@@ -17,6 +17,7 @@ type Auto = {
   cena_prodano_kc: number | null;
   datum_koupeno: string | null;
   datum_prodano: string | null;
+  najezd_km: number | null;
   poznamky: string;
   fotky: string[];
 };
@@ -34,6 +35,13 @@ function formatDatum(d: string | null): string {
 
 function dnesIso(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+function dobaProdejeDny(auto: Auto): number | null {
+  if (!auto.datum_koupeno) return null;
+  const od = new Date(auto.datum_koupeno).getTime();
+  const dokdy = auto.datum_prodano ? new Date(auto.datum_prodano).getTime() : Date.now();
+  return Math.max(0, Math.round((dokdy - od) / 86400000));
 }
 
 export default function AutoDetail({
@@ -108,6 +116,7 @@ export default function AutoDetail({
         stav: auto.stav,
         cena_koupeno_kc: auto.cena_koupeno_kc,
         datum_koupeno: auto.datum_koupeno,
+        najezd_km: auto.najezd_km,
         poznamky: auto.poznamky,
       })
       .eq("id", auto.id);
@@ -289,8 +298,6 @@ export default function AutoDetail({
       <h1 className="mb-2 text-2xl font-semibold text-white">{auto.titulek || t.bezNazvu}</h1>
       <p className="mb-6 text-sm text-zinc-300">
         {t.datumKoupeno}: <span className="text-white">{formatDatum(auto.datum_koupeno)}</span>
-        {" · "}
-        {t.cenaKoupeno}: <span className="text-white">{kc(auto.cena_koupeno_kc ?? 0, t.mena)}</span>
         {auto.stav === "prodano" && auto.datum_prodano && (
           <>
             {" · "}{t.prodanoZa} <span className="text-white">{kc(auto.cena_prodano_kc ?? 0, t.mena)}</span>
@@ -299,7 +306,7 @@ export default function AutoDetail({
         )}
       </p>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <StatKarta label={t.porizeni} hodnota={kc(auto.cena_koupeno_kc ?? 0, t.mena)} />
         <StatKarta label={t.naklady} hodnota={kc(sumaNakladu, t.mena)} />
         <StatKarta label={t.celkemVAute} hodnota={kc(celkemVAute, t.mena)} zvyrazneno />
@@ -307,6 +314,14 @@ export default function AutoDetail({
           label={t.ziskZtrata}
           hodnota={zisk != null ? kc(zisk, t.mena) : "—"}
           tone={zisk == null ? "neutral" : zisk >= 0 ? "green" : "red"}
+        />
+        <StatKarta
+          label={t.dobaProdeje}
+          hodnota={dobaProdejeDny(auto) != null ? `${dobaProdejeDny(auto)} ${t.dni}` : "—"}
+        />
+        <StatKarta
+          label={t.najezd}
+          hodnota={auto.najezd_km != null ? `${auto.najezd_km.toLocaleString("cs-CZ")} km` : "—"}
         />
       </div>
       <div className="mb-6 border-t border-border/60" />
@@ -348,6 +363,14 @@ export default function AutoDetail({
                   <input
                     type="date" className={input} value={auto.datum_koupeno ?? ""}
                     onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
+                  />
+                </Pole>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Pole label={`${t.najezd} (km)`}>
+                  <input
+                    type="number" className={input} value={auto.najezd_km ?? ""}
+                    onChange={(e) => setPole("najezd_km", e.target.value ? Number(e.target.value) : null)}
                   />
                 </Pole>
               </div>

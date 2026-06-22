@@ -2,11 +2,8 @@ import { NextResponse } from "next/server";
 
 // Port geokod.py: prevod kliknuteho bodu na mape -> nejblizsi mesto.
 // Pouziva OpenStreetMap Nominatim (zdarma, bez klice).
-// "zeme" urcuje, ve kterem jazyce se ma vratit nazev mesta - duleziti pro
-// Polsko, kde nazev musi byt v polstine, aby slug sedl na Otomoto URL
-// (mesto_slug). Pro CZ/SK pouzivame cestinu/slovenstinu (Bazos lokalita pole).
-
-const JAZYK_PODLE_ZEME: Record<string, string> = { pl: "pl", cz: "cs", sk: "sk" };
+// "zeme" se urcuje AUTOMATICKY z odpovedi (address.country_code) podle
+// toho, kam uzivatel na mape klikl - zadny rucni vyber zeme predem.
 
 const SPECIAL: Record<string, string> = { ł: "l", Ł: "l" };
 
@@ -21,12 +18,11 @@ function slug(text: string): string {
 }
 
 export async function POST(req: Request) {
-  let lat: number, lon: number, zeme: string;
+  let lat: number, lon: number;
   try {
     const body = await req.json();
     lat = Number(body.lat);
     lon = Number(body.lon);
-    zeme = typeof body.zeme === "string" && JAZYK_PODLE_ZEME[body.zeme] ? body.zeme : "pl";
   } catch {
     return NextResponse.json({ error: "Chybný požadavek." }, { status: 400 });
   }
@@ -35,8 +31,9 @@ export async function POST(req: Request) {
   }
 
   try {
-    const jazyk = JAZYK_PODLE_ZEME[zeme];
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=${jazyk}&zoom=10`;
+    // accept-language jako seznam - Nominatim vrati nazev mesta v prvnim
+    // jazyce, ktery pro dane misto ma (cs/sk/pl podle skutecne zeme).
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=cs,sk,pl,en&zoom=10`;
     const r = await fetch(url, {
       headers: { "User-Agent": "CarFlip/1.0 (osobni nastroj na auta)" },
     });
@@ -45,6 +42,8 @@ export async function POST(req: Request) {
     }
     const j = await r.json();
     const adr = j?.address ?? {};
+    const kodZeme = (adr.country_code as string | undefined)?.toLowerCase();
+    const zeme = kodZeme === "cz" || kodZeme === "sk" || kodZeme === "pl" ? kodZeme : "pl";
     for (const klic of ["city", "town", "village", "municipality", "county"]) {
       if (adr[klic]) {
         const nazev = adr[klic] as string;

@@ -6,12 +6,11 @@ import CountUp from "@/app/components/CountUp";
 import { T, type Trh } from "@/lib/i18n";
 
 export default function DashboardOverview({
-  trh, pocetAutCelkem, pocetKoupeno, pocetInzerce, pocetProdano, celkovyZisk,
+  trh, pocetAutCelkem, pocetKoupeno, pocetProdano, celkovyZisk,
 }: {
   trh: Trh;
   pocetAutCelkem: number;
   pocetKoupeno: number;
-  pocetInzerce: number;
   pocetProdano: number;
   celkovyZisk: number;
 }) {
@@ -40,7 +39,6 @@ export default function DashboardOverview({
             </p>
             <div className="mt-3 flex gap-4 text-sm text-zinc-400">
               <span>{t.koupeno}: {pocetKoupeno}</span>
-              <span>{t.vInzerci}: {pocetInzerce}</span>
               <span>{t.prodano}: {pocetProdano}</span>
             </div>
           </Sekce>

@@ -58,8 +58,6 @@ const ZNAME_ZNACKY = [
   "toyota", "uaz", "volkswagen", "volvo", "zastava",
 ].sort();
 
-const ZEME_VLAJKA: Record<Zeme, string> = { pl: "🇵🇱 PL", cz: "🇨🇿 CZ", sk: "🇸🇰 SK" };
-
 export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
@@ -83,7 +81,6 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
   const zdroje = n.filtry.zdroje ?? ["pl"];
-  const [novaOblastZeme, setNovaOblastZeme] = useState<Zeme>("pl");
   const [najdiTedBezi, setNajdiTedBezi] = useState(false);
   const [najdiTedZprava, setNajdiTedZprava] = useState<string | null>(null);
 
@@ -134,13 +131,13 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   }
 
   function pridatOblast() {
-    setFiltr("oblasti", [...n.filtry.oblasti, { nazev: "", mesto_slug: "", okruh_km: 50, zeme: novaOblastZeme }]);
+    setFiltr("oblasti", [...n.filtry.oblasti, { nazev: "", mesto_slug: "", okruh_km: 50, zeme: "pl" }]);
   }
   async function pridatOblastZMapy(lat: number, lon: number) {
     const r = await fetch("/api/geokod", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lat, lon, zeme: novaOblastZeme }),
+      body: JSON.stringify({ lat, lon }),
     });
     const j = await r.json();
     if (!r.ok) {
@@ -331,27 +328,10 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
         </Sekce>
 
         <Sekce titulek={t.oblasti}>
-          {zdroje.length > 1 && (
-            <div className="mb-2 flex items-center gap-2">
-              <span className="text-xs text-zinc-400">{t.zeme}:</span>
-              {zdroje.map((z) => (
-                <button
-                  key={z}
-                  type="button"
-                  onClick={() => setNovaOblastZeme(z)}
-                  className={`rounded-md px-2.5 py-1 text-xs transition ${
-                    novaOblastZeme === z ? "bg-panel2 text-zinc-100" : "text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  {ZEME_VLAJKA[z]}
-                </button>
-              ))}
-            </div>
-          )}
           <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
           <div className="space-y-3">
             {n.filtry.oblasti.map((o, i) => (
-              <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[80px_1fr_1fr_100px_auto]">
+              <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[80px_1fr_100px_auto]">
                 <Pole label={t.zeme}>
                   <select
                     className={input} value={o.zeme ?? "pl"}
@@ -364,9 +344,6 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
                 </Pole>
                 <Pole label={t.nazev}>
                   <input className={input} value={o.nazev} onChange={(e) => upravitOblast(i, "nazev", e.target.value)} />
-                </Pole>
-                <Pole label={t.slugMesta}>
-                  <input className={input} value={o.mesto_slug} onChange={(e) => upravitOblast(i, "mesto_slug", e.target.value)} />
                 </Pole>
                 <Pole label={t.okruhKm}>
                   <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
