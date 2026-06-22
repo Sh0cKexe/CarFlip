@@ -89,6 +89,8 @@ const CS = {
   koupenoZa: "Koupeno za",
   naklady: "Náklady",
   zisk: "Zisk",
+  vazanyKapital: "Vázaný kapitál",
+  prodanoZa: "Prodáno za",
 
   zakladniInfo: "Základní info",
   nazevModel: "Název / model",
@@ -210,6 +212,8 @@ const SK: typeof CS = {
   koupenoZa: "Kúpené za",
   naklady: "Náklady",
   zisk: "Zisk",
+  vazanyKapital: "Viazaný kapitál",
+  prodanoZa: "Predané za",
 
   zakladniInfo: "Základné info",
   nazevModel: "Názov / model",
