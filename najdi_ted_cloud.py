@@ -86,20 +86,22 @@ def _najdi_pl(cfg, kurz_pln):
     return vysledky
 
 
-def _najdi_domaci(cfg, domaci_trh):
-    """Projede Bazos primo jako zdroj (zdroj 'cz'/'sk'), bez dedup. Vyssi
-    max_stran nez bezny cyklus - bazos.py ma vlastni 12h cache, opakovane
-    spousteni nestoji nic navic."""
+def _najdi_domaci(cfg, zdroj_trh):
+    """Projede Bazos primo jako zdroj (zdroj_trh 'cz'/'sk'), bez dedup,
+    porovna proti DOMOVSKEMU trhu uzivatele (cfg['trh']). Vyssi max_stran
+    nez bezny cyklus - bazos.py ma vlastni 12h cache, opakovane spousteni
+    nestoji nic navic."""
     filtry = cfg["filtry"]
+    domovsky_trh = cfg.get("trh", "cz")
     min_srovnani = cfg.get("min_srovnani", 5)
-    okruhy = [o for o in (filtry.get("oblasti") or []) if o.get("zeme") == domaci_trh] or [None]
+    okruhy = [o for o in (filtry.get("oblasti") or []) if o.get("zeme") == zdroj_trh] or [None]
 
     vysledky = []
     for znacka in filtry.get("znacky", []):
         for okruh in okruhy:
             try:
                 nalezy = bazos.najdi_podhodnocene(
-                    znacka, filtry, trh=domaci_trh,
+                    znacka, filtry, zdroj_trh=zdroj_trh, domovsky_trh=domovsky_trh,
                     min_zisk_kc=cfg["min_zisk_kc"],
                     naklady_dovoz_kc=cfg["naklady_dovoz_kc"],
                     min_srovnani=min_srovnani,
@@ -108,14 +110,14 @@ def _najdi_domaci(cfg, domaci_trh):
                     max_stran=5,
                 )
             except Exception as e:
-                print("  chyba Bazos {}:".format(domaci_trh), e)
+                print("  chyba Bazos {}:".format(zdroj_trh), e)
                 continue
             for nalez in nalezy:
-                popisek = main.naformatuj_zpravu_domaci(nalez, trh=domaci_trh)
-                detail = main.naformatuj_detail_domaci(nalez, trh=domaci_trh)
-                vysledky.append((nalez["zisk"], popisek, detail, None))
+                popisek = main.naformatuj_zpravu_domaci(nalez, zdroj_trh, domovsky_trh)
+                detail = main.naformatuj_detail_domaci(nalez, domovsky_trh)
+                vysledky.append((nalez["zisk"], popisek, detail, nalez.get("foto")))
                 print("  >>> {} kandidat: {} | zisk {}".format(
-                    domaci_trh.upper(), nalez["titulek"][:40], nalez["zisk"]))
+                    zdroj_trh.upper(), nalez["titulek"][:40], nalez["zisk"]))
 
     vysledky.sort(key=lambda x: -x[0])
     return vysledky

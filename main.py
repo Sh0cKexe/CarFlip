@@ -146,42 +146,59 @@ def naformatuj_detail(popis_cz, odhad, trh="cz"):
     return "\n".join(radky)
 
 
-def naformatuj_zpravu_domaci(nalez, trh="cz"):
-    """Zprava pro nalez PRIMO na domacim trhu (Bazos cz/sk) - podhodnoceny
-    inzerat, ne import ze zahranici. Stejna struktura jako naformatuj_zpravu
-    (PL import), jen bez polskych specifik (cena PL, registrace apod.)."""
-    t = TEXTY.get(trh, TEXTY["cz"])
-    mena = t["mena"]
-    vlajka = "🇸🇰" if trh == "sk" else "🇨🇿"
+def naformatuj_zpravu_domaci(nalez, zdroj_trh, domovsky_trh):
+    """Zprava pro nalez PRIMO na Bazosi (zdroj_trh) - porovnano proti
+    DOMOVSKEMU trhu uzivatele (domovsky_trh), stejny princip jako import
+    z Polska. Kdyz zdroj_trh == domovsky_trh, cena je jen jednou (zadny
+    prevod nedava smysl); jinak se ukaze cena ve zdrojove mene + prevod."""
+    t_domov = TEXTY.get(domovsky_trh, TEXTY["cz"])
+    mena_domov = t_domov["mena"]
+    mena_zdroj = TEXTY.get(zdroj_trh, TEXTY["cz"])["mena"]
+    vlajka_zdroj = "🇸🇰" if zdroj_trh == "sk" else "🇨🇿"
+    vlajka_domov = "🇸🇰" if domovsky_trh == "sk" else "🇨🇿"
     najezd = "{:,} km".format(nalez["najezd"]).replace(",", " ") if nalez.get("najezd") else "? km"
+
+    if zdroj_trh == domovsky_trh:
+        cena_radek = "💵 Cena: {:,} {}".format(nalez["cena"], mena_domov).replace(",", " ")
+    else:
+        cena_radek = "{} Cena {}: {:,} {}  (≈ {:,} {})".format(
+            vlajka_zdroj, zdroj_trh.upper(), nalez["cena"], mena_zdroj,
+            int(round(nalez["cena_domovska"])), mena_domov
+        ).replace(",", " ")
+
     radky = [
         "🔎 <b>{}</b>".format(nalez["titulek"]),
-        "💰 <b>Zisk: {:,} {}</b>".format(int(round(nalez["zisk"])), mena).replace(",", " "),
+        "💰 <b>Zisk: {:,} {}</b>".format(int(round(nalez["zisk"])), mena_domov).replace(",", " "),
         "",
-        "💵 Cena: {:,} {}".format(nalez["cena"], mena).replace(",", " "),
-        "{} {}: {:,} {}".format(vlajka, t["odhad_prodej"], nalez["median_trh"], mena).replace(",", " "),
-        "📦 {}: {:,} {}".format(t["naklady_dovoz"], int(round(nalez["naklady"])), mena).replace(",", " "),
+        cena_radek,
+        "{} {}: {:,} {}".format(vlajka_domov, t_domov["odhad_prodej"], nalez["median_trh"], mena_domov).replace(",", " "),
+        "📦 {}: {:,} {}".format(t_domov["naklady_dovoz"], int(round(nalez["naklady"])), mena_domov).replace(",", " "),
         "",
         "📅 {} | {}".format(nalez.get("rok") or "?", najezd),
         "",
-        "🔗 <a href=\"{}\">{}</a>".format(nalez["url"], t["otevrit_inzerat"]),
+        "🔗 <a href=\"{}\">{}</a>".format(nalez["url"], t_domov["otevrit_inzerat"]),
     ]
     return "\n".join(radky)
 
 
-def naformatuj_detail_domaci(nalez, trh="cz"):
-    """Druha zprava pro domaci nalez: srovnatelne inzeraty na stejnem trhu
-    (stejny ucel jako naformatuj_detail u PL importu)."""
-    t = TEXTY.get(trh, TEXTY["cz"])
+def naformatuj_detail_domaci(nalez, domovsky_trh):
+    """Druha zprava pro domaci nalez: puvodni popis z inzeratu (cesky/
+    slovensky text se NEPREKLADA, na rozdil od PL) + srovnatelne inzeraty
+    na domovskem trhu (stejny ucel jako naformatuj_detail u PL importu)."""
+    t = TEXTY.get(domovsky_trh, TEXTY["cz"])
     mena = t["mena"]
-    if not nalez.get("ukazky"):
-        return ""
-    radky = ["🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], nalez["pocet_srovnani"])]
-    for u in nalez["ukazky"]:
-        rok = u.get("rok") or "?"
-        najezd = "{:,} km".format(u["najezd"]).replace(",", " ") if u.get("najezd") else "? km"
-        radky.append("• {} | {} | {:,} {} – <a href=\"{}\">{}</a>".format(
-            rok, najezd, u["cena"], mena, u["url"], u["titulek"][:42]).replace(",", " "))
+    radky = []
+    if nalez.get("popis"):
+        radky.append("📝 <b>Popis z inzerátu:</b>")
+        radky.append(nalez["popis"][:1500])
+        radky.append("")
+    if nalez.get("ukazky"):
+        radky.append("🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], nalez["pocet_srovnani"]))
+        for u in nalez["ukazky"]:
+            rok = u.get("rok") or "?"
+            najezd = "{:,} km".format(u["najezd"]).replace(",", " ") if u.get("najezd") else "? km"
+            radky.append("• {} | {} | {:,} {} – <a href=\"{}\">{}</a>".format(
+                rok, najezd, u["cena"], mena, u["url"], u["titulek"][:42]).replace(",", " "))
     return "\n".join(radky)
 
 
@@ -314,24 +331,30 @@ def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
     return True
 
 
-def zpracuj_auto_domaci(nalez, cfg, trh, uz_videno=databaze.uz_videno,
+def zpracuj_auto_domaci(nalez, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
                          oznac_videno=databaze.oznac_videno):
-    """Vyhodnoti jeden nalez primo z Bazose (cz/sk jako ZDROJ, ne import) -
-    bazos.najdi_podhodnocene uz spocitala zisk/median, tady jen dedup a
-    odeslani. ad_id je prefixovany 'bazos_{trh}_', aby nekolidoval s
-    Otomoto cisly id ve stejne videno databazi."""
-    ad_id = "bazos_{}_{}".format(trh, nalez["url"])
+    """Vyhodnoti jeden nalez primo z Bazose (zdroj_trh = odkud inzerat je) -
+    bazos.najdi_podhodnocene uz spocitala zisk/median PROTI DOMOVSKEMU
+    trhu uzivatele (cfg['trh']), tady jen dedup a odeslani. ad_id je
+    prefixovany 'bazos_{zdroj_trh}_', aby nekolidoval s Otomoto cisly id
+    ve stejne videno databazi."""
+    ad_id = "bazos_{}_{}".format(zdroj_trh, nalez["url"])
     if uz_videno(ad_id):
         return False
     oznac_videno(ad_id)
 
-    print("  >>> NALEZ (Bazos {}): {} | zisk {}".format(trh.upper(), nalez["titulek"], nalez["zisk"]))
+    domovsky_trh = cfg.get("trh", "cz")
+    print("  >>> NALEZ (Bazos {} -> domov {}): {} | zisk {}".format(
+        zdroj_trh.upper(), domovsky_trh.upper(), nalez["titulek"], nalez["zisk"]))
     token = cfg["telegram"]["token"]
     prijemci = _prijemci(cfg)
-    popisek = naformatuj_zpravu_domaci(nalez, trh=trh)
-    detail = naformatuj_detail_domaci(nalez, trh=trh)
+    popisek = naformatuj_zpravu_domaci(nalez, zdroj_trh, domovsky_trh)
+    detail = naformatuj_detail_domaci(nalez, domovsky_trh)
     for cid in prijemci:
-        tg.posli_zpravu(token, cid, popisek)
+        if nalez.get("foto"):
+            tg.posli_foto(token, cid, nalez["foto"], popisek)
+        else:
+            tg.posli_zpravu(token, cid, popisek)
         if detail.strip():
             tg.posli_zpravu(token, cid, detail)
     return True
@@ -386,7 +409,7 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
                 print("Kontroluji (Bazos {}):".format(domaci_trh.upper()), znacka, "|", kde)
                 try:
                     nalezy = bazos.najdi_podhodnocene(
-                        znacka, filtry, trh=domaci_trh,
+                        znacka, filtry, zdroj_trh=domaci_trh, domovsky_trh=trh,
                         min_zisk_kc=cfg["min_zisk_kc"],
                         naklady_dovoz_kc=cfg["naklady_dovoz_kc"],
                         min_srovnani=min_srovnani,

@@ -270,11 +270,15 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5,
             nad = it.select_one(".nadpis a")
             cena = it.select_one(".inzeratycena")
             popis = it.select_one(".popis")
+            obrazek = it.select_one("img")
             if not nad:
                 continue
             link = nad.get("href", "")
             if link.startswith("/"):
                 link = "https://" + domena + link
+            foto = obrazek.get("src") if obrazek else None
+            if foto and foto.startswith("/"):
+                foto = "https://" + domena + foto
             titulek = nad.get_text(strip=True)
             popis_text = popis.get_text(" ", strip=True) if popis else ""
             cely = titulek + " " + popis_text
@@ -285,6 +289,7 @@ def hledat_inzeraty(dotaz, cena_od=None, cena_do=None, max_stran=2, pauza=1.5,
                 "rok": _rok_z_textu(cely),
                 "najezd": _najezd_z_textu(cely),
                 "popis": popis_text,
+                "foto": foto,
             })
         if strana < max_stran - 1:
             time.sleep(pauza)
@@ -415,74 +420,75 @@ def _model_anchor(titulek, znacka):
     return tokeny[0] if tokeny else ""
 
 
-def najdi_podhodnocene(znacka, filtry, trh="cz", min_zisk_kc=0, naklady_dovoz_kc=0,
-                        min_srovnani=5, lokalita=None, okruh_km=None, max_stran=3):
-    """Najde podhodnocene inzeraty PRIMO na Bazosi - misto importu ze
-    zahranici srovnava kazdy inzerat s ostatnimi srovnatelnymi NA STEJNEM
-    trhu (cz nebo sk). Kandidat se vyradi ze sve vlastni srovnavaci skupiny
-    (porovnani podle url), aby nezkresloval median sam sebou.
+def _prevod(castka, z_trhu, do_trhu):
+    """Prevede castku z meny zdrojoveho trhu do meny ciloveho trhu
+    (jen cz<->sk se resi, jine kombinace projdou beze zmeny)."""
+    if z_trhu == do_trhu:
+        return castka
+    k = kurz.kurz_czk_eur()
+    if z_trhu == "cz" and do_trhu == "sk":
+        return castka * k
+    if z_trhu == "sk" and do_trhu == "cz":
+        return castka / k
+    return castka
 
-    filtry["cena_{trh}"] = {"min":.., "max":..} urcuje cenovy rozsah hledani
-    (v mene daneho trhu - Kc pro cz, EUR pro sk).
 
-    Vraci list inzeratu (stejne klice jako hledat_inzeraty + median_trh,
-    zisk, pocet_srovnani), serazeny od nejvyssiho zisku.
+def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
+                        naklady_dovoz_kc=0, min_srovnani=5, lokalita=None,
+                        okruh_km=None, max_stran=3):
+    """Stahne inzeraty PRIMO z Bazose (zdroj_trh) a kazdy porovna proti
+    odhadu prodejni ceny NA DOMOVSKEM TRHU uzivatele (domovsky_trh) -
+    stejny princip jako import z Polska (zpracuj_auto), jen zdroj dat je
+    Bazos misto Otomoto. Kdyz zdroj_trh == domovsky_trh, vychazi to na
+    porovnani v ramci stejneho trhu (bezny pripad).
 
-    POZOR: min_zisk_kc/naklady_dovoz_kc prichazeji VZDY v Kc (stejne jako
-    vsude jinde v aplikaci) - pro trh="sk" se tady prevedou na EUR, jinak
-    by prah v Kc (typicky tisice) byl pro EUR ceny (typicky stovky) zcela
-    nesmyslny a nic by nikdy neprošlo."""
-    if trh == "sk":
-        eur_za_kc = kurz.kurz_pln_eur() / kurz.kurz_pln_czk()
-        min_zisk_kc = min_zisk_kc * eur_za_kc
-        naklady_dovoz_kc = naklady_dovoz_kc * eur_za_kc
+    filtry["cena_{zdroj_trh}"] = {"min":.., "max":..} urcuje cenovy rozsah
+    hledani (v mene ZDROJOVEHO trhu - Kc pro cz, EUR pro sk).
 
-    min_cena = MIN_ROZUMNA_CENA.get(trh, MIN_ROZUMNA_CENA["cz"])
-    rozsah_cena = filtry.get("cena_{}".format(trh)) or {}
+    min_zisk_kc/naklady_dovoz_kc prichazeji VZDY v Kc (stejne jako vsude
+    jinde v aplikaci) - tady se prevedou do meny DOMOVSKEHO trhu.
+
+    Vraci list inzeratu (puvodni klice z hledat_inzeraty + cena_domovska,
+    median_trh, zisk, pocet_srovnani, naklady, ukazky - stejny tvar jako
+    odhad_ceny), serazeny od nejvyssiho zisku."""
+    min_zisk = _prevod(min_zisk_kc, "cz", domovsky_trh)
+    naklady = _prevod(naklady_dovoz_kc, "cz", domovsky_trh)
+
+    min_cena = MIN_ROZUMNA_CENA.get(zdroj_trh, MIN_ROZUMNA_CENA["cz"])
+    rozsah_cena = filtry.get("cena_{}".format(zdroj_trh)) or {}
     cena_od = rozsah_cena.get("min") or min_cena
     cena_do = rozsah_cena.get("max")
 
     syrove = hledat_inzeraty(znacka, cena_od=cena_od, cena_do=cena_do,
-                              max_stran=max_stran, trh=trh,
+                              max_stran=max_stran, trh=zdroj_trh,
                               lokalita=lokalita, okruh_km=okruh_km)
 
-    obohacene = []
+    min_rok = filtry.get("min_rok")
+    min_srovnatelnych = min_srovnani
+
+    vysledky = []
     for x in syrove:
         if not x.get("cena") or x["cena"] < min_cena:
             continue
-        cely = (x.get("titulek") or "") + " " + (x.get("popis") or "")
-        obohacene.append(dict(
-            x, _palivo=_palivo_z_textu(cely), _objem=_objem_z_textu(cely),
-            _model=_model_anchor(x.get("titulek") or "", znacka),
-        ))
-
-    min_rok = filtry.get("min_rok")
-    if min_rok:
-        obohacene = [x for x in obohacene if not x["rok"] or x["rok"] >= min_rok]
-
-    vysledky = []
-    for kandidat in obohacene:
-        # Srovnatelne = stejny (+-1 rok) rocnik a (pokud zname) stejne palivo,
-        # bez sebe sama.
-        srovnatelne = [
-            x for x in obohacene
-            if x["url"] != kandidat["url"]
-            and x["_model"] == kandidat["_model"]
-            and x["rok"] and kandidat["rok"] and abs(x["rok"] - kandidat["rok"]) <= 1
-            and (not x["_palivo"] or not kandidat["_palivo"] or x["_palivo"] == kandidat["_palivo"])
-        ]
-        if len(srovnatelne) < min_srovnani:
+        if min_rok and x.get("rok") and x["rok"] < min_rok:
             continue
-        median = int(statistics.median(x["cena"] for x in srovnatelne))
-        zisk = median - kandidat["cena"] - naklady_dovoz_kc
-        if zisk < min_zisk_kc:
+
+        cena_domovska = _prevod(x["cena"], zdroj_trh, domovsky_trh)
+        model = _model_anchor(x.get("titulek") or "", znacka)
+        odhad = odhad_ceny(znacka, model, rok=x.get("rok"), najezd_km=x.get("najezd"),
+                            cena_anchor_czk=cena_domovska, min_pocet=min_srovnatelnych,
+                            trh=domovsky_trh)
+        if not odhad["median"] or odhad["pocet"] < min_srovnatelnych:
             continue
-        srovnatelne_sorted = sorted(srovnatelne, key=lambda x: abs(x["cena"] - median))
-        ukazky = [{"titulek": x["titulek"], "url": x["url"], "cena": x["cena"],
-                   "rok": x["rok"], "najezd": x.get("najezd")} for x in srovnatelne_sorted[:5]]
+
+        zisk = odhad["median"] - cena_domovska - naklady
+        if zisk < min_zisk:
+            continue
+
         vysledky.append(dict(
-            kandidat, median_trh=median, zisk=zisk, pocet_srovnani=len(srovnatelne),
-            naklady=naklady_dovoz_kc, ukazky=ukazky,
+            x, cena_domovska=cena_domovska, median_trh=odhad["median"],
+            zisk=zisk, pocet_srovnani=odhad["pocet"], naklady=naklady,
+            ukazky=odhad["ukazky"],
         ))
 
     vysledky.sort(key=lambda x: -x["zisk"])

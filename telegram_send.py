@@ -24,12 +24,13 @@ def _post(token, metoda, data):
 
 
 def posli_zpravu(token, chat_id, text):
-    """Posle textovou zpravu (HTML formatovani)."""
+    """Posle textovou zpravu (HTML formatovani), bez nahledu odkazu
+    (predtim bylo "false" = nahled SE zobrazoval, presny opak zamyslu)."""
     return _post(token, "sendMessage", {
         "chat_id": chat_id,
         "text": text,
         "parse_mode": "HTML",
-        "disable_web_page_preview": "false",
+        "disable_web_page_preview": True,
     })
 
 

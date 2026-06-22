@@ -75,6 +75,12 @@ def kurz_pln_eur():
     return pln_czk / eur_czk
 
 
+def kurz_czk_eur():
+    """Vrati kolik EUR stoji 1 Kc (cross-rate pres PLN). Pouzitelne obema
+    smery: cena_eur = cena_czk * kurz_czk_eur(); cena_czk = cena_eur / kurz_czk_eur()."""
+    return kurz_pln_eur() / kurz_pln_czk()
+
+
 if __name__ == "__main__":
     print("1 PLN =", round(kurz_pln_czk(), 3), "CZK")
     print("1 PLN =", round(kurz_pln_eur(), 4), "EUR")
