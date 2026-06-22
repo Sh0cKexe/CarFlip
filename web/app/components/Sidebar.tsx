@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
 import { DISCORD_URL, DISCORD_HANDLE } from "@/lib/discord";
@@ -15,6 +15,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   const supabase = createClient();
   const t = T(trh);
   const [dnyDoVyprseni, setDnyDoVyprseni] = useState<number | null>(null);
+  const [otevreno, setOtevreno] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -24,6 +25,10 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
       setDnyDoVyprseni(Math.ceil(ms / (1000 * 60 * 60 * 24)));
     });
   }, [userId, supabase]);
+
+  useEffect(() => {
+    setOtevreno(false);
+  }, [pathname]);
 
   async function odhlasit() {
     await supabase.auth.signOut();
@@ -46,78 +51,110 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   ];
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-sidebar2 bg-sidebar text-zinc-200">
-      <Link href="/dashboard" className="flex items-center px-5 py-6 transition hover:opacity-90">
-        <Logo height={30} />
-      </Link>
-      <nav className="flex-1 space-y-1 px-3">
-        {polozky.map((p) => {
-          const aktivni = p.presne ? pathname === p.href : pathname.startsWith(p.href);
-          return (
-            <Link
-              key={p.href}
-              href={p.href}
-              className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                aktivni ? "font-medium text-white" : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
-              }`}
-            >
-              {aktivni && (
-                <motion.span
-                  layoutId="sidebar-active"
-                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
-                  className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent to-accent2 shadow-glow"
-                />
-              )}
-              <span className="relative z-10">{p.ikona}</span>
-              <span className="relative z-10">{p.text}</span>
-            </Link>
-          );
-        })}
-      </nav>
-      <div className="px-5 pb-3">
-        <a
-          href={DISCORD_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-2 text-xs text-zinc-400 transition hover:text-accent2"
-        >
-          💬 Diskord komunita
-        </a>
-        <p className="mt-0.5 text-[11px] text-zinc-600">Nejde link? Discord: {DISCORD_HANDLE}</p>
-      </div>
-      <div className="border-t border-sidebar2 px-5 py-4">
-        <div className="mb-3">
-          <div className="group relative mb-1 flex items-center gap-1.5">
-            <span className="text-xs text-zinc-400">{t.trh}</span>
-            <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-zinc-400 text-[10px] text-zinc-300">
-              i
-            </span>
-            <div className="invisible absolute bottom-full left-0 z-10 mb-2 w-56 rounded-lg bg-sidebar2 p-3 text-sm leading-relaxed text-zinc-100 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
-              {t.trhInfo}
-            </div>
-          </div>
-          <select
-            className="w-full rounded-lg border border-sidebar2 bg-sidebar2 px-2 py-1.5 text-sm text-white outline-none transition focus:border-accent2/60"
-            value={trh ?? "cz"}
-            onChange={(e) => zmenitTrh(e.target.value as Trh)}
-          >
-            <option value="cz">{t.trhKratceCz}</option>
-            <option value="sk">{t.trhKratceSk}</option>
-          </select>
-        </div>
-        <p className="mb-1 truncate text-xs text-zinc-400">{email}</p>
-        {dnyDoVyprseni !== null && (
-          <p className={`mb-2 text-xs ${dnyDoVyprseni <= 3 ? "text-red-400" : "text-zinc-500"}`}>
-            {dnyDoVyprseni <= 0 ? t.vyprsiDnes : `${dnyDoVyprseni} ${t.dniDoVyprseniPredlozka}`}
-          </p>
-        )}
+    <>
+      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-sidebar2 bg-sidebar px-4 md:hidden">
+        <Link href="/dashboard" className="flex items-center">
+          <Logo height={26} />
+        </Link>
         <button
-          onClick={odhlasit}
-          className="w-full rounded-lg border border-sidebar2 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-600 hover:bg-sidebar2 hover:text-white active:scale-[0.98]"
+          onClick={() => setOtevreno(!otevreno)}
+          aria-label="Menu"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-2xl text-zinc-200 transition hover:bg-sidebar2"
         >
-          {t.odhlasit}
+          {otevreno ? "✕" : "☰"}
         </button>
       </div>
-    </aside>
+
+      <AnimatePresence>
+        {otevreno && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setOtevreno(false)}
+            className="fixed inset-0 z-40 bg-black/60 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      <aside
+        className={`fixed top-0 z-50 flex h-screen w-64 shrink-0 flex-col border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-300 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
+          otevreno ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <Link href="/dashboard" className="hidden items-center px-5 py-6 transition hover:opacity-90 md:flex">
+          <Logo height={30} />
+        </Link>
+        <div className="h-14 md:hidden" />
+        <nav className="flex-1 space-y-1 px-3 pt-3">
+          {polozky.map((p) => {
+            const aktivni = p.presne ? pathname === p.href : pathname.startsWith(p.href);
+            return (
+              <Link
+                key={p.href}
+                href={p.href}
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  aktivni ? "font-medium text-white" : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
+                }`}
+              >
+                {aktivni && (
+                  <motion.span
+                    layoutId="sidebar-active"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                    className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent to-accent2 shadow-glow"
+                  />
+                )}
+                <span className="relative z-10">{p.ikona}</span>
+                <span className="relative z-10">{p.text}</span>
+              </Link>
+            );
+          })}
+        </nav>
+        <div className="px-5 pb-3">
+          <a
+            href={DISCORD_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 text-xs text-zinc-400 transition hover:text-accent2"
+          >
+            💬 Diskord komunita
+          </a>
+          <p className="mt-0.5 text-[11px] text-zinc-600">Nejde link? Discord: {DISCORD_HANDLE}</p>
+        </div>
+        <div className="border-t border-sidebar2 px-5 py-4">
+          <div className="mb-3">
+            <div className="group relative mb-1 flex items-center gap-1.5">
+              <span className="text-xs text-zinc-400">{t.trh}</span>
+              <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-zinc-400 text-[10px] text-zinc-300">
+                i
+              </span>
+              <div className="invisible absolute bottom-full left-0 z-10 mb-2 w-56 rounded-lg bg-sidebar2 p-3 text-sm leading-relaxed text-zinc-100 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+                {t.trhInfo}
+              </div>
+            </div>
+            <select
+              className="w-full rounded-lg border border-sidebar2 bg-sidebar2 px-2 py-1.5 text-sm text-white outline-none transition focus:border-accent2/60"
+              value={trh ?? "cz"}
+              onChange={(e) => zmenitTrh(e.target.value as Trh)}
+            >
+              <option value="cz">{t.trhKratceCz}</option>
+              <option value="sk">{t.trhKratceSk}</option>
+            </select>
+          </div>
+          <p className="mb-1 truncate text-xs text-zinc-400">{email}</p>
+          {dnyDoVyprseni !== null && (
+            <p className={`mb-2 text-xs ${dnyDoVyprseni <= 3 ? "text-red-400" : "text-zinc-500"}`}>
+              {dnyDoVyprseni <= 0 ? t.vyprsiDnes : `${dnyDoVyprseni} ${t.dniDoVyprseniPredlozka}`}
+            </p>
+          )}
+          <button
+            onClick={odhlasit}
+            className="w-full rounded-lg border border-sidebar2 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-600 hover:bg-sidebar2 hover:text-white active:scale-[0.98]"
+          >
+            {t.odhlasit}
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }

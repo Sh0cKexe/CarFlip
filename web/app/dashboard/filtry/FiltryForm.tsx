@@ -131,7 +131,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
   return (
     <div className="flex min-h-screen">
       <Sidebar email={email} trh={n.trh} userId={n.user_id} />
-      <main className="flex-1 px-8 py-8">
+      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
         <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
 
         <Sekce titulek={t.znacky}>
@@ -208,7 +208,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
           <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
           <div className="space-y-3">
             {n.filtry.oblasti.map((o, i) => (
-              <div key={i} className="grid grid-cols-[1fr_1fr_100px_auto] items-end gap-2 rounded-lg border border-border bg-panel2 p-3">
+              <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[1fr_1fr_100px_auto]">
                 <Pole label={t.nazev}>
                   <input className={input} value={o.nazev} onChange={(e) => upravitOblast(i, "nazev", e.target.value)} />
                 </Pole>

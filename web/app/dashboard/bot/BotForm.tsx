@@ -65,7 +65,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
   return (
     <div className="flex min-h-screen">
       <Sidebar email={email} trh={n.trh} userId={n.user_id} />
-      <main className="flex-1 px-8 py-8">
+      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
         <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>

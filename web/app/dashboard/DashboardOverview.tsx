@@ -23,7 +23,7 @@ export default function DashboardOverview({
   return (
     <div className="flex min-h-screen">
       <Sidebar email={email} trh={trh} userId={userId} />
-      <main className="flex-1 px-8 py-8">
+      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
         <motion.h1
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
