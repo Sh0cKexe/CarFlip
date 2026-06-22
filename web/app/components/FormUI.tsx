@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 
 export function Sekce({
@@ -91,7 +91,14 @@ export function LockInput({
 /** Cenove pole, ktere se ZADAVA v domovske mene uzivatele (trh), i kdyz
  * ulozena hodnota je v jine (nativni) mene daneho trhu (PL=PLN, CZ=CZK,
  * SK=EUR) - prevod resi volajici (lib/kurz.ts), tahle komponenta jen
- * zobrazi uz prevedenou hodnotu + hint s puvodni nativni castkou. */
+ * zobrazi uz prevedenou hodnotu + hint s puvodni nativni castkou.
+ *
+ * `hodnotaDomovska` prichazi z parenta prepocitana ZPATKY z ulozene
+ * nativni hodnoty (zaokrouhlena) - kdyz by ji input zobrazoval primo,
+ * po kazdem keystroku by se prepocet/zaokrouhleni pres PLN/EUR kurz
+ * prepsal pod rukama (napr. napis "5" -> prevod -> zaokrouhli -> "6")
+ * a psani by nefungovalo. Proto se behem editace (focus) drzi vlastni
+ * lokalni text a synchronizace s prop hodnotou se deje jen mimo focus. */
 export function CenovePole({
   label, jednotkaDomovska, hodnotaDomovska, jednotkaNativni, hodnotaNativniHint, onChange,
 }: {
@@ -102,13 +109,30 @@ export function CenovePole({
   hodnotaNativniHint: number | null;
   onChange: (v: number | null) => void;
 }) {
+  const [lokalni, setLokalni] = useState(hodnotaDomovska == null ? "" : String(hodnotaDomovska));
+  const editujeRef = useRef(false);
+
+  useEffect(() => {
+    if (!editujeRef.current) {
+      setLokalni(hodnotaDomovska == null ? "" : String(hodnotaDomovska));
+    }
+  }, [hodnotaDomovska]);
+
   return (
     <Pole label={`${label} (${jednotkaDomovska})`}>
       <input
         type="number"
         className={input}
-        value={hodnotaDomovska ?? ""}
-        onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+        value={lokalni}
+        onFocus={() => { editujeRef.current = true; }}
+        onBlur={() => {
+          editujeRef.current = false;
+          setLokalni(hodnotaDomovska == null ? "" : String(hodnotaDomovska));
+        }}
+        onChange={(e) => {
+          setLokalni(e.target.value);
+          onChange(e.target.value ? Number(e.target.value) : null);
+        }}
       />
       {hodnotaNativniHint != null && jednotkaDomovska !== jednotkaNativni && (
         <p className="mt-1 text-xs text-zinc-500">
