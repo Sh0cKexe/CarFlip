@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, Toggle, LockInput, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
@@ -26,6 +27,7 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [testuje, setTestuje] = useState(false);
+  const [navodOtevreno, setNavodOtevreno] = useState(false);
 
   async function ulozit() {
     setUklada(true);
@@ -65,19 +67,6 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
     <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
       <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
-        <Sekce titulek={t.navodBota}>
-          <div className="overflow-hidden rounded-lg" style={{ aspectRatio: "16 / 9" }}>
-            <iframe
-              src="https://www.youtube.com/embed/t5JoCTcf8bI"
-              title={t.navodBota}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="h-full w-full"
-            />
-          </div>
-          <p className="mt-3 text-sm text-zinc-400">{t.navodVideoPopisek}</p>
-        </Sekce>
-
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Pole label={t.tokenBota}>
@@ -99,6 +88,46 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
             <Toggle checked={n.aktivni} onChange={(v) => setN({ ...n, aktivni: v })} label={t.botAktivni} />
           </div>
         </Sekce>
+
+        <motion.section
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="glass mb-6 overflow-hidden rounded-2xl border border-border shadow-glow"
+        >
+          <button
+            type="button"
+            onClick={() => setNavodOtevreno(!navodOtevreno)}
+            className="flex w-full items-center justify-between px-6 py-4 text-left"
+          >
+            <h2 className="text-base font-semibold text-zinc-100">{t.navodBota}</h2>
+            <span className={`text-zinc-400 transition-transform ${navodOtevreno ? "rotate-180" : ""}`}>▾</span>
+          </button>
+          <AnimatePresence initial={false}>
+            {navodOtevreno && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="overflow-hidden"
+              >
+                <div className="px-6 pb-6">
+                  <div className="overflow-hidden rounded-lg" style={{ aspectRatio: "16 / 9", maxWidth: 320 }}>
+                    <iframe
+                      src="https://www.youtube.com/embed/t5JoCTcf8bI"
+                      title={t.navodBota}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-full w-full"
+                    />
+                  </div>
+                  <p className="mt-3 text-sm text-zinc-400">{t.navodVideoPopisek}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.section>
 
         <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
           {uklada ? t.ukladam : t.ulozitNastaveni}
