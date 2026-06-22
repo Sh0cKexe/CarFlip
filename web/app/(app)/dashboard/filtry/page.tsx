@@ -13,5 +13,5 @@ export default async function FiltryPage() {
     .eq("user_id", user.id)
     .single();
 
-  return <FiltryForm email={user.email ?? ""} nastaveni={nastaveni} />;
+  return <FiltryForm nastaveni={nastaveni} />;
 }

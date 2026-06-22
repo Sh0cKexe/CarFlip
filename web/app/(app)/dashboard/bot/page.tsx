@@ -13,5 +13,5 @@ export default async function BotPage() {
     .eq("user_id", user.id)
     .single();
 
-  return <BotForm email={user.email ?? ""} nastaveni={nastaveni} />;
+  return <BotForm nastaveni={nastaveni} />;
 }

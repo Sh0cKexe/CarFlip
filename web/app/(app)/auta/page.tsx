@@ -31,7 +31,6 @@ export default async function AutaPage() {
 
   return (
     <AutaList
-      email={user.email ?? ""}
       userId={user.id}
       auta={(auta ?? []) as Auto[]}
       nakladySuma={nakladySuma}

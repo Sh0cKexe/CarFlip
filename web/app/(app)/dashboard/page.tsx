@@ -45,8 +45,6 @@ export default async function DashboardPage() {
 
   return (
     <DashboardOverview
-      email={user.email ?? ""}
-      userId={user.id}
       trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
       pocetAutCelkem={(auta ?? []).length}
       pocetKoupeno={pocetKoupeno}

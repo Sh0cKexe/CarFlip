@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
-import Sidebar from "@/app/components/Sidebar";
 import { Sekce, Pole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
@@ -49,7 +48,7 @@ const ZNAME_ZNACKY = [
   "toyota", "uaz", "volkswagen", "volvo", "zastava",
 ].sort();
 
-export default function FiltryForm({ email, nastaveni }: { email: string; nastaveni: Nastaveni | null }) {
+export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
     nastaveni ?? {
@@ -129,10 +128,8 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar email={email} trh={n.trh} userId={n.user_id} />
-      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
-        <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
+    <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
+      <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
 
         <Sekce titulek={t.znacky}>
           <div className="mb-2 flex items-center justify-between">
@@ -248,8 +245,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
         </button>
         {zprava && (
           <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") || zprava.startsWith("Geo") ? "text-red-400" : "text-accent"}`}>{zprava}</p>
-        )}
-      </main>
-    </div>
+      )}
+    </main>
   );
 }

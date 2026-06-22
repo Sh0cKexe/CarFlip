@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
-import Sidebar from "@/app/components/Sidebar";
 import { Sekce, Pole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
@@ -23,8 +22,8 @@ type Auto = {
 type Naklad = { id: string; auto_id: string; popis: string; castka_kc: number; datum: string };
 
 export default function AutoDetail({
-  email, userId, auto: autoVychozi, naklady: nakladyVychozi, trh,
-}: { email: string; userId: string; auto: Auto; naklady: Naklad[]; trh: Trh }) {
+  userId, auto: autoVychozi, naklady: nakladyVychozi, trh,
+}: { userId: string; auto: Auto; naklady: Naklad[]; trh: Trh }) {
   const router = useRouter();
   const supabase = createClient();
   const fileInput = useRef<HTMLInputElement>(null);
@@ -128,9 +127,7 @@ export default function AutoDetail({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar email={email} trh={trh} userId={userId} />
-      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
+    <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -263,7 +260,6 @@ export default function AutoDetail({
         <input ref={fileInput} type="file" accept="image/*" multiple onChange={(e) => nahratFotky(e.target.files)} disabled={nahravam} className="text-sm text-zinc-500" />
         {nahravam && <p className="mt-2 text-sm text-zinc-500">{t.nahravam}</p>}
       </Sekce>
-      </main>
-    </div>
+    </main>
   );
 }

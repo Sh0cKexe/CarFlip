@@ -22,7 +22,6 @@ export default async function AiPage() {
 
   return (
     <AiRozborForm
-      email={user.email ?? ""}
       userId={user.id}
       trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
       historie={(historie ?? []) as Rozbor[]}

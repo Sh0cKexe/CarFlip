@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
-import Sidebar from "@/app/components/Sidebar";
 import { btnPrimary } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
@@ -37,8 +36,8 @@ const PRUH_BARVA: Record<string, string> = {
 };
 
 export default function AutaList({
-  email, userId, auta, nakladySuma, trh,
-}: { email: string; userId: string; auta: Auto[]; nakladySuma: Record<string, number>; trh: Trh }) {
+  userId, auta, nakladySuma, trh,
+}: { userId: string; auta: Auto[]; nakladySuma: Record<string, number>; trh: Trh }) {
   const router = useRouter();
   const supabase = createClient();
   const [vytvarim, setVytvarim] = useState(false);
@@ -66,62 +65,59 @@ export default function AutaList({
   }, 0);
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar email={email} trh={trh} userId={userId} />
-      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-zinc-100">{t.mojeAuta}</h1>
-          <button onClick={pridatAuto} disabled={vytvarim} className={btnPrimary}>
-            {vytvarim ? t.vytvarim : t.pridatAuto}
-          </button>
-        </div>
+    <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-zinc-100">{t.mojeAuta}</h1>
+        <button onClick={pridatAuto} disabled={vytvarim} className={btnPrimary}>
+          {vytvarim ? t.vytvarim : t.pridatAuto}
+        </button>
+      </div>
 
-        {auta.length === 0 && (
-          <p className="glass rounded-2xl border border-border p-8 text-center text-sm text-zinc-500">
-            {t.zadneAuto}
-          </p>
+      {auta.length === 0 && (
+        <p className="glass rounded-2xl border border-border p-8 text-center text-sm text-zinc-500">
+          {t.zadneAuto}
+        </p>
+      )}
+
+      <div className="space-y-6">
+        {koupena.length > 0 && (
+          <SekceAut
+            ikona="🛒"
+            nazev={t.koupeno}
+            auta={koupena}
+            nakladySuma={nakladySuma}
+            t={t}
+            barva="koupeno"
+            subtotal={{ label: t.vazanyKapital, hodnota: kc(vazanyKapital, t.mena), tone: "blue" }}
+          />
         )}
-
-        <div className="space-y-6">
-          {koupena.length > 0 && (
-            <SekceAut
-              ikona="🛒"
-              nazev={t.koupeno}
-              auta={koupena}
-              nakladySuma={nakladySuma}
-              t={t}
-              barva="koupeno"
-              subtotal={{ label: t.vazanyKapital, hodnota: kc(vazanyKapital, t.mena), tone: "blue" }}
-            />
-          )}
-          {vInzerci.length > 0 && (
-            <SekceAut
-              ikona="📢"
-              nazev={t.vInzerci}
-              auta={vInzerci}
-              nakladySuma={nakladySuma}
-              t={t}
-              barva="inzerce"
-            />
-          )}
-          {prodana.length > 0 && (
-            <SekceAut
-              ikona="✅"
-              nazev={t.prodano}
-              auta={prodana}
-              nakladySuma={nakladySuma}
-              t={t}
-              barva="prodano"
-              subtotal={{
-                label: t.zisk,
-                hodnota: kc(celkovyZisk, t.mena),
-                tone: celkovyZisk >= 0 ? "green" : "red",
-              }}
-            />
-          )}
-        </div>
-      </main>
-    </div>
+        {vInzerci.length > 0 && (
+          <SekceAut
+            ikona="📢"
+            nazev={t.vInzerci}
+            auta={vInzerci}
+            nakladySuma={nakladySuma}
+            t={t}
+            barva="inzerce"
+          />
+        )}
+        {prodana.length > 0 && (
+          <SekceAut
+            ikona="✅"
+            nazev={t.prodano}
+            auta={prodana}
+            nakladySuma={nakladySuma}
+            t={t}
+            barva="prodano"
+            subtotal={{
+              label: t.zisk,
+              hodnota: kc(celkovyZisk, t.mena),
+              tone: celkovyZisk >= 0 ? "green" : "red",
+            }}
+          />
+        )}
+      </div>
+    </main>
   );
 }
 

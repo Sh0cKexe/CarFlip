@@ -1,16 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Sidebar from "@/app/components/Sidebar";
 import { Sekce } from "@/app/components/FormUI";
 import CountUp from "@/app/components/CountUp";
 import { T, type Trh } from "@/lib/i18n";
 
 export default function DashboardOverview({
-  email, userId, trh, pocetAutCelkem, pocetKoupeno, pocetInzerce, pocetProdano, celkovyZisk,
+  trh, pocetAutCelkem, pocetKoupeno, pocetInzerce, pocetProdano, celkovyZisk,
 }: {
-  email: string;
-  userId: string;
   trh: Trh;
   pocetAutCelkem: number;
   pocetKoupeno: number;
@@ -21,9 +18,7 @@ export default function DashboardOverview({
   const t = T(trh);
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar email={email} trh={trh} userId={userId} />
-      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
+    <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
         <motion.h1
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -50,7 +45,6 @@ export default function DashboardOverview({
             </div>
           </Sekce>
         </div>
-      </main>
-    </div>
+    </main>
   );
 }

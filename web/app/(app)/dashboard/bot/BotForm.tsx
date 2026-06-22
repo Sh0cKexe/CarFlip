@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
-import Sidebar from "@/app/components/Sidebar";
 import { Sekce, Pole, Toggle, LockInput, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
@@ -15,7 +14,7 @@ type Nastaveni = {
   trh: Trh;
 };
 
-export default function BotForm({ email, nastaveni }: { email: string; nastaveni: Nastaveni | null }) {
+export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
     nastaveni ?? {
@@ -63,10 +62,8 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar email={email} trh={n.trh} userId={n.user_id} />
-      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
-        <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
+    <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
+      <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -95,8 +92,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
         </button>
         {zprava && (
           <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>
-        )}
-      </main>
-    </div>
+      )}
+    </main>
   );
 }

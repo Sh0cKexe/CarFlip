@@ -3,15 +3,14 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
-import Sidebar from "@/app/components/Sidebar";
 import { Sekce, Pole, input, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 export type Rozbor = { id: string; url: string; vysledek: string; vytvoreno: string };
 
 export default function AiRozborForm({
-  email, userId, trh, historie: historieVychozi,
-}: { email: string; userId: string; trh: Trh; historie: Rozbor[] }) {
+  userId, trh, historie: historieVychozi,
+}: { userId: string; trh: Trh; historie: Rozbor[] }) {
   const supabase = createClient();
   const t = T(trh);
   const [url, setUrl] = useState("");
@@ -48,10 +47,8 @@ export default function AiRozborForm({
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar email={email} trh={trh} userId={userId} />
-      <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
-        <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.aiRozborNadpis}</h1>
+    <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
+      <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.aiRozborNadpis}</h1>
 
         <Sekce titulek={t.aiRozborNadpis}>
           <Pole label={t.vlozLink}>
@@ -82,8 +79,7 @@ export default function AiRozborForm({
               </motion.div>
             ))}
           </div>
-        </Sekce>
-      </main>
-    </div>
+      </Sekce>
+    </main>
   );
 }

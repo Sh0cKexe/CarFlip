@@ -30,7 +30,6 @@ export default async function AutoDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <AutoDetail
-      email={user.email ?? ""}
       userId={user.id}
       auto={auto}
       naklady={naklady ?? []}
