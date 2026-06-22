@@ -16,6 +16,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   const t = T(trh);
   const [dnyDoVyprseni, setDnyDoVyprseni] = useState<number | null>(null);
   const [otevreno, setOtevreno] = useState(false);
+  const [infoOtevreno, setInfoOtevreno] = useState(false);
 
   useEffect(() => {
     if (!userId) return;
@@ -119,16 +120,24 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
           >
             💬 Discord komunita
           </a>
-          <p className="mt-1 text-sm font-medium text-accent2/80">Nejde link? Discord: {DISCORD_HANDLE}</p>
+          <p className="mt-1 text-sm font-medium text-zinc-300">Nejde link? Discord: {DISCORD_HANDLE}</p>
         </div>
         <div className="shrink-0 border-t border-sidebar2 bg-sidebar2/40 px-5 py-4">
           <div className="mb-3">
             <div className="group relative mb-1 flex items-center gap-1.5">
               <span className="text-xs text-zinc-300">{t.trh}</span>
-              <span className="flex h-4 w-4 cursor-help items-center justify-center rounded-full border border-zinc-400 text-[10px] text-zinc-300">
+              <button
+                type="button"
+                onClick={() => setInfoOtevreno(!infoOtevreno)}
+                className="flex h-4 w-4 items-center justify-center rounded-full border border-zinc-400 text-[10px] text-zinc-300"
+              >
                 i
-              </span>
-              <div className="invisible absolute bottom-full left-0 z-10 mb-2 w-56 rounded-lg bg-sidebar2 p-3 text-sm leading-relaxed text-zinc-100 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+              </button>
+              <div
+                className={`absolute bottom-full left-0 z-10 mb-2 w-56 rounded-lg bg-sidebar2 p-3 text-sm leading-relaxed text-zinc-100 shadow-lg transition ${
+                  infoOtevreno ? "visible opacity-100" : "invisible opacity-0 group-hover:visible group-hover:opacity-100"
+                }`}
+              >
                 {t.trhInfo}
               </div>
             </div>
