@@ -174,23 +174,33 @@ def naformatuj_zpravu_domaci(nalez, zdroj_trh, domovsky_trh):
         "{} {}: {:,} {}".format(vlajka_domov, t_domov["odhad_prodej"], nalez["median_trh"], mena_domov).replace(",", " "),
         "📦 {}: {:,} {}".format(t_domov["naklady_dovoz"], int(round(nalez["naklady"])), mena_domov).replace(",", " "),
         "",
-        "📅 {} | {}".format(nalez.get("rok") or "?", najezd),
-        "",
-        "🔗 <a href=\"{}\">{}</a>".format(nalez["url"], t_domov["otevrit_inzerat"]),
+        "📅 {} | {} | {}".format(
+            nalez.get("rok") or "?", najezd, nalez.get("palivo") or nalez.get("prevodovka") or "?"
+        ).replace(",", " "),
     ]
+    if nalez.get("vykon_kw"):
+        radky.append("🔧 {} kW".format(nalez["vykon_kw"]))
+    if nalez.get("lokalita"):
+        radky.append("📍 {}".format(nalez["lokalita"]))
+    radky.append("")
+    radky.append("🔗 <a href=\"{}\">{} (Bazoš.{})</a>".format(
+        nalez["url"], t_domov["otevrit_inzerat"], zdroj_trh))
     return "\n".join(radky)
 
 
-def naformatuj_detail_domaci(nalez, domovsky_trh):
-    """Druha zprava pro domaci nalez: puvodni popis z inzeratu (cesky/
-    slovensky text se NEPREKLADA, na rozdil od PL) + srovnatelne inzeraty
+def naformatuj_detail_domaci(nalez, zdroj_trh, domovsky_trh):
+    """Druha zprava pro domaci nalez: cely popis z inzeratu (PRELOZENY,
+    kdyz zdroj a domov mluvi jinou rec - cz<->sk) + srovnatelne inzeraty
     na domovskem trhu (stejny ucel jako naformatuj_detail u PL importu)."""
     t = TEXTY.get(domovsky_trh, TEXTY["cz"])
     mena = t["mena"]
     radky = []
     if nalez.get("popis"):
+        jazyk = {"cz": "cs", "sk": "sk"}
+        popis = preklad.prelozit(nalez["popis"], source=jazyk.get(zdroj_trh, "cs"),
+                                  target=jazyk.get(domovsky_trh, "cs"))
         radky.append("📝 <b>Popis z inzerátu:</b>")
-        radky.append(nalez["popis"][:1500])
+        radky.append(popis[:3000])
         radky.append("")
     if nalez.get("ukazky"):
         radky.append("🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], nalez["pocet_srovnani"]))
@@ -349,7 +359,7 @@ def zpracuj_auto_domaci(nalez, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
     token = cfg["telegram"]["token"]
     prijemci = _prijemci(cfg)
     popisek = naformatuj_zpravu_domaci(nalez, zdroj_trh, domovsky_trh)
-    detail = naformatuj_detail_domaci(nalez, domovsky_trh)
+    detail = naformatuj_detail_domaci(nalez, zdroj_trh, domovsky_trh)
     for cid in prijemci:
         if nalez.get("foto"):
             tg.posli_foto(token, cid, nalez["foto"], popisek)

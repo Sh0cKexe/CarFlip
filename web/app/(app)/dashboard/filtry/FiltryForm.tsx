@@ -3,8 +3,9 @@
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
-import { Sekce, Pole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
+import { Sekce, Pole, CenovePole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
+import { useKurz, prevod, type Mena } from "@/lib/kurz";
 
 const MapaOkruhy = dynamic(() => import("@/app/components/MapaOkruhy"), { ssr: false });
 
@@ -74,6 +75,10 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
     }
   );
   const t = T(n.trh);
+  const kurz = useKurz();
+  const domovskaMena: Mena = n.trh === "sk" ? "EUR" : "CZK";
+  const domovskaJednotka = domovskaMena === "EUR" ? "€" : "Kč";
+  const bezJednotky = (label: string) => label.replace(/\s*\([^)]*\)\s*$/, "");
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
@@ -275,46 +280,52 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
 
           {zdroje.includes("pl") && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Pole label={t.cenaPlOd}>
-                <input type="number" className={input} value={n.filtry.min_cena_pln} onChange={(e) => setFiltr("min_cena_pln", Number(e.target.value))} />
-              </Pole>
-              <Pole label={t.cenaPlDo}>
-                <input type="number" className={input} value={n.filtry.max_cena_pln} onChange={(e) => setFiltr("max_cena_pln", Number(e.target.value))} />
-              </Pole>
+              <CenovePole
+                label={bezJednotky(t.cenaPlOd)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={Math.round(prevod(n.filtry.min_cena_pln, "PLN", domovskaMena, kurz))}
+                jednotkaNativni="PLN" hodnotaNativniHint={n.filtry.min_cena_pln}
+                onChange={(v) => setFiltr("min_cena_pln", Math.round(prevod(v ?? 0, domovskaMena, "PLN", kurz)))}
+              />
+              <CenovePole
+                label={bezJednotky(t.cenaPlDo)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={Math.round(prevod(n.filtry.max_cena_pln, "PLN", domovskaMena, kurz))}
+                jednotkaNativni="PLN" hodnotaNativniHint={n.filtry.max_cena_pln}
+                onChange={(v) => setFiltr("max_cena_pln", Math.round(prevod(v ?? 0, domovskaMena, "PLN", kurz)))}
+              />
             </div>
           )}
 
           {zdroje.includes("cz") && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Pole label={t.cenaCzOd}>
-                <input
-                  type="number" className={input} value={n.filtry.cena_cz?.min ?? 0}
-                  onChange={(e) => setFiltr("cena_cz", { ...n.filtry.cena_cz, min: Number(e.target.value) })}
-                />
-              </Pole>
-              <Pole label={t.cenaCzDo}>
-                <input
-                  type="number" className={input} value={n.filtry.cena_cz?.max ?? ""}
-                  onChange={(e) => setFiltr("cena_cz", { ...n.filtry.cena_cz, max: e.target.value ? Number(e.target.value) : null })}
-                />
-              </Pole>
+              <CenovePole
+                label={bezJednotky(t.cenaCzOd)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={Math.round(prevod(n.filtry.cena_cz?.min ?? 0, "CZK", domovskaMena, kurz))}
+                jednotkaNativni="Kč" hodnotaNativniHint={n.filtry.cena_cz?.min ?? 0}
+                onChange={(v) => setFiltr("cena_cz", { ...n.filtry.cena_cz, min: Math.round(prevod(v ?? 0, domovskaMena, "CZK", kurz)) })}
+              />
+              <CenovePole
+                label={bezJednotky(t.cenaCzDo)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={n.filtry.cena_cz?.max == null ? null : Math.round(prevod(n.filtry.cena_cz.max, "CZK", domovskaMena, kurz))}
+                jednotkaNativni="Kč" hodnotaNativniHint={n.filtry.cena_cz?.max ?? null}
+                onChange={(v) => setFiltr("cena_cz", { ...n.filtry.cena_cz, max: v == null ? null : Math.round(prevod(v, domovskaMena, "CZK", kurz)) })}
+              />
             </div>
           )}
 
           {zdroje.includes("sk") && (
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <Pole label={t.cenaSkOd}>
-                <input
-                  type="number" className={input} value={n.filtry.cena_sk?.min ?? 0}
-                  onChange={(e) => setFiltr("cena_sk", { ...n.filtry.cena_sk, min: Number(e.target.value) })}
-                />
-              </Pole>
-              <Pole label={t.cenaSkDo}>
-                <input
-                  type="number" className={input} value={n.filtry.cena_sk?.max ?? ""}
-                  onChange={(e) => setFiltr("cena_sk", { ...n.filtry.cena_sk, max: e.target.value ? Number(e.target.value) : null })}
-                />
-              </Pole>
+              <CenovePole
+                label={bezJednotky(t.cenaSkOd)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={Math.round(prevod(n.filtry.cena_sk?.min ?? 0, "EUR", domovskaMena, kurz))}
+                jednotkaNativni="€" hodnotaNativniHint={n.filtry.cena_sk?.min ?? 0}
+                onChange={(v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, min: Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)) })}
+              />
+              <CenovePole
+                label={bezJednotky(t.cenaSkDo)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={n.filtry.cena_sk?.max == null ? null : Math.round(prevod(n.filtry.cena_sk.max, "EUR", domovskaMena, kurz))}
+                jednotkaNativni="€" hodnotaNativniHint={n.filtry.cena_sk?.max ?? null}
+                onChange={(v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, max: v == null ? null : Math.round(prevod(v, domovskaMena, "EUR", kurz)) })}
+              />
             </div>
           )}
         </Sekce>

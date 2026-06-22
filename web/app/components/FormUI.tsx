@@ -88,6 +88,37 @@ export function LockInput({
   );
 }
 
+/** Cenove pole, ktere se ZADAVA v domovske mene uzivatele (trh), i kdyz
+ * ulozena hodnota je v jine (nativni) mene daneho trhu (PL=PLN, CZ=CZK,
+ * SK=EUR) - prevod resi volajici (lib/kurz.ts), tahle komponenta jen
+ * zobrazi uz prevedenou hodnotu + hint s puvodni nativni castkou. */
+export function CenovePole({
+  label, jednotkaDomovska, hodnotaDomovska, jednotkaNativni, hodnotaNativniHint, onChange,
+}: {
+  label: string;
+  jednotkaDomovska: string;
+  hodnotaDomovska: number | null;
+  jednotkaNativni: string;
+  hodnotaNativniHint: number | null;
+  onChange: (v: number | null) => void;
+}) {
+  return (
+    <Pole label={`${label} (${jednotkaDomovska})`}>
+      <input
+        type="number"
+        className={input}
+        value={hodnotaDomovska ?? ""}
+        onChange={(e) => onChange(e.target.value ? Number(e.target.value) : null)}
+      />
+      {hodnotaNativniHint != null && jednotkaDomovska !== jednotkaNativni && (
+        <p className="mt-1 text-xs text-zinc-500">
+          ≈ {Math.round(hodnotaNativniHint).toLocaleString("cs-CZ")} {jednotkaNativni}
+        </p>
+      )}
+    </Pole>
+  );
+}
+
 export const input =
   "w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-accent2/60 focus:ring-2 focus:ring-accent2";
 

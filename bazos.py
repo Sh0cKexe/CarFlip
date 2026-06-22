@@ -420,6 +420,94 @@ def _model_anchor(titulek, znacka):
     return tokeny[0] if tokeny else ""
 
 
+# Bezna hlavicka popisu na Bazosi: "Label: hodnota" radky pred volnym textem.
+_RADEK_LABEL = re.compile(r"^([^:]{2,25}):\s*(.+)$")
+
+
+def nacti_detail(url):
+    """Stahne detail stranku inzeratu a vytahne presnejsi udaje, ktere
+    listing-snippet nema: CELY popis (needorezany), lokalitu (mesto) a -
+    pokud je prodejce vyplnil - strukturovany vykon/prevodovku z bloku
+    'div.popisdetail' (Rok vyroby/Stav tachometru/Palivo/Vykon/Prevodovka/...
+    jeden radek na kazde pole, pred volnym textem popisu).
+
+    Vykon a prevodovka jsou na Bazosi NEPOVINNA pole pri vkladani inzeratu -
+    casto chybi (zive overeno: vyplnuje je mensina inzerentu). Kdyz chybi
+    strukturovane, zkusi se fallback regex primo na volny text popisu."""
+    vysledek = {"popis": "", "lokalita": None, "rok": None, "najezd": None,
+                "palivo": None, "vykon_kw": None, "prevodovka": None}
+    _pockej_na_radu()
+    try:
+        r = requests.get(url, headers=HEADERS, timeout=20)
+    except Exception as e:
+        print("  [bazos] chyba detailu:", e)
+        return vysledek
+    if r.status_code != 200:
+        return vysledek
+    r.encoding = r.apparent_encoding
+    soup = BeautifulSoup(r.text, "lxml")
+
+    blok = soup.select_one("div.popisdetail")
+    if blok:
+        for br in blok.find_all("br"):
+            br.replace_with("\n")
+        radky = [l.strip() for l in blok.get_text().split("\n")]
+        i = 0
+        while i < len(radky) and _RADEK_LABEL.match(radky[i]):
+            label, hodnota = _RADEK_LABEL.match(radky[i]).groups()
+            klic = _bez_diakritiky(label)
+            hodnota = hodnota.strip()
+            if "rok vyroby" in klic:
+                m = re.search(r"(19[9]\d|20[0-2]\d)", hodnota)
+                if m:
+                    vysledek["rok"] = int(m.group(1))
+            elif "tachomet" in klic:
+                cislo = re.sub(r"[^\d]", "", hodnota)
+                if cislo:
+                    vysledek["najezd"] = int(cislo)
+            elif klic == "palivo":
+                vysledek["palivo"] = hodnota
+            elif klic == "vykon":
+                m = re.search(r"(\d{2,4})\s*kw", hodnota.lower())
+                if m:
+                    vysledek["vykon_kw"] = int(m.group(1))
+            elif "prevodovka" in klic:
+                vysledek["prevodovka"] = hodnota
+            i += 1
+        while i < len(radky) and not radky[i]:
+            i += 1
+        vysledek["popis"] = "\n".join(radky[i:]).strip()
+
+    # Fallback: kdyz vykon/prevodovka nebyly vyplnene jako strukturovane
+    # pole, zkusime je uhodnout z volneho textu popisu (stejny princip
+    # jako _palivo_z_textu/_objem_z_textu).
+    text_pro_fallback = vysledek["popis"].lower()
+    if vysledek["vykon_kw"] is None:
+        m = re.search(r"\b(\d{2,3})\s*kw\b", text_pro_fallback)
+        if m and 30 <= int(m.group(1)) <= 500:
+            vysledek["vykon_kw"] = int(m.group(1))
+        else:
+            m = re.search(r"\b(\d{2,3})\s*(?:km|k\.?s\.?|hp)\b", text_pro_fallback)
+            if m and 30 <= int(m.group(1)) <= 700:
+                vysledek["vykon_kw"] = int(round(int(m.group(1)) * 0.7355))
+    if not vysledek["prevodovka"]:
+        bez = _bez_diakritiky(text_pro_fallback)
+        if "dsg" in bez or "tiptronic" in bez or "automat" in bez:
+            vysledek["prevodovka"] = "automat"
+        elif "manual" in bez or "manuál" in text_pro_fallback:
+            vysledek["prevodovka"] = "manuál"
+
+    a_mapa = soup.find("a", href=re.compile(r"maps"))
+    if a_mapa:
+        # Hned za PSC-linkem (na maps.google) nasleduje druhy <a> s
+        # nazvem mesta (link na vypis inzeratu v tom miste) - to chceme
+        # zobrazit, ne ciste PSC.
+        a_mesto = a_mapa.find_next_sibling("a")
+        vysledek["lokalita"] = (a_mesto or a_mapa).get_text(strip=True)
+
+    return vysledek
+
+
 def _prevod(castka, z_trhu, do_trhu):
     """Prevede castku z meny zdrojoveho trhu do meny ciloveho trhu
     (jen cz<->sk se resi, jine kombinace projdou beze zmeny)."""
@@ -485,10 +573,20 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
         if zisk < min_zisk:
             continue
 
+        # Detail jen pro kandidaty co projdou ziskovym filtrem (stejny
+        # vzorec jako otomoto.nacti_detail u PL) - cely popis, lokalita,
+        # vykon/prevodovka (kdyz je prodejce vyplnil nebo se uhodnou z textu).
+        detail = nacti_detail(x["url"])
+
         vysledky.append(dict(
             x, cena_domovska=cena_domovska, median_trh=odhad["median"],
             zisk=zisk, pocet_srovnani=odhad["pocet"], naklady=naklady,
             ukazky=odhad["ukazky"],
+            rok=detail["rok"] or x.get("rok"),
+            najezd=detail["najezd"] or x.get("najezd"),
+            popis=detail["popis"] or x.get("popis"),
+            lokalita=detail["lokalita"], palivo=detail["palivo"],
+            vykon_kw=detail["vykon_kw"], prevodovka=detail["prevodovka"],
         ))
 
     vysledky.sort(key=lambda x: -x["zisk"])
