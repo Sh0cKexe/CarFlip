@@ -154,7 +154,7 @@ def naformatuj_zpravu_domaci(nalez, trh="cz"):
         "🔎 <b>{}</b>".format(nalez["titulek"]),
         "💰 <b>Zisk: {:,} {}</b>".format(nalez["zisk"], mena).replace(",", " "),
         "",
-        "Cena: {:,} {} (medián trhu: {:,} {}, {} srovnatelných)".format(
+        "Cena: {:,} {} (medián trhu: {:,} {} · {} srovnatelných)".format(
             nalez["cena"], mena, nalez["median_trh"], mena, nalez["pocet_srovnani"]
         ).replace(",", " "),
         "📅 {} | {}".format(nalez.get("rok") or "?", najezd),

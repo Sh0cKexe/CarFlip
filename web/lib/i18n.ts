@@ -44,6 +44,12 @@ const CS = {
   celkovyZisk: "Celkový zisk z prodaných aut",
   pocetAutCelkem: "Aut celkem",
 
+  najdiTed: "Najít teď",
+  najdiTedSpoustim: "Spouštím...",
+  najdiTedSpusteno: "Hledám podle filtrů, výsledek přijde na Telegram za chvíli.",
+  najdiTedCooldown: "Zkus to znovu za",
+  najdiTedMinut: "min",
+
   zdrojoveTrhy: "Zdrojové trhy",
   zdrojoveTrhyInfo: "Odkud se mají stahovat inzeráty k posouzení. Polsko = dovoz (porovnání s domovským trhem). Česko/Slovensko = hledání podhodnocených aut přímo v dané zemi (porovnání s ostatními inzeráty na stejném trhu).",
   zdrojPolsko: "🇵🇱 Polsko (import z Otomoto)",
@@ -201,6 +207,12 @@ const SK: typeof CS = {
   prehled: "Prehľad",
   celkovyZisk: "Celkový zisk z predaných áut",
   pocetAutCelkem: "Áut celkom",
+
+  najdiTed: "Nájsť teraz",
+  najdiTedSpoustim: "Spúšťam...",
+  najdiTedSpusteno: "Hľadám podľa filtrov, výsledok prijde na Telegram za chvíľu.",
+  najdiTedCooldown: "Skús to znova za",
+  najdiTedMinut: "min",
 
   zdrojoveTrhy: "Zdrojové trhy",
   zdrojoveTrhyInfo: "Odkiaľ sa majú stahovať inzeráty na posúdenie. Poľsko = import (porovnanie s domovským trhom). Česko/Slovensko = hľadanie podhodnotených áut priamo v danej krajine (porovnanie s ostatnými inzerátmi na rovnakom trhu).",

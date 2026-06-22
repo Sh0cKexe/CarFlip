@@ -37,6 +37,7 @@ type Nastaveni = {
   min_zisk_kc: number;
   naklady_dovoz_kc: number;
   min_srovnani: number;
+  posledni_najdi_ted?: string | null;
 };
 
 const ZNAME_ZNACKY = [
@@ -78,6 +79,38 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   const [hledatZnacku, setHledatZnacku] = useState("");
   const zdroje = n.filtry.zdroje ?? ["pl"];
   const [novaOblastZeme, setNovaOblastZeme] = useState<Zeme>("pl");
+  const [posledniNajdiTed, setPosledniNajdiTed] = useState<string | null>(nastaveni?.posledni_najdi_ted ?? null);
+  const [najdiTedBezi, setNajdiTedBezi] = useState(false);
+  const [najdiTedZprava, setNajdiTedZprava] = useState<string | null>(null);
+
+  function zbyvaCooldownMinut(): number {
+    if (!posledniNajdiTed) return 0;
+    const uplynulo = Date.now() - new Date(posledniNajdiTed).getTime();
+    return Math.max(0, 30 - Math.floor(uplynulo / 60000));
+  }
+
+  async function najitTed() {
+    setNajdiTedBezi(true);
+    setNajdiTedZprava(null);
+    try {
+      const r = await fetch("/api/najdi-ted", { method: "POST" });
+      const j = await r.json();
+      if (!r.ok) {
+        if (j.zbyvaMinut) {
+          setNajdiTedZprava(`${t.najdiTedCooldown} ${j.zbyvaMinut} ${t.najdiTedMinut}`);
+        } else {
+          setNajdiTedZprava("Chyba: " + (j.error || "neznámá"));
+        }
+        return;
+      }
+      setPosledniNajdiTed(new Date().toISOString());
+      setNajdiTedZprava(t.najdiTedSpusteno);
+    } catch (e: any) {
+      setNajdiTedZprava("Chyba sítě: " + e.message);
+    } finally {
+      setNajdiTedBezi(false);
+    }
+  }
 
   const vybraneZname = useMemo(() => new Set(n.filtry.znacky), [n.filtry.znacky]);
   const filtrovaneZname = useMemo(
@@ -149,7 +182,28 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
 
   return (
     <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
-      <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
+      <h1 className="mb-4 text-xl font-semibold text-zinc-100">{t.filtryHledani}</h1>
+
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={najitTed}
+            disabled={najdiTedBezi || zbyvaCooldownMinut() > 0}
+            className={btnPrimary}
+          >
+            {najdiTedBezi ? t.najdiTedSpoustim : `🔎 ${t.najdiTed}`}
+          </button>
+          {zbyvaCooldownMinut() > 0 && (
+            <span className="text-xs text-zinc-400">
+              {t.najdiTedCooldown} {zbyvaCooldownMinut()} {t.najdiTedMinut}
+            </span>
+          )}
+          {najdiTedZprava && (
+            <span className={`text-sm ${najdiTedZprava.startsWith("Chyba") ? "text-red-400" : "text-accent"}`}>
+              {najdiTedZprava}
+            </span>
+          )}
+        </div>
 
         <Sekce titulek={t.zdrojoveTrhy}>
           <p className="mb-3 text-xs text-zinc-400">{t.zdrojoveTrhyInfo}</p>

@@ -1,0 +1,39 @@
+name: CarFlip Najdi ted (jeden uzivatel)
+
+# Spousti se z webu (tlacitko "Najit ted" ve Filtrech) - webova API route
+# (web/app/api/najdi-ted/route.ts) zavola workflow_dispatch s user_id.
+# concurrency group je parametrizovana user_id, aby se nemohly prekryvat
+# dva souc behy STEJNEHO uzivatele (rate-limit na webu uz to navic chrani
+# cooldownem), ale ruzni uzivatele bezi klidne paralelne.
+on:
+  workflow_dispatch:
+    inputs:
+      user_id:
+        required: true
+        type: string
+
+concurrency:
+  group: najdi-ted-${{ github.event.inputs.user_id }}
+  cancel-in-progress: false
+
+jobs:
+  najdi:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Stahnout kod
+        uses: actions/checkout@v4
+
+      - name: Nainstalovat Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Nainstalovat knihovny
+        run: pip install -r requirements-server.txt
+
+      - name: Najdi ted pro jednoho uzivatele
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          NAJDI_TED_USER_ID: ${{ github.event.inputs.user_id }}
+        run: python najdi_ted_cloud.py

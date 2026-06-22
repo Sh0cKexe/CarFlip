@@ -25,11 +25,15 @@ create table if not exists public.nastaveni (
   min_srovnani integer not null default 3,
   aktivni boolean not null default true,
   vytvoreno timestamptz not null default now(),
-  trh text not null default 'cz'
+  trh text not null default 'cz',
+  posledni_najdi_ted timestamptz
 );
 
 -- Pro existujici instalace (puvodni create table uz probehl bez "trh"):
 alter table public.nastaveni add column if not exists trh text not null default 'cz';
+
+-- Pro existujici instalace (tlacitko "Najdi ted" - cooldown per uzivatel):
+alter table public.nastaveni add column if not exists posledni_najdi_ted timestamptz;
 
 -- Pro existujici instalace: doplnit nove klice do filtry jsonb (zdrojove trhy
 -- PL/CZ/SK - Faze 1 multi-market). Vychozi zdroje=["pl"] zachovava soucasne

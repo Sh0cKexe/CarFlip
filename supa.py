@@ -36,6 +36,32 @@ def nacti_uzivatele(sb):
     return uzivatele
 
 
+def nacti_uzivatele_jeden(sb, user_id):
+    """Stejny tvar cfg jako nacti_uzivatele(), ale jen pro JEDNOHO uzivatele
+    a bez filtru na 'aktivni' (manualni 'Najdi ted' funguje i kdyz je
+    automaticke hlidani pozastavene). Vrati None, kdyz uzivatel neexistuje
+    nebo nema vyplneny telegram token/chat_id."""
+    res = sb.table("nastaveni").select("*").eq("user_id", user_id).limit(1).execute()
+    radky = res.data
+    if not radky:
+        return None
+    r = radky[0]
+    if not r.get("telegram_token") or not r.get("telegram_chat_id"):
+        return None
+    return {
+        "telegram": {
+            "token": r["telegram_token"],
+            "chat_id": r["telegram_chat_id"],
+            "dalsi_prijemci": r.get("dalsi_prijemci") or [],
+        },
+        "min_zisk_kc": r["min_zisk_kc"],
+        "naklady_dovoz_kc": r["naklady_dovoz_kc"],
+        "min_srovnani": r["min_srovnani"],
+        "filtry": r["filtry"],
+        "trh": r.get("trh") or "cz",
+    }
+
+
 def ma_videno_zaznam(sb, user_id):
     """True kdyz uzivatel uz ma alespon jedno auto v 'videno' (tedy uz nema bezet
     prvni-beh rezim, ktery projede cely trh)."""
