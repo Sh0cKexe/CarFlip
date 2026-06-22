@@ -485,8 +485,13 @@ export default function AutoDetail({
             </motion.div>
           ))}
         </div>
-        <input ref={fileInput} type="file" accept="image/*" multiple onChange={(e) => nahratFotky(e.target.files)} disabled={nahravam} className="text-sm text-zinc-400" />
-        {nahravam && <p className="mt-2 text-sm text-zinc-400">{t.nahravam}</p>}
+        <input
+          ref={fileInput} type="file" accept="image/*" multiple
+          onChange={(e) => nahratFotky(e.target.files)} className="hidden"
+        />
+        <button onClick={() => fileInput.current?.click()} disabled={nahravam} className={btnGhost}>
+          {nahravam ? t.nahravam : t.pridatFotky}
+        </button>
         {fotoChyba && <p className="mt-2 text-sm text-red-400">Chyba: {fotoChyba}</p>}
       </Sekce>
 
