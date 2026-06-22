@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/app/components/Sidebar";
-import { Sekce, Pole, input } from "@/app/components/FormUI";
+import { Sekce, Pole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 type Auto = {
@@ -130,12 +131,17 @@ export default function AutoDetail({
     <div className="flex min-h-screen">
       <Sidebar email={email} trh={trh} userId={userId} />
       <main className="flex-1 px-8 py-8">
-      <div className="mb-6 flex items-center justify-between">
-        <a href="/auta" className="text-sm text-zinc-400 hover:text-zinc-200">{t.zpetNaAuta}</a>
-        <button onClick={smazatAuto} className="rounded-lg border border-red-500/40 px-3 py-1.5 text-sm text-red-400 hover:bg-red-500/10">
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="mb-6 flex items-center justify-between"
+      >
+        <a href="/auta" className="text-sm text-zinc-400 transition hover:text-zinc-200">{t.zpetNaAuta}</a>
+        <button onClick={smazatAuto} className={btnDanger}>
           {t.smazatAuto}
         </button>
-      </div>
+      </motion.div>
 
       <Sekce titulek={t.zakladniInfo}>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -187,10 +193,7 @@ export default function AutoDetail({
           </Pole>
         </div>
         <div className="mt-4 flex items-center gap-4">
-          <button
-            onClick={ulozit} disabled={uklada}
-            className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
-          >
+          <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
             {uklada ? t.ukladam : t.ulozit}
           </button>
           {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>}
@@ -222,7 +225,7 @@ export default function AutoDetail({
               onChange={(e) => setNovyNaklad({ ...novyNaklad, castka_kc: e.target.value })}
             />
           </Pole>
-          <button onClick={pridatNaklad} className="h-fit rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 hover:bg-accent2/10">
+          <button onClick={pridatNaklad} className={`h-fit ${btnGhost}`}>
             {t.pridat}
           </button>
         </div>
@@ -235,11 +238,18 @@ export default function AutoDetail({
 
       <Sekce titulek={t.fotky}>
         <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {auto.fotky.map((cesta) => (
-            <div key={cesta} className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-panel2">
+          {auto.fotky.map((cesta, i) => (
+            <motion.div
+              key={cesta}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.04 }}
+              whileHover={{ scale: 1.03 }}
+              className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-panel2"
+            >
               {fotoUrls[cesta] && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={fotoUrls[cesta]} alt="" className="h-full w-full object-cover" />
+                <img src={fotoUrls[cesta]} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
               )}
               <button
                 onClick={() => smazatFotku(cesta)}
@@ -247,7 +257,7 @@ export default function AutoDetail({
               >
                 ✕
               </button>
-            </div>
+            </motion.div>
           ))}
         </div>
         <input ref={fileInput} type="file" accept="image/*" multiple onChange={(e) => nahratFotky(e.target.files)} disabled={nahravam} className="text-sm text-zinc-500" />

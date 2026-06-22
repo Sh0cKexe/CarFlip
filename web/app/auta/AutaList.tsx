@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/app/components/Sidebar";
+import { btnPrimary } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 export type Auto = {
@@ -56,33 +58,33 @@ export default function AutaList({
       <main className="flex-1 px-8 py-8">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="text-xl font-semibold text-zinc-100">{t.mojeAuta}</h1>
-          <button
-            onClick={pridatAuto}
-            disabled={vytvarim}
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
-          >
+          <button onClick={pridatAuto} disabled={vytvarim} className={btnPrimary}>
             {vytvarim ? t.vytvarim : t.pridatAuto}
           </button>
         </div>
 
         {auta.length === 0 && (
-          <p className="rounded-2xl border border-border bg-panel p-8 text-center text-sm text-zinc-500">
+          <p className="glass rounded-2xl border border-border p-8 text-center text-sm text-zinc-500">
             {t.zadneAuto}
           </p>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
-          {auta.map((a) => {
+          {auta.map((a, i) => {
             const naklady = nakladySuma[a.id] ?? 0;
             const zisk =
               a.stav === "prodano" && a.cena_koupeno_kc != null && a.cena_prodano_kc != null
                 ? a.cena_prodano_kc - a.cena_koupeno_kc - naklady
                 : null;
             return (
-              <a
+              <motion.a
                 key={a.id}
                 href={`/auta/${a.id}`}
-                className="rounded-2xl border border-border bg-panel p-5 transition hover:border-zinc-500"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
+                whileHover={{ y: -3 }}
+                className="glass rounded-2xl border border-border p-5 transition-shadow duration-300 hover:border-zinc-500 hover:shadow-glow"
               >
                 <div className="mb-3 flex items-center justify-between">
                   <h2 className="truncate font-medium text-zinc-100">{a.titulek || t.bezNazvu}</h2>
@@ -107,7 +109,7 @@ export default function AutaList({
                     </p>
                   )}
                 </div>
-              </a>
+              </motion.a>
             );
           })}
         </div>

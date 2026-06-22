@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/app/components/Sidebar";
-import { Sekce, Pole, input, Toggle } from "@/app/components/FormUI";
+import { Sekce, Pole, input, Toggle, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 type Nastaveni = {
@@ -82,7 +82,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
               type="button"
               onClick={testSpojeni}
               disabled={testuje || !n.telegram_token || !n.telegram_chat_id}
-              className="rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 transition hover:bg-accent2/10 disabled:opacity-40"
+              className={btnGhost}
             >
               {testuje ? t.testuji : t.testSpojeni}
             </button>
@@ -90,11 +90,7 @@ export default function BotForm({ email, nastaveni }: { email: string; nastaveni
           </div>
         </Sekce>
 
-        <button
-          onClick={ulozit}
-          disabled={uklada}
-          className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
-        >
+        <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
           {uklada ? t.ukladam : t.ulozitNastaveni}
         </button>
         {zprava && (

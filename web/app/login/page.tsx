@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
 import Logo from "@/app/components/Logo";
@@ -73,9 +74,12 @@ function LoginFormulare() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <form
+      <motion.form
+        initial={{ opacity: 0, y: 24, scale: 0.97 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
         onSubmit={odeslat}
-        className="w-full max-w-sm rounded-2xl border border-border bg-panel p-8 shadow-xl"
+        className="glass w-full max-w-sm rounded-2xl border border-border p-8 shadow-glow-lg"
       >
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -85,25 +89,31 @@ function LoginFormulare() {
           <div className="flex gap-1">
             <button
               type="button" onClick={() => zmenitJazyk("cz")}
-              className={`rounded-md px-2 py-1 text-lg ${trh === "cz" ? "bg-panel2" : "opacity-50"}`}
+              className={`rounded-md px-2 py-1 text-lg transition ${trh === "cz" ? "bg-panel2" : "opacity-50 hover:opacity-80"}`}
             >
               🇨🇿
             </button>
             <button
               type="button" onClick={() => zmenitJazyk("sk")}
-              className={`rounded-md px-2 py-1 text-lg ${trh === "sk" ? "bg-panel2" : "opacity-50"}`}
+              className={`rounded-md px-2 py-1 text-lg transition ${trh === "sk" ? "bg-panel2" : "opacity-50 hover:opacity-80"}`}
             >
               🇸🇰
             </button>
           </div>
         </div>
 
-        <div className="mb-6 grid grid-cols-2 rounded-lg bg-panel2 p-1 text-sm">
+        <div className="relative mb-6 grid grid-cols-2 rounded-lg bg-panel2 p-1 text-sm">
+          <motion.div
+            layout
+            transition={{ type: "spring", stiffness: 450, damping: 35 }}
+            className="absolute inset-y-1 w-[calc(50%-0.25rem)] rounded-md bg-gradient-to-r from-accent to-accent2 shadow-glow"
+            style={{ left: mode === "login" ? "0.25rem" : "calc(50% + 0rem)" }}
+          />
           <button
             type="button"
             onClick={() => setMode("login")}
-            className={`rounded-md py-2 transition ${
-              mode === "login" ? "bg-accent2 text-white" : "text-zinc-400 hover:text-zinc-200"
+            className={`relative z-10 rounded-md py-2 transition ${
+              mode === "login" ? "text-white" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             {t.prihlasit}
@@ -111,8 +121,8 @@ function LoginFormulare() {
           <button
             type="button"
             onClick={() => setMode("register")}
-            className={`rounded-md py-2 transition ${
-              mode === "register" ? "bg-accent2 text-white" : "text-zinc-400 hover:text-zinc-200"
+            className={`relative z-10 rounded-md py-2 transition ${
+              mode === "register" ? "text-white" : "text-zinc-400 hover:text-zinc-200"
             }`}
           >
             {t.registrovat}
@@ -125,7 +135,7 @@ function LoginFormulare() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
+          className="mb-4 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none transition focus:border-accent2/60 focus:ring-2 focus:ring-accent2"
         />
 
         <label className="mb-1 block text-xs text-zinc-400">{t.heslo}</label>
@@ -135,35 +145,52 @@ function LoginFormulare() {
           minLength={6}
           value={heslo}
           onChange={(e) => setHeslo(e.target.value)}
-          className={`w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2 ${mode === "register" ? "mb-4" : "mb-6"}`}
+          className={`w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none transition focus:border-accent2/60 focus:ring-2 focus:ring-accent2 ${mode === "register" ? "mb-4" : "mb-6"}`}
         />
 
-        {mode === "register" && (
-          <>
-            <label className="mb-1 block text-xs text-zinc-400">{t.inviteKod}</label>
-            <input
-              required
-              value={kod}
-              onChange={(e) => setKod(e.target.value)}
-              className="mb-6 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none ring-accent2 focus:ring-2"
-            />
-          </>
-        )}
+        <AnimatePresence>
+          {mode === "register" && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="overflow-hidden"
+            >
+              <label className="mb-1 block text-xs text-zinc-400">{t.inviteKod}</label>
+              <input
+                required
+                value={kod}
+                onChange={(e) => setKod(e.target.value)}
+                className="mb-6 w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm outline-none transition focus:border-accent2/60 focus:ring-2 focus:ring-accent2"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.015 }}
+          whileTap={{ scale: 0.97 }}
           type="submit"
           disabled={pracuje}
-          className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
+          className="w-full rounded-lg bg-gradient-to-r from-accent to-accent2 py-2.5 text-sm font-semibold text-white shadow-glow transition-all duration-200 hover:shadow-glow-lg disabled:opacity-60"
         >
           {pracuje ? t.pracuji : mode === "login" ? t.prihlasitSe : t.vytvoritUcet}
-        </button>
+        </motion.button>
 
-        {zprava && (
-          <p className={`mt-4 text-sm ${zprava.startsWith("Chyba") ? "text-red-400" : "text-accent"}`}>
-            {zprava}
-          </p>
-        )}
-      </form>
+        <AnimatePresence>
+          {zprava && (
+            <motion.p
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className={`mt-4 text-sm ${zprava.startsWith("Chyba") ? "text-red-400" : "text-accent"}`}
+            >
+              {zprava}
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </motion.form>
     </main>
   );
 }

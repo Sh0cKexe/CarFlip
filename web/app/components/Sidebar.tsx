@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
 import Logo from "@/app/components/Logo";
@@ -33,8 +34,8 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   ];
 
   return (
-    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col bg-sidebar text-zinc-200">
-      <Link href="/dashboard" className="flex items-center gap-2.5 px-5 py-6 hover:opacity-90">
+    <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-sidebar2 bg-sidebar text-zinc-200">
+      <Link href="/dashboard" className="flex items-center gap-2.5 px-5 py-6 transition hover:opacity-90">
         <Logo size={36} />
         <span className="text-lg font-semibold tracking-tight text-white">FlipniTo</span>
       </Link>
@@ -42,18 +43,23 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
         {polozky.map((p) => {
           const aktivni = p.presne ? pathname === p.href : pathname.startsWith(p.href);
           return (
-          <Link
-            key={p.href}
-            href={p.href}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-              aktivni
-                ? "bg-accent text-white font-medium"
-                : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
-            }`}
-          >
-            <span>{p.ikona}</span>
-            {p.text}
-          </Link>
+            <Link
+              key={p.href}
+              href={p.href}
+              className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                aktivni ? "font-medium text-white" : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
+              }`}
+            >
+              {aktivni && (
+                <motion.span
+                  layoutId="sidebar-active"
+                  transition={{ type: "spring", stiffness: 450, damping: 35 }}
+                  className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent to-accent2 shadow-glow"
+                />
+              )}
+              <span className="relative z-10">{p.ikona}</span>
+              <span className="relative z-10">{p.text}</span>
+            </Link>
           );
         })}
       </nav>
@@ -69,7 +75,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
             </div>
           </div>
           <select
-            className="w-full rounded-lg border border-sidebar2 bg-sidebar2 px-2 py-1.5 text-sm text-white outline-none"
+            className="w-full rounded-lg border border-sidebar2 bg-sidebar2 px-2 py-1.5 text-sm text-white outline-none transition focus:border-accent2/60"
             value={trh ?? "cz"}
             onChange={(e) => zmenitTrh(e.target.value as Trh)}
           >
@@ -80,7 +86,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
         <p className="mb-2 truncate text-xs text-zinc-400">{email}</p>
         <button
           onClick={odhlasit}
-          className="w-full rounded-lg border border-sidebar2 px-3 py-2 text-sm text-zinc-200 transition hover:bg-sidebar2 hover:text-white"
+          className="w-full rounded-lg border border-sidebar2 px-3 py-2 text-sm text-zinc-200 transition hover:border-zinc-600 hover:bg-sidebar2 hover:text-white active:scale-[0.98]"
         >
           {t.odhlasit}
         </button>

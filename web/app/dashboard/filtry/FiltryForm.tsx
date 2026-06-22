@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
 import Sidebar from "@/app/components/Sidebar";
-import { Sekce, Pole, input } from "@/app/components/FormUI";
+import { Sekce, Pole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 
 const MapaOkruhy = dynamic(() => import("@/app/components/MapaOkruhy"), { ssr: false });
@@ -218,13 +218,13 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
                 <Pole label={t.okruhKm}>
                   <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
                 </Pole>
-                <button type="button" onClick={() => odebratOblast(i)} className="h-fit rounded-lg border border-red-500/40 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10">
+                <button type="button" onClick={() => odebratOblast(i)} className={`h-fit ${btnDanger}`}>
                   {t.smazat}
                 </button>
               </div>
             ))}
           </div>
-          <button type="button" onClick={pridatOblast} className="mt-3 rounded-lg border border-accent2 px-4 py-2 text-sm text-accent2 hover:bg-accent2/10">
+          <button type="button" onClick={pridatOblast} className={`mt-3 ${btnGhost}`}>
             {t.pridatOblast}
           </button>
         </Sekce>
@@ -243,11 +243,7 @@ export default function FiltryForm({ email, nastaveni }: { email: string; nastav
           </div>
         </Sekce>
 
-        <button
-          onClick={ulozit}
-          disabled={uklada}
-          className="rounded-lg bg-accent px-6 py-2.5 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-60"
-        >
+        <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
           {uklada ? t.ukladam : t.ulozitNastaveni}
         </button>
         {zprava && (
