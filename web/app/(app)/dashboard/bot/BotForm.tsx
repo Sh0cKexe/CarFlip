@@ -66,7 +66,16 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
       <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
         <Sekce titulek={t.navodBota}>
-          <p className="whitespace-pre-line text-sm leading-relaxed text-zinc-300">{t.navodPopis}</p>
+          <div className="overflow-hidden rounded-lg" style={{ aspectRatio: "16 / 9" }}>
+            <iframe
+              src="https://www.youtube.com/embed/t5JoCTcf8bI"
+              title={t.navodBota}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              className="h-full w-full"
+            />
+          </div>
+          <p className="mt-3 text-sm text-zinc-400">{t.navodVideoPopisek}</p>
         </Sekce>
 
         <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>

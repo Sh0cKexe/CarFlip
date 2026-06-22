@@ -53,7 +53,10 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-sidebar2 bg-sidebar px-4 md:hidden">
+      <div
+        style={{ touchAction: "pan-y" }}
+        className="fixed inset-x-0 top-0 z-30 flex h-14 items-center justify-between border-b border-sidebar2 bg-sidebar px-4 md:hidden"
+      >
         <Link href="/dashboard" className="flex items-center">
           <Logo height={26} />
         </Link>
@@ -79,7 +82,8 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
       </AnimatePresence>
 
       <aside
-        className={`fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-y-auto border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-300 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
+        style={{ touchAction: "pan-y" }}
+        className={`fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-300 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
           otevreno ? "translate-x-0" : "-translate-x-full"
         }`}
       >
