@@ -83,7 +83,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
 
       <aside
         style={{ touchAction: "pan-y" }}
-        className={`fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-300 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
+        className={`fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-300 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
           otevreno ? "translate-x-0" : "-translate-x-full"
         }`}
       >
