@@ -18,6 +18,7 @@ const CS = {
   registraceOk: "Registrace OK. Pokud projekt vyžaduje potvrzení e-mailu, zkontroluj schránku, jinak se hned přihlas.",
   inviteKod: "Invite kód",
   pristupVyprsel: "Přístup vypršel. Pro prodloužení kontaktuj administrátora.",
+  nemasInviteKod: "Nemáš ještě svůj invite kód? Připoj se na Discord.",
   dniDoVyprseniPredlozka: "dní do vypršení",
   vyprsiDnes: "Přístup vyprší dnes",
 
@@ -143,6 +144,7 @@ const SK: typeof CS = {
   registraceOk: "Registrácia OK. Ak projekt vyžaduje potvrdenie e-mailu, skontroluj schránku, inak sa hneď prihlás.",
   inviteKod: "Invite kód",
   pristupVyprsel: "Prístup vypršal. Pre predĺženie kontaktuj administrátora.",
+  nemasInviteKod: "Nemáš ešte svoj invite kód? Pripoj sa na Discord.",
   dniDoVyprseniPredlozka: "dní do vypršania",
   vyprsiDnes: "Prístup vyprší dnes",
 

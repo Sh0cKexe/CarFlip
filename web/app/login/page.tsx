@@ -69,14 +69,7 @@ function LoginFormulare() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4">
-      <div className="fixed bottom-4 left-4 flex max-w-[80vw] flex-col gap-0.5 text-xs text-zinc-500 sm:max-w-none sm:flex-row sm:items-center sm:gap-1.5">
-        <a href={DISCORD_URL} target="_blank" rel="noreferrer" className="transition hover:text-accent2">
-          💬 Discord komunita
-        </a>
-        <span className="hidden sm:inline">·</span>
-        <span>Nejde link? Discord: {DISCORD_HANDLE}</span>
-      </div>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-5 px-4 py-10">
       <motion.form
         initial={{ opacity: 0, y: 24, scale: 0.97 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -177,6 +170,24 @@ function LoginFormulare() {
           )}
         </AnimatePresence>
       </motion.form>
+
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+        className="glass w-full max-w-sm rounded-2xl border border-border p-5 text-center shadow-glow"
+      >
+        <p className="text-sm font-semibold text-white">{t.nemasInviteKod}</p>
+        <a
+          href={DISCORD_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-accent2/50 px-5 py-2.5 text-sm font-semibold text-accent2 transition hover:border-accent2 hover:bg-accent2/10 active:scale-[0.97]"
+        >
+          💬 Připojit se na Discord
+        </a>
+        <p className="mt-3 text-sm text-zinc-300">Nejde link? Discord: {DISCORD_HANDLE}</p>
+      </motion.div>
     </main>
   );
 }
