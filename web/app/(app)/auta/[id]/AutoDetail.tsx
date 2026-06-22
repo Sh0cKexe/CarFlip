@@ -63,6 +63,18 @@ export default function AutoDetail({
   const [nakladChyba, setNakladChyba] = useState<string | null>(null);
   const [upravujiNaklad, setUpravujiNaklad] = useState<string | null>(null);
   const [upravaNaklad, setUpravaNaklad] = useState({ popis: "", castka_kc: "", datum: "" });
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (lightbox === null) return;
+    function naKlavesu(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightbox(null);
+      if (e.key === "ArrowRight") setLightbox((i) => (i === null ? null : (i + 1) % auto.fotky.length));
+      if (e.key === "ArrowLeft") setLightbox((i) => (i === null ? null : (i - 1 + auto.fotky.length) % auto.fotky.length));
+    }
+    window.addEventListener("keydown", naKlavesu);
+    return () => window.removeEventListener("keydown", naKlavesu);
+  }, [lightbox, auto.fotky.length]);
 
   const sumaNakladu = naklady.reduce((s, n) => s + (n.castka_kc || 0), 0);
   const celkemVAute = (auto.cena_koupeno_kc ?? 0) + sumaNakladu;
@@ -425,18 +437,25 @@ export default function AutoDetail({
       <Sekce titulek={t.ukoly}>
         <div className="space-y-1.5">
           {ukoly.length === 0 && <p className="text-sm text-zinc-500">{t.zadneUkoly}</p>}
-          {ukoly.map((u) => (
-            <div key={u.id} className="group flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-white/[0.03]">
+          {[...ukoly].sort((a, b) => Number(a.hotovo) - Number(b.hotovo)).map((u) => (
+            <motion.div
+              key={u.id}
+              layout
+              transition={{ type: "spring", stiffness: 500, damping: 40 }}
+              className="group flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-white/[0.03]"
+            >
               <button
                 type="button"
                 onClick={() => prepnoutUkol(u)}
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
-                  u.hotovo ? "border-accent bg-accent text-white" : "border-zinc-500 text-transparent"
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs transition ${
+                  u.hotovo
+                    ? "border-transparent bg-gradient-to-r from-accent to-accent2 text-white shadow-glow"
+                    : "border-zinc-500 text-transparent hover:border-zinc-400"
                 }`}
               >
                 ✓
               </button>
-              <span className={`flex-1 text-sm ${u.hotovo ? "text-zinc-500 line-through" : "text-zinc-100"}`}>
+              <span className={`flex-1 text-sm ${u.hotovo ? "text-zinc-300 line-through" : "text-zinc-100"}`}>
                 {u.text}
               </span>
               <button
@@ -445,7 +464,7 @@ export default function AutoDetail({
               >
                 {t.smazatMale}
               </button>
-            </div>
+            </motion.div>
           ))}
         </div>
         <div className="mt-3 flex items-end gap-2">
@@ -470,14 +489,15 @@ export default function AutoDetail({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.3, delay: i * 0.04 }}
               whileHover={{ scale: 1.03 }}
-              className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-panel2"
+              className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-border bg-panel2"
+              onClick={() => setLightbox(i)}
             >
               {fotoUrls[cesta] && (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={fotoUrls[cesta]} alt="" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
               )}
               <button
-                onClick={() => smazatFotku(cesta)}
+                onClick={(e) => { e.stopPropagation(); smazatFotku(cesta); }}
                 className="absolute right-1 top-1 hidden rounded bg-black/70 px-1.5 py-0.5 text-xs text-white group-hover:block"
               >
                 ✕
@@ -494,6 +514,58 @@ export default function AutoDetail({
         </button>
         {fotoChyba && <p className="mt-2 text-sm text-red-400">Chyba: {fotoChyba}</p>}
       </Sekce>
+
+      <AnimatePresence>
+        {lightbox !== null && auto.fotky[lightbox] && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+            onClick={() => setLightbox(null)}
+          >
+            <button
+              onClick={() => setLightbox(null)}
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-white transition hover:bg-white/20"
+            >
+              ✕
+            </button>
+            {auto.fotky.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i === null ? null : (i - 1 + auto.fotky.length) % auto.fotky.length)); }}
+                  className="absolute left-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition hover:bg-white/20"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setLightbox((i) => (i === null ? null : (i + 1) % auto.fotky.length)); }}
+                  className="absolute right-4 top-1/2 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-2xl text-white transition hover:bg-white/20"
+                >
+                  ›
+                </button>
+              </>
+            )}
+            {fotoUrls[auto.fotky[lightbox]] && (
+              <motion.img
+                key={auto.fotky[lightbox]}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                src={fotoUrls[auto.fotky[lightbox]]}
+                alt=""
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[88vh] max-w-[92vw] rounded-lg object-contain"
+              />
+            )}
+            {auto.fotky.length > 1 && (
+              <p className="absolute bottom-4 text-sm text-zinc-300">
+                {lightbox + 1} / {auto.fotky.length}
+              </p>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {prodejOtevren && (
