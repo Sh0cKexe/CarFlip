@@ -82,10 +82,7 @@ function LoginFormulare() {
         className="glass w-full max-w-sm rounded-2xl border border-border p-8 shadow-glow-lg"
       >
         <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Logo size={36} />
-            <h1 className="text-xl font-semibold tracking-tight text-zinc-100">FlipniTo</h1>
-          </div>
+          <Logo height={34} />
           <div className="flex gap-1">
             <button
               type="button" onClick={() => zmenitJazyk("cz")}

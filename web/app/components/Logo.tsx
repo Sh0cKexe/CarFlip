@@ -3,15 +3,15 @@
 /* eslint-disable @next/next/no-img-element */
 import { motion } from "framer-motion";
 
-export default function Logo({ size = 36 }: { size?: number }) {
+export default function Logo({ height = 32 }: { height?: number }) {
   return (
     <motion.span
-      whileHover={{ scale: 1.06, rotate: -2 }}
+      whileHover={{ scale: 1.04 }}
       transition={{ type: "spring", stiffness: 400, damping: 20 }}
-      className="flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-accent to-accent2 shadow-glow"
-      style={{ width: size, height: size }}
+      className="flex shrink-0 items-center"
+      style={{ height }}
     >
-      <img src="/auto-logo-white.png" alt="" width={size * 0.78} height={size * 0.78} style={{ objectFit: "contain" }} />
+      <img src="/logo-flipnito.png" alt="FlipniTo" style={{ height, width: "auto" }} />
     </motion.span>
   );
 }

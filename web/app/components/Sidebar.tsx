@@ -35,9 +35,8 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
 
   return (
     <aside className="sticky top-0 flex h-screen w-60 shrink-0 flex-col border-r border-sidebar2 bg-sidebar text-zinc-200">
-      <Link href="/dashboard" className="flex items-center gap-2.5 px-5 py-6 transition hover:opacity-90">
-        <Logo size={36} />
-        <span className="text-lg font-semibold tracking-tight text-white">FlipniTo</span>
+      <Link href="/dashboard" className="flex items-center px-5 py-6 transition hover:opacity-90">
+        <Logo height={30} />
       </Link>
       <nav className="flex-1 space-y-1 px-3">
         {polozky.map((p) => {
