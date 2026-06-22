@@ -79,15 +79,8 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   const [hledatZnacku, setHledatZnacku] = useState("");
   const zdroje = n.filtry.zdroje ?? ["pl"];
   const [novaOblastZeme, setNovaOblastZeme] = useState<Zeme>("pl");
-  const [posledniNajdiTed, setPosledniNajdiTed] = useState<string | null>(nastaveni?.posledni_najdi_ted ?? null);
   const [najdiTedBezi, setNajdiTedBezi] = useState(false);
   const [najdiTedZprava, setNajdiTedZprava] = useState<string | null>(null);
-
-  function zbyvaCooldownMinut(): number {
-    if (!posledniNajdiTed) return 0;
-    const uplynulo = Date.now() - new Date(posledniNajdiTed).getTime();
-    return Math.max(0, 30 - Math.floor(uplynulo / 60000));
-  }
 
   async function najitTed() {
     setNajdiTedBezi(true);
@@ -103,7 +96,6 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
         }
         return;
       }
-      setPosledniNajdiTed(new Date().toISOString());
       setNajdiTedZprava(t.najdiTedSpusteno);
     } catch (e: any) {
       setNajdiTedZprava("Chyba sítě: " + e.message);
@@ -188,16 +180,11 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
           <button
             type="button"
             onClick={najitTed}
-            disabled={najdiTedBezi || zbyvaCooldownMinut() > 0}
+            disabled={najdiTedBezi}
             className={btnPrimary}
           >
             {najdiTedBezi ? t.najdiTedSpoustim : `🔎 ${t.najdiTed}`}
           </button>
-          {zbyvaCooldownMinut() > 0 && (
-            <span className="text-xs text-zinc-400">
-              {t.najdiTedCooldown} {zbyvaCooldownMinut()} {t.najdiTedMinut}
-            </span>
-          )}
           {najdiTedZprava && (
             <span className={`text-sm ${najdiTedZprava.startsWith("Chyba") ? "text-red-400" : "text-accent"}`}>
               {najdiTedZprava}
