@@ -11,6 +11,8 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
   const [najezd, setNajezd] = useState("");
   const [palivo, setPalivo] = useState("");
   const [prevodovka, setPrevodovka] = useState("");
+  const [vykon, setVykon] = useState("");
+  const [spotreba, setSpotreba] = useState("");
   const [cena, setCena] = useState("");
   const [poznamky, setPoznamky] = useState("");
   const [bezi, setBezi] = useState(false);
@@ -27,7 +29,7 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nazev, rok, najezd, palivo, prevodovka, cena,
+          nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, cena,
           mena: t.mena, poznamky, jazyk: trh,
         }),
       });
@@ -81,6 +83,12 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
           </Pole>
           <Pole label={`${t.cena} (${t.mena})`}>
             <input type="number" className={input} value={cena} onChange={(e) => setCena(e.target.value)} />
+          </Pole>
+          <Pole label={t.vykonKw}>
+            <input type="number" className={input} value={vykon} onChange={(e) => setVykon(e.target.value)} placeholder="kW" />
+          </Pole>
+          <Pole label={t.spotrebaKombinovana}>
+            <input className={input} value={spotreba} onChange={(e) => setSpotreba(e.target.value)} placeholder="l/100km" />
           </Pole>
         </div>
         <div className="mt-4">

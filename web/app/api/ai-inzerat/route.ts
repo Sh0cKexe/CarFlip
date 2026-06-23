@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Chybný požadavek." }, { status: 400 });
   }
 
-  const { nazev, rok, najezd, palivo, prevodovka, cena, mena, poznamky, jazyk } = body;
+  const { nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, cena, mena, poznamky, jazyk } = body;
   if (!nazev) {
     return NextResponse.json({ error: "Vyplň název/model auta." }, { status: 400 });
   }
@@ -28,14 +28,20 @@ export async function POST(req: Request) {
   }
 
   const jazykText = jazyk === "sk" ? "slovensky" : "česky";
-  const systemPrompt = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš ${jazykText}, přirozeně, jako normální člověk – ŽÁDNÉ reklamní klišé typu "Prodávám tuto raketu" nebo přehnaně nadšený tón. Krátké věty, věcné a důvěryhodné, ale ať auto zní lákavě. Nepřidávej nadpis ani emoji, vrať jen samotný text inzerátu, žádné komentáře navíc.`;
+  const systemPrompt = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš ${jazykText}. Dodrž přesně tuto strukturu:
+
+1. Na začátku technické specifikace, KAŽDÁ NA VLASTNÍ ŘÁDEK, ve formátu "Popisek - hodnota" (např. "Palivo - nafta"). Použij jen ty údaje, které dostaneš, vynech řádky bez hodnoty, nevymýšlej si nic.
+2. Prázdný řádek.
+3. Pár krátkých odstavců normálním lidským jazykem (NE reklamní klišé typu "Prodávám tuto raketu", NE přehnaně nadšený tón) – k čemu se auto hodí, jaký je technický/karosériový stav, co bylo nedávno uděláno/vyměněno, jaká výbava je součástí, jestli auto potřebuje nějaké investice. Vychází z poznámek od majitele, nic si nepřidávej navíc. Pár emoji je v pořádku (střídmě, ne v každé větě).
+
+Vrať jen samotný text inzerátu, žádný nadpis ani komentáře navíc.`;
   const userPrompt = `Model: ${nazev}
-Rok výroby: ${rok || "neuvedeno"}
+${vykon ? `Výkon: ${vykon} kW\n` : ""}Palivo: ${palivo || "neuvedeno"}
 Nájezd: ${najezd ? najezd + " km" : "neuvedeno"}
-Palivo: ${palivo || "neuvedeno"}
-Převodovka: ${prevodovka || "neuvedeno"}
-Cena: ${cena ? cena + " " + (mena || "") : "neuvedeno"}
-Doplňující info od majitele: ${poznamky || "žádné"}`;
+Rok výroby: ${rok || "neuvedeno"}
+${spotreba ? `Kombinovaná spotřeba: ${spotreba} l/100km\n` : ""}Cena: ${cena ? cena + " " + (mena || "") : "neuvedeno"}
+
+Poznámky od majitele (stav, výbava, co bylo uděláno, důvod prodeje apod.): ${poznamky || "žádné"}`;
 
   try {
     const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
