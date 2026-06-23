@@ -6,13 +6,16 @@ import { MapContainer, TileLayer, Circle, CircleMarker, Tooltip, useMapEvents } 
 
 type Oblast = {
   nazev: string; mesto_slug: string; okruh_km: number; lat?: number; lon?: number;
-  zeme?: "pl" | "cz" | "sk";
+  zeme?: "pl" | "cz" | "sk" | "de" | "at" | "it";
 };
 
 const BARVA_ZEME: Record<string, string> = {
   pl: "#22c55e",
   cz: "#3b82f6",
   sk: "#f59e0b",
+  de: "#ef4444",
+  at: "#a855f7",
+  it: "#14b8a6",
 };
 
 function KlikHandler({ onKlik }: { onKlik: (lat: number, lon: number) => void }) {

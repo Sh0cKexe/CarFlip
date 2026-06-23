@@ -9,7 +9,7 @@ import { useKurz, prevod, type Mena } from "@/lib/kurz";
 
 const MapaOkruhy = dynamic(() => import("@/app/components/MapaOkruhy"), { ssr: false });
 
-type Zeme = "pl" | "cz" | "sk";
+type Zeme = "pl" | "cz" | "sk" | "de" | "at" | "it";
 type CenaRozsah = { min: number; max: number | null };
 type Oblast = {
   nazev: string; mesto_slug: string; okruh_km: number; lat?: number; lon?: number;
@@ -26,6 +26,8 @@ type Filtry = {
   max_najezd_benzin: number;
   max_cena_pln: number;
   min_cena_pln: number;
+  max_cena_eur: number;
+  min_cena_eur: number;
   zdroje: Zeme[];
   cena_cz: CenaRozsah;
   cena_sk: CenaRozsah;
@@ -67,6 +69,7 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
         znacky: [], palivo: "vse", prevodovka: "vse", oblasti: [],
         min_rok: 2003, max_najezd_nafta: 250000, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
+        max_cena_eur: 3000, min_cena_eur: 0,
         zdroje: ["pl"], cena_cz: { min: 0, max: null }, cena_sk: { min: 0, max: null },
       },
       min_zisk_kc: 20000, naklady_dovoz_kc: 10000, min_srovnani: 3,
@@ -201,6 +204,9 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
               ["pl", t.zdrojPolsko],
               ["cz", t.zdrojCesko],
               ["sk", t.zdrojSlovensko],
+              ["de", t.zdrojNemecko],
+              ["at", t.zdrojRakousko],
+              ["it", t.zdrojItalie],
             ] as [Zeme, string][]).map(([zdroj, popisek]) => (
               <label
                 key={zdroj}
@@ -322,6 +328,23 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
                 hodnotaDomovska={n.filtry.cena_sk?.max == null ? null : Math.round(prevod(n.filtry.cena_sk.max, "EUR", domovskaMena, kurz))}
                 jednotkaNativni="€" hodnotaNativniHint={n.filtry.cena_sk?.max ?? null}
                 onChange={(v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, max: v == null ? null : Math.round(prevod(v, domovskaMena, "EUR", kurz)) })}
+              />
+            </div>
+          )}
+
+          {(zdroje.includes("de") || zdroje.includes("at") || zdroje.includes("it")) && (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <CenovePole
+                label={bezJednotky(t.cenaZahranicniOd)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={Math.round(prevod(n.filtry.min_cena_eur, "EUR", domovskaMena, kurz))}
+                jednotkaNativni="€" hodnotaNativniHint={n.filtry.min_cena_eur}
+                onChange={(v) => setFiltr("min_cena_eur", Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)))}
+              />
+              <CenovePole
+                label={bezJednotky(t.cenaZahranicniDo)} jednotkaDomovska={domovskaJednotka}
+                hodnotaDomovska={Math.round(prevod(n.filtry.max_cena_eur, "EUR", domovskaMena, kurz))}
+                jednotkaNativni="€" hodnotaNativniHint={n.filtry.max_cena_eur}
+                onChange={(v) => setFiltr("max_cena_eur", Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)))}
               />
             </div>
           )}
