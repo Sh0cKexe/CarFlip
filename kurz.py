@@ -81,6 +81,13 @@ def kurz_czk_eur():
     return kurz_pln_eur() / kurz_pln_czk()
 
 
+def kurz_eur_czk():
+    """Vrati kolik Kc stoji 1 EUR (primo z CNB fixingu, ne cross-rate).
+    Pro zdroje primo v EUR (Nemecko/Rakousko/Italie)."""
+    _, eur_czk = _kurzy_dnes()
+    return eur_czk
+
+
 if __name__ == "__main__":
     print("1 PLN =", round(kurz_pln_czk(), 3), "CZK")
     print("1 PLN =", round(kurz_pln_eur(), 4), "EUR")

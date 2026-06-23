@@ -16,6 +16,8 @@ import time
 import os
 
 import otomoto
+import autoscout24
+import willhaben
 import bazos
 import kurz
 import preklad
@@ -135,6 +137,85 @@ def naformatuj_detail(popis_cz, odhad, trh="cz"):
     if popis_cz:
         radky.append("📝 <b>{}:</b>".format(t["popis_prelozeno"]))
         radky.append(popis_cz[:3000])
+        radky.append("")
+    if odhad["ukazky"]:
+        radky.append("🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], odhad["pocet"]))
+        for u in odhad["ukazky"]:
+            rok = u.get("rok") or "?"
+            najezd = "{:,} km".format(u["najezd"]).replace(",", " ") if u.get("najezd") else "? km"
+            radky.append("• {} | {} | {:,} {} – <a href=\"{}\">{}</a>".format(
+                rok, najezd, u["cena"], mena, u["url"], u["titulek"][:42]).replace(",", " "))
+    return "\n".join(radky)
+
+
+# Zahranicni zdroje primo v EUR (na rozdil od PL/Otomoto) - import flow,
+# stejny princip jako Polsko (hledat tam, porovnat s domovskym trhem).
+ZAHRANICNI_MODULY = {
+    "de": autoscout24,
+    "it": autoscout24,
+    "at": willhaben,
+}
+ZAHRANICNI_INFO = {
+    "de": {"vlajka": "🇩🇪", "nazev": "Německo", "jazyk_popis": "de", "platforma": "AutoScout24"},
+    "it": {"vlajka": "🇮🇹", "nazev": "Itálie", "jazyk_popis": "it", "platforma": "AutoScout24"},
+    "at": {"vlajka": "🇦🇹", "nazev": "Rakousko", "jazyk_popis": "de", "platforma": "Willhaben"},
+}
+
+
+def _kurz_zahranicni_eur(domovsky_trh):
+    """Kolik domovske meny stoji 1 EUR. SK uz je v EUR (1:1), CZ primo z CNB."""
+    return 1.0 if domovsky_trh == "sk" else kurz.kurz_eur_czk()
+
+
+def naformatuj_zpravu_zahranicni(auto, cena_mistni, odhad, zisk, naklady, zdroj_trh, domovsky_trh):
+    """Hlavni popisek pro auto ze zahranicniho EUR zdroje (Nemecko atd.) -
+    stejna struktura jako naformatuj_zpravu (Otomoto/PL), jen jina mena
+    zdroje (EUR vzdy) a bez prevodu kdyz domovsky trh uz je v EUR (SK)."""
+    t = TEXTY.get(domovsky_trh, TEXTY["cz"])
+    mena = t["mena"]
+    info = ZAHRANICNI_INFO[zdroj_trh]
+    vlajka_domov = "🇸🇰" if domovsky_trh == "sk" else "🇨🇿"
+
+    if domovsky_trh == "sk":
+        cena_radek = "{} Cena {}: {:,} EUR".format(
+            info["vlajka"], info["nazev"], auto["cena"]).replace(",", " ")
+    else:
+        cena_radek = "{} Cena {}: {:,} EUR  (≈ {:,} {})".format(
+            info["vlajka"], info["nazev"], auto["cena"], cena_mistni, mena).replace(",", " ")
+
+    radky = [
+        "🚗 <b>{}</b>".format(auto["titulek"]),
+        "💰 <b>Zisk: {:,} {}</b>".format(zisk, mena).replace(",", " "),
+        "",
+        cena_radek,
+        "{} {}: {:,} {}".format(vlajka_domov, t["odhad_prodej"], odhad["median"], mena).replace(",", " "),
+        "📦 {}: {:,} {}".format(t["naklady_dovoz"], naklady, mena).replace(",", " "),
+        "",
+        "📅 {} | {:,} km | {} | {}".format(
+            auto.get("rok") or "?",
+            auto.get("najezd_km") or 0,
+            auto.get("palivo") or "?",
+            auto.get("prevodovka") or "",
+        ).replace(",", " "),
+    ]
+    if auto.get("vykon_kw"):
+        radky.append("🔧 {} kW".format(auto["vykon_kw"]))
+    if auto.get("mesto"):
+        radky.append("📍 {}".format(auto["mesto"]))
+    radky.append("")
+    radky.append("🔗 <a href=\"{}\">Otevřít na {}</a>".format(auto["url"], info["platforma"]))
+    return "\n".join(radky)
+
+
+def naformatuj_detail_zahranicni(popis_prelozeny, odhad, domovsky_trh):
+    """Druha zprava: prelozeny popis + srovnatelne inzeraty - stejne jako
+    naformatuj_detail (Otomoto/PL)."""
+    t = TEXTY.get(domovsky_trh, TEXTY["cz"])
+    mena = t["mena"]
+    radky = []
+    if popis_prelozeny:
+        radky.append("📝 <b>Popis (přeloženo):</b>")
+        radky.append(popis_prelozeny[:3000])
         radky.append("")
     if odhad["ukazky"]:
         radky.append("🔎 <b>{} ({} ks):</b>".format(t["srovnatelna_auta"], odhad["pocet"]))
@@ -341,6 +422,70 @@ def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
     return True
 
 
+def zpracuj_auto_zahranicni(auto, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
+                             oznac_videno=databaze.oznac_videno):
+    """Vyhodnoti jedno auto ze zahranicniho EUR zdroje (Nemecko atd.) -
+    stejny princip jako Otomoto/Polsko: porovnat odhad s domovskym trhem,
+    poslat pri zisku. AutoScout24 uz pri vyhledavani vyfiltroval havarovana
+    auta (damaged_listing=exclude); detail jeste overi hadAccident."""
+    if uz_videno(auto["id"]):
+        return False
+    oznac_videno(auto["id"])
+
+    if not auto.get("cena") or not auto.get("znacka"):
+        return False
+
+    if _je_plyn(auto):
+        return False
+
+    if not _najezd_ok(auto, cfg["filtry"]):
+        return False
+
+    trh = cfg.get("trh", "cz")
+    min_srovnani = cfg.get("min_srovnani", MIN_SROVNANI)
+    cena_mistni = int(round(auto["cena"] * _kurz_zahranicni_eur(trh)))
+    odhad = bazos.odhad_ceny(auto["znacka"], auto.get("model"),
+                             rok=auto.get("rok"),
+                             najezd_km=auto.get("najezd_km"),
+                             cena_anchor_czk=cena_mistni,
+                             palivo=auto.get("palivo_kod"),
+                             objem_l=auto.get("objem_l"),
+                             min_pocet=min_srovnani,
+                             trh=trh)
+    if not odhad["median"] or odhad["pocet"] < min_srovnani:
+        return False
+
+    naklady = cfg["naklady_dovoz_kc"]
+    zisk = odhad["median"] - cena_mistni - naklady
+    if zisk < cfg["min_zisk_kc"]:
+        return False
+
+    modul = ZAHRANICNI_MODULY[zdroj_trh]
+    info = ZAHRANICNI_INFO[zdroj_trh]
+    detail = modul.nacti_detail(auto["url"])
+    if detail["poskozeno"]:
+        print("  - preskoceno (havarovane/poskozene):", auto["titulek"][:40])
+        return False
+
+    print("  >>> FLIP ({}): {} | zisk {} Kc".format(info["nazev"], auto["titulek"], zisk))
+    token = cfg["telegram"]["token"]
+    prijemci = _prijemci(cfg)
+
+    popisek = naformatuj_zpravu_zahranicni(auto, cena_mistni, odhad, zisk, naklady, zdroj_trh, trh)
+    cilovy_jazyk = {"cz": "cs", "sk": "sk"}.get(trh, "cs")
+    popis_prelozeny = preklad.prelozit(detail["popis"], source=info["jazyk_popis"], target=cilovy_jazyk)
+    detail_zprava = naformatuj_detail_zahranicni(popis_prelozeny, odhad, trh)
+
+    for cid in prijemci:
+        if auto.get("foto"):
+            tg.posli_foto(token, cid, auto["foto"], popisek)
+        else:
+            tg.posli_zpravu(token, cid, popisek)
+        if detail_zprava.strip():
+            tg.posli_zpravu(token, cid, detail_zprava)
+    return True
+
+
 def zpracuj_auto_domaci(nalez, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
                          oznac_videno=databaze.oznac_videno):
     """Vyhodnoti jeden nalez primo z Bazose (zdroj_trh = odkud inzerat je) -
@@ -403,6 +548,24 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
                 for auto in auta:
                     try:
                         if zpracuj_auto(auto, cfg, kurz_pln, uz_videno, oznac_videno):
+                            poslano += 1
+                    except Exception as e:
+                        print("  chyba u auta:", e)
+                time.sleep(1)
+
+    for zahranicni_trh, modul in ZAHRANICNI_MODULY.items():
+        if zahranicni_trh not in zdroje:
+            continue
+        okruhy_zahr = [o for o in vsechny_okruhy if o.get("zeme") == zahranicni_trh] or [None]
+        for znacka in znacky:
+            for okruh in okruhy_zahr:
+                kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cela zeme"
+                print("Kontroluji ({}):".format(zahranicni_trh.upper()), znacka, "|", kde)
+                auta = modul.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh)
+                print("  nalezeno {} inzeratu".format(len(auta)))
+                for auto in auta:
+                    try:
+                        if zpracuj_auto_zahranicni(auto, cfg, zahranicni_trh, uz_videno, oznac_videno):
                             poslano += 1
                     except Exception as e:
                         print("  chyba u auta:", e)
