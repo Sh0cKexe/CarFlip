@@ -1,5 +1,17 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { AI_INZERAT_LIMIT, zacatekMesice } from "@/lib/aiLimit";
+
+const SYSTEM_PROMPT = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš VÝHRADNĚ ČESKY NEBO SLOVENSKY podle jazyka v zadání, žádný jiný jazyk ani cizí znaky. Dodrž přesně tuto strukturu:
+
+1. Na začátku technické specifikace, KAŽDÁ NA VLASTNÍ ŘÁDEK, ve formátu "Popisek - hodnota" (např. "Palivo - nafta"). Použij jen ty údaje, které dostaneš, vynech řádky bez hodnoty, nevymýšlej si nic. NIKDY nepiš cenu, cena je na Bazoši v samostatné kolonce a do textu inzerátu nepatří.
+2. Prázdný řádek.
+3. Pár krátkých odstavců normálním, věcným jazykem – k čemu se auto hodí, jaký je technický/karosériový stav, co bylo nedávno uděláno/vyměněno, jaká výbava je součástí, jestli auto potřebuje nějaké investice. Vychází jen z poznámek od majitele, nic si nepřidávej navíc a nezmiňuj cenu.
+
+Styl: piš jako majitel popisující auto, NE jako prodejce oslovující kupujícího. Nikdy nepiš "vy/vám/hledáte/mohlo by vám vyhovovat" ani jiné přímé oslovení čtenáře, žádné řečnické otázky, žádná reklamní klišé ("Prodávám tuto raketu", přehnané nadšení). Pár emoji je v pořádku (střídmě, ne v každé větě).
+
+Vrať jen samotný text inzerátu, žádný nadpis ani komentáře navíc.`;
 
 export async function POST(req: Request) {
   let body: any;
@@ -20,24 +32,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Musíš být přihlášen." }, { status: 401 });
   }
 
-  if (!process.env.GROQ_API_KEY) {
+  const { count } = await supabase
+    .from("ai_inzeraty")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("vytvoreno", zacatekMesice());
+
+  if (count !== null && count >= AI_INZERAT_LIMIT) {
     return NextResponse.json(
-      { error: "AI generátor není nastaven (chybí GROQ_API_KEY na serveru)." },
+      { error: `Dosáhl jsi měsíčního limitu AI inzerátů (${AI_INZERAT_LIMIT}/měsíc). Limit se obnoví příští měsíc.` },
+      { status: 429 }
+    );
+  }
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: "AI generátor není nastaven (chybí ANTHROPIC_API_KEY na serveru)." },
       { status: 500 }
     );
   }
 
   const jazykText = jazyk === "sk" ? "slovensky" : "česky";
-  const systemPrompt = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš VÝHRADNĚ ${jazykText}, žádná jiná jazyk ani cizí znaky (žádná čínština, žádné neobvyklé symboly). Dodrž přesně tuto strukturu:
-
-1. Na začátku technické specifikace, KAŽDÁ NA VLASTNÍ ŘÁDEK, ve formátu "Popisek - hodnota" (např. "Palivo - nafta"). Použij jen ty údaje, které dostaneš, vynech řádky bez hodnoty, nevymýšlej si nic. NIKDY nepiš cenu, cena je na Bazoši v samostatné kolonce a do textu inzerátu nepatří.
-2. Prázdný řádek.
-3. Pár krátkých odstavců normálním, věcným jazykem – k čemu se auto hodí, jaký je technický/karosériový stav, co bylo nedávno uděláno/vyměněno, jaká výbava je součástí, jestli auto potřebuje nějaké investice. Vychází jen z poznámek od majitele, nic si nepřidávej navíc a nezmiňuj cenu.
-
-Styl: piš jako majitel popisující auto, NE jako prodejce oslovující kupujícího. Nikdy nepiš "vy/vám/hledáte/mohlo by vám vyhovovat" ani jiné přímé oslovení čtenáře, žádné řečnické otázky, žádná reklamní klišé ("Prodávám tuto raketu", přehnané nadšení). Pár emoji je v pořádku (střídmě, ne v každé větě).
-
-Vrať jen samotný text inzerátu, žádný nadpis ani komentáře navíc.`;
-  const userPrompt = `Model: ${nazev}
+  const userPrompt = `Jazyk: ${jazykText}
+Model: ${nazev}
 ${vykon ? `Výkon: ${vykon} kW\n` : ""}Palivo: ${palivo || "neuvedeno"}
 Nájezd: ${najezd ? najezd + " km" : "neuvedeno"}
 Rok výroby: ${rok || "neuvedeno"}
@@ -45,26 +62,19 @@ ${spotreba ? `Kombinovaná spotřeba: ${spotreba} l/100km\n` : ""}
 Poznámky od majitele (stav, výbava, co bylo uděláno, důvod prodeje apod.): ${poznamky || "žádné"}`;
 
   try {
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      }),
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 500,
+      output_config: { effort: "low" },
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: userPrompt }],
     });
-    const j = await r.json();
-    if (!r.ok) {
-      return NextResponse.json({ error: "Chyba AI: " + (j?.error?.message || r.statusText) }, { status: 502 });
-    }
-    const text = j?.choices?.[0]?.message?.content ?? "";
-    return NextResponse.json({ text });
+    const text = response.content.find((b) => b.type === "text")?.text ?? "";
+
+    await supabase.from("ai_inzeraty").insert({ user_id: user.id });
+
+    return NextResponse.json({ text, vyuzito: (count ?? 0) + 1, limit: AI_INZERAT_LIMIT });
   } catch (e: any) {
     return NextResponse.json({ error: "Chyba AI: " + (e?.message || String(e)) }, { status: 502 });
   }

@@ -163,6 +163,20 @@ Použijte tento rozbor jako super přípravu a vždy si ověřujte data z více 
   vystupInzeratu: "Vygenerovaný text",
   zkopirovat: "Zkopírovat",
   zkopirovano: "Zkopírováno!",
+  aiInzeratVyuzitoZLimitu: "inzerátů využito tento měsíc",
+  aiInzeratLimitDosazen: "Dosáhl jsi měsíčního limitu AI inzerátů. Limit se obnoví příští měsíc.",
+  aiInzeratDisclaimer: `🚀 Text je na světě! Než ho ale zkopírujete na Bazoš...
+Umělá inteligence vám sice ušetřila spoustu práce a napsala text, ale auto nezná tak dobře jako vy. Před publikováním inzerátu si text prosím pozorně přečtěte a zkontrolujte.
+
+Na co si dát největší pozor?
+
+🔍 Skutečný stav: Odpovídá text realitě? Pokud AI napsala „perfektní stav laku", ale na autě je škrábanec přes celé dveře, raději to upravte. Upřímnost prodává nejlépe.
+
+🛠️ Výbava a motor: Zkontrolujte, zda AI omylem nepřidala výbavu, kterou vaše auto nemá (např. panoramatickou střechu nebo jiný typ převodovky).
+
+📝 Pravopis jmen a názvů: Občas může AI poplést specifický název motorizace nebo výbavového stupně.
+
+ℹ️ Právní doložka: Tento text byl vygenerován umělou inteligencí. Provozovatel webu neodpovídá za správnost, pravdivost ani úplnost vygenerovaného inzerátu. Jako prodejce nesete plnou odpovědnost za to, že informace, které o vozidle zveřejníte, odpovídají skutečnému stavu.`,
 
   aiMechanikNadpis: "AI pro mechaniky",
   mechZnacka: "Značka",
@@ -375,6 +389,20 @@ Použite tento rozbor ako super prípravu a vždy si overujte dáta z viacerých
   vystupInzeratu: "Vygenerovaný text",
   zkopirovat: "Skopírovať",
   zkopirovano: "Skopírované!",
+  aiInzeratVyuzitoZLimitu: "inzerátov využitých tento mesiac",
+  aiInzeratLimitDosazen: "Dosiahol si mesačný limit AI inzerátov. Limit sa obnoví budúci mesiac.",
+  aiInzeratDisclaimer: `🚀 Text je na svete! Než ho ale skopírujete na Bazoš...
+Umelá inteligencia vám síce ušetrila veľa práce a napísala text, ale auto nepozná tak dobre ako vy. Pred publikovaním inzerátu si text prosím pozorne prečítajte a skontrolujte.
+
+Na čo si dať najväčší pozor?
+
+🔍 Skutočný stav: Zodpovedá text realite? Ak AI napísala „perfektný stav laku", ale na aute je škrabanec cez celé dvere, radšej to upravte. Úprimnosť predáva najlepšie.
+
+🛠️ Výbava a motor: Skontrolujte, či AI omylom nepridala výbavu, ktorú vaše auto nemá (napr. panoramatickú strechu alebo iný typ prevodovky).
+
+📝 Pravopis mien a názvov: Občas môže AI pomýliť konkrétny názov motorizácie alebo výbavového stupňa.
+
+ℹ️ Právna doložka: Tento text bol vygenerovaný umelou inteligenciou. Provozovateľ webu nezodpovedá za správnosť, pravdivosť ani úplnosť vygenerovaného inzerátu. Ako predajca nesiete plnú zodpovednosť za to, že informácie, ktoré o vozidle zverejníte, zodpovedajú skutočnému stavu.`,
 
   aiMechanikNadpis: "AI pre mechanikov",
   mechZnacka: "Značka",

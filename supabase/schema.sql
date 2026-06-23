@@ -255,6 +255,26 @@ create policy "ai_rozbory_delete_own" on public.ai_rozbory
   for delete using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
+-- AI generator textu inzeratu: jen pocitadlo pro mesicni limit, zadna
+-- historie textu (ten se na rozdil od AI rozboru nikam neuklada).
+-- ---------------------------------------------------------------------
+
+create table if not exists public.ai_inzeraty (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  vytvoreno timestamptz not null default now()
+);
+
+alter table public.ai_inzeraty enable row level security;
+
+drop policy if exists "ai_inzeraty_select_own" on public.ai_inzeraty;
+create policy "ai_inzeraty_select_own" on public.ai_inzeraty
+  for select using (auth.uid() = user_id);
+drop policy if exists "ai_inzeraty_insert_own" on public.ai_inzeraty;
+create policy "ai_inzeraty_insert_own" on public.ai_inzeraty
+  for insert with check (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
 -- Invite kody a prodluzitelny pristup (paywall gate).
 -- invite_kody: zadne RLS policy -> nedostupne z webu (anon/auth klic),
 -- jen service key (registracni route) a ty v Supabase Table Editoru.

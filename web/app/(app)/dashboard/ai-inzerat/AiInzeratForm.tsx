@@ -3,9 +3,12 @@
 import { useState } from "react";
 import { Sekce, Pole, input, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
+import { AI_INZERAT_LIMIT } from "@/lib/aiLimit";
 
-export default function AiInzeratForm({ trh }: { trh: Trh }) {
+export default function AiInzeratForm({ trh, vyuzitoVychozi }: { trh: Trh; vyuzitoVychozi: number }) {
   const t = T(trh);
+  const [vyuzito, setVyuzito] = useState(vyuzitoVychozi);
+  const limitDosazen = vyuzito >= AI_INZERAT_LIMIT;
   const [nazev, setNazev] = useState("");
   const [rok, setRok] = useState("");
   const [najezd, setNajezd] = useState("");
@@ -38,6 +41,7 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
         return;
       }
       setVystup(j.text);
+      if (typeof j.vyuzito === "number") setVyuzito(j.vyuzito);
     } catch (e: any) {
       setChyba(t.chybaSite + e.message);
     } finally {
@@ -56,6 +60,9 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
       <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.aiInzeratNadpis}</h1>
 
       <Sekce titulek={t.aiInzeratNadpis}>
+        <p className="mb-3 text-xs text-zinc-500">
+          {vyuzito}/{AI_INZERAT_LIMIT} {t.aiInzeratVyuzitoZLimitu}
+        </p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Pole label={t.nazevModel}>
             <input className={input} value={nazev} onChange={(e) => setNazev(e.target.value)} placeholder="Škoda Octavia 2.0 TDI" />
@@ -95,19 +102,26 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
             <textarea className={`${input} min-h-24`} value={poznamky} onChange={(e) => setPoznamky(e.target.value)} />
           </Pole>
         </div>
-        <button type="button" onClick={generovat} disabled={bezi || !nazev} className={`mt-3 ${btnGhost}`}>
+        <button type="button" onClick={generovat} disabled={bezi || !nazev || limitDosazen} className={`mt-3 ${btnGhost}`}>
           {bezi ? t.generuji : t.generujInzerat}
         </button>
+        {limitDosazen && <p className="mt-2 text-sm text-amber-400">{t.aiInzeratLimitDosazen}</p>}
         {chyba && <p className="mt-2 text-sm text-red-400">{chyba}</p>}
       </Sekce>
 
       {vystup && (
-        <Sekce titulek={t.vystupInzeratu}>
-          <p className="whitespace-pre-wrap text-sm text-zinc-200">{vystup}</p>
-          <button type="button" onClick={zkopirovatText} className={`mt-4 ${btnGhost}`}>
-            {zkopirovano ? t.zkopirovano : t.zkopirovat}
-          </button>
-        </Sekce>
+        <>
+          <Sekce titulek={t.vystupInzeratu}>
+            <p className="whitespace-pre-wrap text-sm text-zinc-200">{vystup}</p>
+            <button type="button" onClick={zkopirovatText} className={`mt-4 ${btnGhost}`}>
+              {zkopirovano ? t.zkopirovano : t.zkopirovat}
+            </button>
+          </Sekce>
+
+          <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
+            {t.aiInzeratDisclaimer}
+          </div>
+        </>
       )}
     </main>
   );
