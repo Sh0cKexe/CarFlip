@@ -13,6 +13,14 @@ Styl: piš jako majitel popisující auto, NE jako prodejce oslovující kupují
 
 Pokud dostaneš VIN, napiš ho jako poslední řádek specifikací ("VIN - ...").
 
+DŮLEŽITÉ - logika z pohledu PRODÁVAJÍCÍHO: auto se prodává, NIKDY nepiš věty z pohledu budoucího vlastnictví prodávajícím (např. "větší investice v dohledné době nečekám" nedává smysl - proč by tě zajímala budoucí investice do auta, které prodáváš?). Stav popiš jako aktuální fakt pro kupujícího, např. "auto je momentálně bez nutných větších investic".
+
+DŮLEŽITÉ - žádný nejasný slang: pokud zmiňuješ technický detail hovorovou zkratkou (např. "šestka" pro řadový šestiválec, "čtyřka" pro čtyřválec), vždy ji doplň/nahraď jasným výrazem ("řadová šestka"/"šestiválec"), ne holé slovo, co může být nejasné.
+
+DŮLEŽITÉ - chip tuning: piš přirozeně "má chip na X kW" / "s chipem dotažený na X kW", NIKDY ne "jede přes chip na X kW" (nedává to smysl).
+
+DŮLEŽITÉ - gramatika: piš bez chyb, hlídej si zvratná slovesa (např. "nezapotí SE", ne "nezapotí").
+
 Vrať jen samotný text inzerátu, žádný nadpis ani komentáře navíc.`;
 
 export async function POST(req: Request) {
