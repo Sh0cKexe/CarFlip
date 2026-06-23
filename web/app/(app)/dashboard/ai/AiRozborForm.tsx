@@ -17,6 +17,18 @@ export default function AiRozborForm({
   const [chyba, setChyba] = useState<string | null>(null);
   const [historie, setHistorie] = useState<Rozbor[]>(historieVychozi);
   const [vyuzito, setVyuzito] = useState(vyuzitoVychozi);
+  const [rozbaleno, setRozbaleno] = useState<Set<string>>(
+    () => new Set(historieVychozi[0] ? [historieVychozi[0].id] : [])
+  );
+
+  function prepnoutRozbaleni(id: string) {
+    setRozbaleno((aktualni) => {
+      const kopie = new Set(aktualni);
+      if (kopie.has(id)) kopie.delete(id);
+      else kopie.add(id);
+      return kopie;
+    });
+  }
 
   async function spustit() {
     setBezi(true);
@@ -32,7 +44,10 @@ export default function AiRozborForm({
         setChyba(j.error || t.neznama);
         return;
       }
-      if (j.radek) setHistorie([j.radek as Rozbor, ...historie]);
+      if (j.radek) {
+        setHistorie([j.radek as Rozbor, ...historie]);
+        setRozbaleno((aktualni) => new Set(aktualni).add(j.radek.id));
+      }
       if (typeof j.vyuzito === "number") setVyuzito(j.vyuzito);
       setUrl("");
     } catch (e: any) {
@@ -65,21 +80,45 @@ export default function AiRozborForm({
         <Sekce titulek={t.aiHistorie}>
           {historie.length === 0 && <p className="text-sm text-zinc-500">{t.zadneRozbory}</p>}
           <div className="space-y-3">
-            {historie.map((h, i) => (
-              <motion.div
-                key={h.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.04 }}
-                className="rounded-lg border border-border bg-panel2 p-4 transition hover:border-zinc-600"
-              >
-                <div className="mb-2 flex items-center justify-between text-xs text-zinc-500">
-                  <a href={h.url} target="_blank" rel="noreferrer" className="truncate text-accent2 hover:underline">{h.url}</a>
-                  <span className="ml-3 shrink-0">{new Date(h.vytvoreno).toLocaleString("cs-CZ")}</span>
-                </div>
-                <p className="whitespace-pre-wrap text-sm text-zinc-200">{h.vysledek}</p>
-              </motion.div>
-            ))}
+            {historie.map((h, i) => {
+              const otevreno = rozbaleno.has(h.id);
+              const prvniRadek = h.vysledek.split("\n").find((l) => l.trim()) ?? "";
+              return (
+                <motion.div
+                  key={h.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.04 }}
+                  className="rounded-lg border border-border bg-panel2 p-4 transition hover:border-zinc-600"
+                >
+                  <button
+                    type="button"
+                    onClick={() => prepnoutRozbaleni(h.id)}
+                    className="flex w-full items-start justify-between gap-3 text-left"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between text-xs text-zinc-500">
+                        <a
+                          href={h.url} target="_blank" rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="truncate text-accent2 hover:underline"
+                        >
+                          {h.url}
+                        </a>
+                        <span className="ml-3 shrink-0">{new Date(h.vytvoreno).toLocaleString("cs-CZ")}</span>
+                      </div>
+                      {!otevreno && (
+                        <p className="mt-1 truncate text-sm text-zinc-400">{prvniRadek}</p>
+                      )}
+                    </div>
+                    <span className="mt-0.5 shrink-0 text-zinc-500">{otevreno ? "▾" : "▸"}</span>
+                  </button>
+                  {otevreno && (
+                    <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-200">{h.vysledek}</p>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
       </Sekce>
     </main>

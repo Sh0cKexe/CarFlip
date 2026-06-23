@@ -15,7 +15,9 @@ Struktura (přesně v tomto pořadí):
 Model, rok, motor, nájezd, cena (cenu napiš PŘESNĚ podle řádku "Cena (přesně dopočítáno):" v datech, nepřepočítávej ji sám), stav v krátkosti.
 
 🔧 Co zkontrolovat
-Spojí typické známé problémy této motorizace/modelu (z obecných znalostí, NE z textu inzerátu) S tím, co je rozumné zkontrolovat KONKRÉTNĚ při tomto nájezdu (např. u vyššího nájezdu rozvody/spojka/podvozek, u nízkého spíš historie používání). Piš konkrétně k tomuto motoru, ne obecné fráze.
+Spojí typické známé problémy této motorizace/modelu (z obecných znalostí, NE z textu inzerátu) S tím, co je rozumné zkontrolovat KONKRÉTNĚ při tomto nájezdu. Piš konkrétně k tomuto motoru, ne obecné fráze.
+DŮLEŽITÉ - realističnost: kupující u prohlídky má jen VIZUÁLNÍ kontrolu, zkušební jízdu a OBD diagnostiku (vyčtení chybových kódů) - NEMÁ zvedák, nerozebírá motor. Nikdy nepiš rady vyžadující demontáž nebo dílnu (např. "zkontrolovat vůli na turbu", "zkontrolovat ventilovou vůli") - místo toho napiš co se z toho projeví navenek (zvuky/kouř/výkon při jízdě, co ukáže OBD).
+DŮLEŽITÉ - počítání servisních intervalů: když zmiňuješ intervalovou výměnu (rozvody, olej, brzdová kapalina apod.), spočítej si KOLIKRÁT už podle aktuálního nájezdu měla reálně proběhnout (nájezd ÷ interval, zaokrouhleno dolů) - nepiš "měla proběhnout 2x", pokud z nájezdu vychází jen 1x. Buď přesný v aritmetice.
 
 🔍 Co prověřit u TOHOTO inzerátu
 Věcně a klidně (NE alarmisticky) shrň co stojí za prověření přímo z dat tohoto inzerátu. Import bez specifikovaného původu nebo "beznehodové" tvrzení bez dokladu jsou u ojetin BĚŽNÉ, ne podezřelé - napiš je jako standardní doporučení k ověření (např. "doporučuji prověřit historii přes Cebia nebo CARVERTICAL podle VIN", "stálo by za to zkontrolovat v servisní historii, jestli byl servis i v Polsku nebo jen v původní zemi"), ne jako varování. Skutečné red flags (poškození, podezřele nízká cena/nájezd, nejasný/prázdný popis) naopak napiš jasně.
@@ -246,7 +248,7 @@ export async function POST(req: Request) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 800,
+      max_tokens: 1600,
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: obsahProAi }],
     });
