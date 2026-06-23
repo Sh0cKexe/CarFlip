@@ -24,7 +24,7 @@ export async function POST() {
   // stihl zapsat hotovo/chyba, tlacitko by jinak zustalo navzdy blokovane.
   const behZaseknuty = nastaveni?.najdi_ted_spusteno
     && Date.now() - new Date(nastaveni.najdi_ted_spusteno).getTime() > 20 * 60000;
-  if (nastaveni?.najdi_ted_stav === "bezi" && !behZaseknuty) {
+  if (!jeOwner && nastaveni?.najdi_ted_stav === "bezi" && !behZaseknuty) {
     return NextResponse.json({ error: "bezi" }, { status: 429 });
   }
 

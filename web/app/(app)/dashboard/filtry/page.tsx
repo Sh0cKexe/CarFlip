@@ -23,5 +23,6 @@ export default async function FiltryPage() {
     );
   }
 
-  return <FiltryForm nastaveni={nastaveni} />;
+  const jeAdmin = !!process.env.ADMIN_EMAIL && user.email === process.env.ADMIN_EMAIL;
+  return <FiltryForm nastaveni={nastaveni} jeAdmin={jeAdmin} />;
 }

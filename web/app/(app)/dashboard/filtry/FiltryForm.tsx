@@ -77,7 +77,7 @@ const ZNAME_ZNACKY = [
   "toyota", "uaz", "volkswagen", "volvo", "zastava",
 ].sort();
 
-export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
+export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaveni | null; jeAdmin?: boolean }) {
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
     nastaveni ?? {
@@ -103,10 +103,11 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   const [najdiTedOdesilani, setNajdiTedOdesilani] = useState(false);
   const [najdiTedStav, setNajdiTedStav] = useState<string | null>(n.najdi_ted_stav ?? null);
   const [posledniDokonceni, setPosledniDokonceni] = useState<string | null>(n.posledni_najdi_ted ?? null);
+  const [najdiTedSpusteno, setNajdiTedSpusteno] = useState<string | null>(n.najdi_ted_spusteno ?? null);
   const [najdiTedChyba, setNajdiTedChyba] = useState<string | null>(null);
   const [ted, setTed] = useState(() => Date.now());
 
-  // Tikajici hodiny pro live countdown cooldownu (kazdou sekundu).
+  // Tikajici hodiny pro live countdown cooldownu + dobu behu (kazdou sekundu).
   useEffect(() => {
     const id = setInterval(() => setTed(Date.now()), 1000);
     return () => clearInterval(id);
@@ -120,19 +121,23 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
     const id = setInterval(async () => {
       const { data } = await supabase
         .from("nastaveni")
-        .select("najdi_ted_stav, posledni_najdi_ted")
+        .select("najdi_ted_stav, posledni_najdi_ted, najdi_ted_spusteno")
         .eq("user_id", n.user_id)
         .single();
       if (data) {
         setNajdiTedStav(data.najdi_ted_stav ?? null);
         setPosledniDokonceni(data.posledni_najdi_ted ?? null);
+        setNajdiTedSpusteno(data.najdi_ted_spusteno ?? null);
       }
     }, 4000);
     return () => clearInterval(id);
   }, [najdiTedStav, supabase, n.user_id]);
 
-  const zbyvaSekund = posledniDokonceni
+  const zbyvaSekund = !jeAdmin && posledniDokonceni
     ? Math.max(0, Math.ceil((new Date(posledniDokonceni).getTime() + NAJDI_TED_COOLDOWN_MIN * 60000 - ted) / 1000))
+    : 0;
+  const bezitSekund = najdiTedSpusteno
+    ? Math.max(0, Math.floor((ted - new Date(najdiTedSpusteno).getTime()) / 1000))
     : 0;
 
   async function najitTed() {
@@ -150,6 +155,7 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
         return;
       }
       setNajdiTedStav("bezi");
+      setNajdiTedSpusteno(new Date().toISOString());
     } catch (e: any) {
       setNajdiTedChyba("Chyba sítě: " + e.message);
     } finally {
@@ -233,7 +239,7 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
           <button
             type="button"
             onClick={najitTed}
-            disabled={najdiTedOdesilani || najdiTedStav === "bezi" || zbyvaSekund > 0}
+            disabled={najdiTedOdesilani || (!jeAdmin && (najdiTedStav === "bezi" || zbyvaSekund > 0))}
             className={btnPrimary}
           >
             {najdiTedOdesilani ? t.najdiTedSpoustim : `🔎 ${t.najdiTed}`}
@@ -241,7 +247,7 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
           {najdiTedStav === "bezi" ? (
             <span className="flex items-center gap-2 text-sm text-accent">
               <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
-              {t.najdiTedBezi}
+              {t.najdiTedBezi} ({Math.floor(bezitSekund / 60)}:{String(bezitSekund % 60).padStart(2, "0")})
             </span>
           ) : najdiTedChyba ? (
             <span className="text-sm text-red-400">{najdiTedChyba}</span>
