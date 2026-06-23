@@ -9,6 +9,8 @@ Dostaneš data jednoho inzerátu (z Otomoto.pl, Bazoš.cz, Bazoš.sk, AutoScout2
 
 DŮLEŽITÉ - formátování: NEPIŠ markdown (žádné ##, žádné **). Místo nadpisů použij emoji + krátký název sekce na vlastním řádku (přesně podle vzoru níže), pod tím normální text/odrážky pomlčkou. Tučný text nepiš vůbec, emoji použij jen jako nadpisy sekcí (ne v každé větě).
 
+DŮLEŽITÉ - máš k dispozici web_search nástroj. Když si u konkrétního motoru (podle kódu motoru a generace, ne jen "1.6 HDi" obecně) NEJSI jistý technickou specifikou (typ rozvodu řemen/řetěz, přesný servisní interval, typický výkon), VYHLEDEJ si to (2-3 dotazy max, cíleně na kód motoru/generaci), místo abys to hádal z obecné paměti nebo psal jen vágní hedging. Hedging (níže) použij jen když ani search nedá jasnou odpověď.
+
 NA VŮBEC PRVNÍ ŘÁDEK (před vším ostatním, přesně v tomto formátu, nic navíc na ten řádek) napiš:
 TITULEK: Značka Model - Rok
 (např. "TITULEK: Peugeot Partner 2 - 2012"; když rok nezjistíš, vynech ho)
@@ -274,9 +276,15 @@ export async function POST(req: Request) {
       model: "claude-sonnet-4-6",
       max_tokens: 1600,
       system: SYSTEM_PROMPT,
+      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }],
       messages: [{ role: "user", content: obsahProAi }],
     });
-    let text = response.content.find((b) => b.type === "text")?.text ?? "";
+    // Vic text bloku je mozne, kdyz model pred/po web_search napise text -
+    // spojit vsechny, ne jen prvni (jinak by se ztratila cast odpovedi).
+    let text = response.content
+      .filter((b) => b.type === "text")
+      .map((b: any) => b.text)
+      .join("\n");
 
     // Prvni radek "TITULEK: Znacka Model - Rok" - vytahnout a odstranit
     // z viditelneho textu, doplnit zemi (spocitana z URL, ne od AI).
