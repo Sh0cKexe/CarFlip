@@ -1,3 +1,4 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
@@ -31,9 +32,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Musíš být přihlášen." }, { status: 401 });
   }
 
-  if (!process.env.GROQ_API_KEY) {
+  if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
-      { error: "AI mechanik není nastaven (chybí GROQ_API_KEY na serveru)." },
+      { error: "AI mechanik není nastaven (chybí ANTHROPIC_API_KEY na serveru)." },
       { status: 500 }
     );
   }
@@ -42,25 +43,19 @@ export async function POST(req: Request) {
   const systemPrompt = `Jsi zkušený automechanik-diagnostik. Pracuješ na tomto autě: ${auto.znacka} ${auto.model}, rok výroby ${auto.rok}, motor ${auto.motor}, výkon ${auto.vykon} kW. Odpovídej VÝHRADNĚ ${jazykText} (žádné cizí znaky ani jiný jazyk), věcně a konkrétně, jako zkušený mechanik kolegovi mechanikovi. Mluv konkrétně k tomuto modelu a motoru (typické závady, co kontrolovat, na co si dát pozor), ne obecné fráze. Pokud je dotaz nejasný nebo chybí důležitý detail, doptej se.`;
 
   const messages = [
-    { role: "system", content: systemPrompt },
     ...(historie ?? []).map((h) => ({ role: h.role, content: h.obsah })),
-    { role: "user", content: zprava },
+    { role: "user" as const, content: zprava },
   ];
 
   try {
-    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages }),
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-6",
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages,
     });
-    const j = await r.json();
-    if (!r.ok) {
-      return NextResponse.json({ error: "Chyba AI: " + (j?.error?.message || r.statusText) }, { status: 502 });
-    }
-    const text = j?.choices?.[0]?.message?.content ?? "";
+    const text = response.content.find((b) => b.type === "text")?.text ?? "";
     return NextResponse.json({ text });
   } catch (e: any) {
     return NextResponse.json({ error: "Chyba AI: " + (e?.message || String(e)) }, { status: 502 });
