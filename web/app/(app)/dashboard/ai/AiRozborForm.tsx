@@ -2,21 +2,21 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, input, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
+import { AI_ROZBOR_LIMIT } from "@/lib/aiLimit";
 
 export type Rozbor = { id: string; url: string; vysledek: string; vytvoreno: string };
 
 export default function AiRozborForm({
-  userId, trh, historie: historieVychozi,
-}: { userId: string; trh: Trh; historie: Rozbor[] }) {
-  const supabase = createClient();
+  trh, historie: historieVychozi, vyuzitoVychozi,
+}: { trh: Trh; historie: Rozbor[]; vyuzitoVychozi: number }) {
   const t = T(trh);
   const [url, setUrl] = useState("");
   const [bezi, setBezi] = useState(false);
   const [chyba, setChyba] = useState<string | null>(null);
   const [historie, setHistorie] = useState<Rozbor[]>(historieVychozi);
+  const [vyuzito, setVyuzito] = useState(vyuzitoVychozi);
 
   async function spustit() {
     setBezi(true);
@@ -32,12 +32,8 @@ export default function AiRozborForm({
         setChyba(j.error || t.neznama);
         return;
       }
-      const { data } = await supabase
-        .from("ai_rozbory")
-        .insert({ user_id: userId, url, vysledek: j.text })
-        .select("*")
-        .single();
-      if (data) setHistorie([data as Rozbor, ...historie]);
+      if (j.radek) setHistorie([j.radek as Rozbor, ...historie]);
+      if (typeof j.vyuzito === "number") setVyuzito(j.vyuzito);
       setUrl("");
     } catch (e: any) {
       setChyba(t.chybaSite + e.message);
@@ -46,17 +42,23 @@ export default function AiRozborForm({
     }
   }
 
+  const limitDosazen = vyuzito >= AI_ROZBOR_LIMIT;
+
   return (
     <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
       <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.aiRozborNadpis}</h1>
 
         <Sekce titulek={t.aiRozborNadpis}>
+          <p className="mb-3 text-xs text-zinc-500">
+            {vyuzito}/{AI_ROZBOR_LIMIT} {t.aiVyuzitoZLimitu}
+          </p>
           <Pole label={t.vlozLink}>
-            <input className={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.otomoto.pl/..." />
+            <input className={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.otomoto.pl/..." disabled={limitDosazen} />
           </Pole>
-          <button type="button" onClick={spustit} disabled={bezi || !url} className={`mt-3 ${btnGhost}`}>
+          <button type="button" onClick={spustit} disabled={bezi || !url || limitDosazen} className={`mt-3 ${btnGhost}`}>
             {bezi ? t.analyzuji : t.spustitRozbor}
           </button>
+          {limitDosazen && <p className="mt-2 text-sm text-amber-400">{t.aiLimitDosazen}</p>}
           {chyba && <p className="mt-2 text-sm text-red-400">{chyba}</p>}
         </Sekce>
 

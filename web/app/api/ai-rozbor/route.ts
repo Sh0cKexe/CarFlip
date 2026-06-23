@@ -1,5 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { AI_ROZBOR_LIMIT, zacatekMesice } from "@/lib/aiLimit";
 
 const SYSTEM_PROMPT = `Jsi expert na ojetá auta a jejich dovoz z Polska do ČR za účelem dalšího prodeje (flip).
 Dostaneš strukturovaná data jednoho inzerátu z Otomoto.pl (JSON). Napiš stručnou analýzu v ČEŠTINĚ, v tomto pořadí:
@@ -22,6 +24,25 @@ export async function POST(req: Request) {
 
   if (!url || !url.startsWith("https://www.otomoto.pl/")) {
     return NextResponse.json({ error: "Vyplň platný link na Otomoto inzerát." }, { status: 400 });
+  }
+
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "Musíš být přihlášen." }, { status: 401 });
+  }
+
+  const { count } = await supabase
+    .from("ai_rozbory")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .gte("vytvoreno", zacatekMesice());
+
+  if (count !== null && count >= AI_ROZBOR_LIMIT) {
+    return NextResponse.json(
+      { error: `Dosáhl jsi měsíčního limitu AI rozborů (${AI_ROZBOR_LIMIT}/měsíc). Limit se obnoví příští měsíc.` },
+      { status: 429 }
+    );
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -78,7 +99,14 @@ export async function POST(req: Request) {
       messages: [{ role: "user", content: advertJson }],
     });
     const text = response.content.find((b) => b.type === "text")?.text ?? "";
-    return NextResponse.json({ text });
+
+    const { data: radek } = await supabase
+      .from("ai_rozbory")
+      .insert({ user_id: user.id, url, vysledek: text })
+      .select("*")
+      .single();
+
+    return NextResponse.json({ text, radek, vyuzito: (count ?? 0) + 1, limit: AI_ROZBOR_LIMIT });
   } catch (e: any) {
     return NextResponse.json({ error: "Chyba AI rozboru: " + (e?.message || String(e)) }, { status: 502 });
   }
