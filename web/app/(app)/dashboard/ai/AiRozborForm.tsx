@@ -53,7 +53,7 @@ export default function AiRozborForm({
             {vyuzito}/{AI_ROZBOR_LIMIT} {t.aiVyuzitoZLimitu}
           </p>
           <Pole label={t.vlozLink}>
-            <input className={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.otomoto.pl/..." disabled={limitDosazen} />
+            <input className={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.otomoto.pl/... nebo Bazoš/AutoScout24/Willhaben" disabled={limitDosazen} />
           </Pole>
           <button type="button" onClick={spustit} disabled={bezi || !url || limitDosazen} className={`mt-3 ${btnGhost}`}>
             {bezi ? t.analyzuji : t.spustitRozbor}
