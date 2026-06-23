@@ -46,6 +46,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
   const polozky = [
     { href: "/dashboard", ikona: "📊", text: t.prehled, presne: true },
     { href: "/dashboard/ai", ikona: "🤖", text: t.aiRozborNadpis },
+    { href: "/dashboard/ai-inzerat", ikona: "📝", text: t.aiInzeratNadpis },
     { href: "/dashboard/bot", ikona: "🛠️", text: t.nastaveniBota },
     { href: "/dashboard/filtry", ikona: "🔍", text: t.filtryHledani },
     { href: "/auta", ikona: "📋", text: t.mojeAuta },

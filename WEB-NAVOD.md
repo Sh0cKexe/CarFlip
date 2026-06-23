@@ -99,6 +99,21 @@ Potřebuje to API klíč (jen na serveru, nikdy ve webu/prohlížeči):
 Cena: i bez kreditu řádově desetiny Kč na jeden rozbor (model Claude Opus 4.8).
 Sleduj spotřebu v **console.anthropic.com → Usage**.
 
+**📝 AI generátor textu inzerátu** – vyplníš základní údaje o autě (model,
+rok, nájezd, cena, palivo, převodovka, volné poznámky) a AI (Google Gemini,
+zdarma) napíše text inzerátu na Bazoš v normálním jazyce, bez reklamních
+klišé. Text se nikam neukládá, jen na obrazovce + tlačítko "Zkopírovat".
+
+Potřebuje API klíč (jen na serveru):
+1. **https://aistudio.google.com/app/apikey** → přihlaš se Google účtem →
+   **Create API key**. Zdarma, žádná platební karta potřeba (jen rate-limit
+   na free tieru, na tohle bohatě stačí).
+2. Ve **Vercelu** → CarFlip projekt → **Settings → Environment Variables**:
+   - Name: `GOOGLE_AI_API_KEY`
+   - Value: ten klíč z kroku 1
+   - Environments: Production + Preview
+3. **Redeploy**, ať se proměnná použije.
+
 ## Aktualizace – klikací mapa pro oblasti
 V Nastavení u "Oblasti v Polsku" je teď mapa – klikneš do ní a vznikne nová
 oblast (kruh) s automaticky doplněným názvem města a slugem. Lze přidat víc
