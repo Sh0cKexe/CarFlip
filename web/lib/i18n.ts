@@ -197,6 +197,34 @@ Na co si dát největší pozor?
   odeslat: "Odeslat",
   novyAutoDoChatu: "Nové auto",
   mechAsistent: "AI mechanik",
+  aiMechanikVyuzitoZLimitu: "nových chatů využito tento měsíc",
+  aiMechanikLimitDosazen: "Dosáhl jsi měsíčního limitu nových chatů. Limit se obnoví příští měsíc - staré chaty si ale dál můžeš otevřít a pokračovat v nich.",
+  aiMechanikProbiha: "Mechanik přemýšlí – může to trvat i 30 s.",
+  aiMechanikHistorie: "Historie chatů",
+  pokracovatVChatu: "Pokračovat",
+  aiMechanikDisclaimer: `🛠️ K čemu je tento AI asistent skvěle použitelný?
+Umělá inteligence je fantastický parťák pro brainstorming a rychlou diagnostiku. Dokáže vám ušetřit hodiny tápání, protože:
+
+✅ Propojuje symptomy: Zadáte jí chybové kódy společně s tím, jak se auto chová (např. cuká za studena, ztrácí tlak), a ona vám okamžitě vyplivne seznam nejčastějších příčin.
+
+✅ Zná typické bolesti aut: Ví, co u konkrétních modelů a motorů odchází nejčastěji (např. „u tohoto nájezdu na tomto motoru často odchází podtlaková regulace turba"). Máte tak hned tip, na co se zaměřit nejdřív.
+
+✅ Poradí s logickým postupem: Navrhne vám efektivní postup měření a testování, abyste nemuseli měnit díly stylem pokus-omyl.
+
+🛑 STOP! Ale pozor na tvrdá data:
+Tento AI asistent slouží výhradně jako myšlenková inspirace, kde začít hledat závadu, když už si nevíte rady s diagnostikou. Nikdy ho nepoužívejte jako zdroj technických dat!
+
+Co od AI NIKDY nebrat vážně:
+
+❌ Utahovací momenty: AI si čísla a Newtonmetry často vymýšlí nebo plete modely. Hrozí stržení závitů nebo zničení dílů.
+
+❌ Elektrická schémata a piny: Barvy drátů, čísla pinů a schémata zapojení musíte brát jako neověřená. Stačí jeden přehozený pin a odpálíte řídicí jednotku.
+
+❌ Servisní postupy (Rozvody apod.): Přesné postupy montáže a nastavení motoru z AI nelze považovat za bezpečné.
+
+🛠️ Zlaté pravidlo: Všechny utahovací momenty, schémata a přesné postupy si vždy a bezvýhradně ověřte a porovnejte z více nezávislých zdrojů a oficiálních dílenských příruček (Autodata, Vivid, ElsaWin, TecRMI atd.) podle konkrétního kódu motoru a VIN. Spoléhat se pouze na jeden zdroj informací, natož na AI, je v dílně obrovský hazard.
+
+ℹ️ Právní doložka: Provozovatel webu důrazně varuje před slepým následováním technických hodnot vygenerovaných AI. Data jsou bez záruky. Za jakékoliv škody na vozidle, zničené díly nebo finanční ztráty způsobené nesprávným postupem nese plnou odpovědnost mechanik provádějící opravu.`,
   pridatDoPoznamek: "Přidat do poznámek",
   cenaKoupeno: "Cena koupeno",
   cenaProdano: "Cena prodáno",
@@ -432,6 +460,34 @@ Na čo si dať najväčší pozor?
   odeslat: "Odoslať",
   novyAutoDoChatu: "Nové auto",
   mechAsistent: "AI mechanik",
+  aiMechanikVyuzitoZLimitu: "nových chatov využitých tento mesiac",
+  aiMechanikLimitDosazen: "Dosiahol si mesačný limit nových chatov. Limit sa obnoví budúci mesiac - staré chaty si ale stále môžeš otvoriť a pokračovať v nich.",
+  aiMechanikProbiha: "Mechanik rozmýšľa – môže to trvať aj 30 s.",
+  aiMechanikHistorie: "História chatov",
+  pokracovatVChatu: "Pokračovať",
+  aiMechanikDisclaimer: `🛠️ Na čo je tento AI asistent skvele použiteľný?
+Umelá inteligencia je fantastický partner na brainstorming a rýchlu diagnostiku. Dokáže vám ušetriť hodiny tápania, pretože:
+
+✅ Spája symptómy: Zadáte jej chybové kódy spolu s tým, ako sa auto správa (napr. cuká za studena, stráca tlak), a ona vám okamžite vypľuje zoznam najčastejších príčin.
+
+✅ Pozná typické bolesti áut: Vie, čo pri konkrétnych modeloch a motoroch odchádza najčastejšie (napr. „pri tomto nájazde na tomto motore často odchádza podtlaková regulácia turba"). Máte tak hneď tip, na čo sa zamerať najskôr.
+
+✅ Poradí s logickým postupom: Navrhne vám efektívny postup merania a testovania, aby ste nemuseli meniť diely metódou pokus-omyl.
+
+🛑 STOP! Ale pozor na tvrdé dáta:
+Tento AI asistent slúži výhradne ako myšlienková inšpirácia, kde začať hľadať závadu, keď už si neviete rady s diagnostikou. Nikdy ho nepoužívajte ako zdroj technických dát!
+
+Čo od AI NIKDY nebrať vážne:
+
+❌ Uťahovacie momenty: AI si čísla a Newtonmetre často vymýšľa alebo pletie modely. Hrozí strhnutie závitov alebo zničenie dielov.
+
+❌ Elektrické schémy a piny: Farby drôtov, čísla pinov a schémy zapojenia musíte brať ako neoverené. Stačí jeden prehodený pin a odpálite riadiacu jednotku.
+
+❌ Servisné postupy (rozvody a pod.): Presné postupy montáže a nastavenia motora z AI nie je možné považovať za bezpečné.
+
+🛠️ Zlaté pravidlo: Všetky uťahovacie momenty, schémy a presné postupy si vždy a bezvýhradne overte a porovnajte z viacerých nezávislých zdrojov a oficiálnych dielenských príručiek (Autodata, Vivid, ElsaWin, TecRMI atď.) podľa konkrétneho kódu motora a VIN. Spoliehať sa len na jeden zdroj informácií, nieto na AI, je v dielni obrovský hazard.
+
+ℹ️ Právna doložka: Provozovateľ webu dôrazne varuje pred slepým nasledovaním technických hodnôt vygenerovaných AI. Dáta sú bez záruky. Za akékoľvek škody na vozidle, zničené diely alebo finančné straty spôsobené nesprávnym postupom nesie plnú zodpovednosť mechanik vykonávajúci opravu.`,
   pridatDoPoznamek: "Pridať do poznámok",
   cenaKoupeno: "Cena kúpené",
   cenaProdano: "Cena predané",

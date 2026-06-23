@@ -282,6 +282,38 @@ create policy "ai_inzeraty_insert_own" on public.ai_inzeraty
   for insert with check (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
+-- AI mechanik: cely chat (auto + vsechny zpravy) v jednom radku, aby se
+-- k nemu dalo vratit a pokracovat. Limit je na POCET CHATU (novych radku)
+-- za mesic, ne na pocet zprav - pokracovani v existujicim chatu nove
+-- radky nepridava, jen UPDATE zpravy.
+-- ---------------------------------------------------------------------
+
+create table if not exists public.ai_mechanik_chaty (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  znacka text not null default '',
+  model text not null default '',
+  rok text not null default '',
+  motor text not null default '',
+  vykon text not null default '',
+  zpravy jsonb not null default '[]'::jsonb,
+  vytvoreno timestamptz not null default now(),
+  aktualizovano timestamptz not null default now()
+);
+
+alter table public.ai_mechanik_chaty enable row level security;
+
+drop policy if exists "ai_mechanik_chaty_select_own" on public.ai_mechanik_chaty;
+create policy "ai_mechanik_chaty_select_own" on public.ai_mechanik_chaty
+  for select using (auth.uid() = user_id);
+drop policy if exists "ai_mechanik_chaty_insert_own" on public.ai_mechanik_chaty;
+create policy "ai_mechanik_chaty_insert_own" on public.ai_mechanik_chaty
+  for insert with check (auth.uid() = user_id);
+drop policy if exists "ai_mechanik_chaty_update_own" on public.ai_mechanik_chaty;
+create policy "ai_mechanik_chaty_update_own" on public.ai_mechanik_chaty
+  for update using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
 -- Invite kody a prodluzitelny pristup (paywall gate).
 -- invite_kody: zadne RLS policy -> nedostupne z webu (anon/auth klic),
 -- jen service key (registracni route) a ty v Supabase Table Editoru.

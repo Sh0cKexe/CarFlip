@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
+import { AI_MECHANIK_LIMIT, zacatekMesice } from "@/lib/aiLimit";
 
 type ChatZprava = { role: "user" | "assistant"; obsah: string };
 
@@ -12,7 +13,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Chybný požadavek." }, { status: 400 });
   }
 
-  const { auto, zprava, historie, jazyk } = body as {
+  const { chatId, auto, zprava, historie, jazyk } = body as {
+    chatId?: string;
     auto: { znacka: string; model: string; rok: string; motor: string; vykon: string };
     zprava: string;
     historie: ChatZprava[];
@@ -30,6 +32,24 @@ export async function POST(req: Request) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Musíš být přihlášen." }, { status: 401 });
+  }
+
+  // Limit je na POCET NOVYCH CHATU za mesic, ne na pocet zprav -
+  // pokracovani v existujicim chatu (chatId vyplnene) se nepocita.
+  let vyuzito = 0;
+  if (!chatId) {
+    const { count } = await supabase
+      .from("ai_mechanik_chaty")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .gte("vytvoreno", zacatekMesice());
+    vyuzito = count ?? 0;
+    if (vyuzito >= AI_MECHANIK_LIMIT) {
+      return NextResponse.json(
+        { error: `Dosáhl jsi měsíčního limitu nových chatů s AI mechanikem (${AI_MECHANIK_LIMIT}/měsíc). Limit se obnoví příští měsíc.` },
+        { status: 429 }
+      );
+    }
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
@@ -56,7 +76,28 @@ export async function POST(req: Request) {
       messages,
     });
     const text = response.content.find((b) => b.type === "text")?.text ?? "";
-    return NextResponse.json({ text });
+
+    const novaZpravy = [...(historie ?? []), { role: "user", obsah: zprava }, { role: "assistant", obsah: text }];
+
+    if (chatId) {
+      await supabase
+        .from("ai_mechanik_chaty")
+        .update({ zpravy: novaZpravy, aktualizovano: new Date().toISOString() })
+        .eq("id", chatId)
+        .eq("user_id", user.id);
+      return NextResponse.json({ text });
+    } else {
+      const { data: radek } = await supabase
+        .from("ai_mechanik_chaty")
+        .insert({
+          user_id: user.id,
+          znacka: auto.znacka, model: auto.model, rok: auto.rok, motor: auto.motor, vykon: auto.vykon,
+          zpravy: novaZpravy,
+        })
+        .select("*")
+        .single();
+      return NextResponse.json({ text, chatId: radek?.id, vyuzito: vyuzito + 1, limit: AI_MECHANIK_LIMIT });
+    }
   } catch (e: any) {
     return NextResponse.json({ error: "Chyba AI: " + (e?.message || String(e)) }, { status: 502 });
   }
