@@ -12,15 +12,15 @@ export default async function DashboardPage() {
     trh,
     { data: auta },
     { data: naklady },
-    { count: otevreneUkoly },
+    { data: ukolyOtevrene },
     { count: aiRozboru },
     { count: aiInzeratu },
     { count: aiMechanikChatu },
   ] = await Promise.all([
     getTrh(user.id),
-    supabase.from("auta").select("id, stav, cena_koupeno_kc, cena_prodano_kc, datum_koupeno, datum_prodano").eq("user_id", user.id),
+    supabase.from("auta").select("id, titulek, stav, cena_koupeno_kc, cena_prodano_kc, datum_koupeno, datum_prodano").eq("user_id", user.id),
     supabase.from("naklady").select("auto_id, castka_kc").eq("user_id", user.id),
-    supabase.from("ukoly").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("hotovo", false),
+    supabase.from("ukoly").select("id, auto_id, text").eq("user_id", user.id).eq("hotovo", false).order("vytvoreno", { ascending: true }),
     supabase.from("ai_rozbory").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("vytvoreno", zacatekMesice()),
     supabase.from("ai_inzeraty").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("vytvoreno", zacatekMesice()),
     supabase.from("ai_mechanik_chaty").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("vytvoreno", zacatekMesice()),
@@ -30,7 +30,15 @@ export default async function DashboardPage() {
   (naklady ?? []).forEach((row) => {
     nakladySuma[row.auto_id] = (nakladySuma[row.auto_id] ?? 0) + (row.castka_kc ?? 0);
   });
-  const celkoveNaklady = (naklady ?? []).reduce((suma, row) => suma + (row.castka_kc ?? 0), 0);
+
+  const titulekAuta: Record<string, string> = {};
+  (auta ?? []).forEach((a) => { titulekAuta[a.id] = a.titulek; });
+  const ukoly = (ukolyOtevrene ?? []).map((u) => ({
+    id: u.id as string,
+    text: u.text as string,
+    autoTitulek: titulekAuta[u.auto_id] ?? "",
+    autoId: u.auto_id as string,
+  }));
 
   let celkovyZisk = 0;
   let pocetKoupeno = 0;
@@ -64,10 +72,9 @@ export default async function DashboardPage() {
       pocetVInzerci={pocetVInzerci}
       pocetProdano={pocetProdano}
       celkovyZisk={celkovyZisk}
-      celkoveNaklady={celkoveNaklady}
       prumernyZiskAuto={pocetProdano > 0 ? Math.round(celkovyZisk / pocetProdano) : null}
       prumernaDobaDrzeniDni={pocetSDatumy > 0 ? Math.round(soucetDniDrzeni / pocetSDatumy) : null}
-      otevreneUkoly={otevreneUkoly ?? 0}
+      ukoly={ukoly}
       aiRozboru={aiRozboru ?? 0}
       aiInzeratu={aiInzeratu ?? 0}
       aiMechanikChatu={aiMechanikChatu ?? 0}
