@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, getUzivatel, getTrh } from "@/utils/supabase/server";
 import DashboardOverview from "./DashboardOverview";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUzivatel();
   if (!user) redirect("/login");
+  const supabase = await createClient();
 
-  const [{ data: nastaveni }, { data: auta }, { data: naklady }] = await Promise.all([
-    supabase.from("nastaveni").select("trh").eq("user_id", user.id).single(),
+  const [trh, { data: auta }, { data: naklady }] = await Promise.all([
+    getTrh(user.id),
     supabase.from("auta").select("id, stav, cena_koupeno_kc, cena_prodano_kc").eq("user_id", user.id),
     supabase.from("naklady").select("auto_id, castka_kc").eq("user_id", user.id),
   ]);
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardOverview
-      trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
+      trh={trh}
       pocetAutCelkem={(auta ?? []).length}
       pocetKoupeno={pocetKoupeno}
       pocetProdano={pocetProdano}

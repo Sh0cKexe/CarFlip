@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, getUzivatel } from "@/utils/supabase/server";
 import FiltryForm from "./FiltryForm";
 
 export default async function FiltryPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUzivatel();
   if (!user) redirect("/login");
+  const supabase = await createClient();
 
   const { data: nastaveni, error } = await supabase
     .from("nastaveni")

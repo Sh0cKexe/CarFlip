@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, getUzivatel, getTrh } from "@/utils/supabase/server";
 import AutaList, { type Auto } from "./AutaList";
 
 export default async function AutaPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUzivatel();
   if (!user) redirect("/login");
+  const supabase = await createClient();
 
-  const [{ data: auta }, { data: naklady }, { data: nastaveni }] = await Promise.all([
+  const [{ data: auta }, { data: naklady }, trh] = await Promise.all([
     supabase.from("auta").select("*").eq("user_id", user.id).order("vytvoreno", { ascending: false }),
     supabase.from("naklady").select("auto_id, castka_kc").eq("user_id", user.id),
-    supabase.from("nastaveni").select("trh").eq("user_id", user.id).single(),
+    getTrh(user.id),
   ]);
 
   const nakladySuma: Record<string, number> = {};
@@ -23,7 +23,7 @@ export default async function AutaPage() {
       userId={user.id}
       auta={(auta ?? []) as Auto[]}
       nakladySuma={nakladySuma}
-      trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"}
+      trh={trh}
     />
   );
 }

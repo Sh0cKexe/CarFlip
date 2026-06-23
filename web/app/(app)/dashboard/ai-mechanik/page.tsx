@@ -1,17 +1,11 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { getUzivatel, getTrh } from "@/utils/supabase/server";
 import AiMechanikChat from "./AiMechanikChat";
 
 export default async function AiMechanikPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUzivatel();
   if (!user) redirect("/login");
+  const trh = await getTrh(user.id);
 
-  const { data: nastaveni } = await supabase
-    .from("nastaveni")
-    .select("trh")
-    .eq("user_id", user.id)
-    .single();
-
-  return <AiMechanikChat trh={(nastaveni?.trh as "cz" | "sk") ?? "cz"} />;
+  return <AiMechanikChat trh={trh} />;
 }

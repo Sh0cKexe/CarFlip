@@ -1,11 +1,11 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createClient, getUzivatel } from "@/utils/supabase/server";
 import BotForm from "./BotForm";
 
 export default async function BotPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUzivatel();
   if (!user) redirect("/login");
+  const supabase = await createClient();
 
   const { data: nastaveni, error } = await supabase
     .from("nastaveni")
