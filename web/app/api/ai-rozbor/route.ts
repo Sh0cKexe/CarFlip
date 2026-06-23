@@ -2,20 +2,36 @@ import Anthropic from "@anthropic-ai/sdk";
 import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { AI_ROZBOR_LIMIT, zacatekMesice } from "@/lib/aiLimit";
+import { nactiKurzServer, type Kurz } from "@/lib/kurzServer";
 
 const SYSTEM_PROMPT = `Jsi expert na ojetá auta a jejich dovoz/import za účelem dalšího prodeje (flip).
-Dostaneš data jednoho inzerátu (z Otomoto.pl, Bazoš.cz, Bazoš.sk, AutoScout24 nebo Willhaben.at - JSON nebo prostý text podle zdroje). Napiš stručnou analýzu v ČEŠTINĚ, v tomto pořadí:
+Dostaneš data jednoho inzerátu (z Otomoto.pl, Bazoš.cz, Bazoš.sk, AutoScout24 nebo Willhaben.at - JSON nebo prostý text podle zdroje). Napiš stručnou analýzu v ČEŠTINĚ.
 
-1. **Shrnutí auta** – model, rok, motor, nájezd, cena, stav v krátkosti.
-2. **Typické známé problémy této motorizace/modelu** – z obecných znalostí o tomto autě (NE z textu inzerátu).
-3. **Red flags z TOHOTO inzerátu** – podezřelé věci přímo z dat (poškození, neregistrováno, podezřele nízká cena/nájezd, nejasný popis, chybějící servisní historie apod.). Pokud nic podezřelého není, napiš to.
-4. **Doporučení** – jedno slovo tučně: **KOUPIT** / **NEKOUPIT** / **ZJISTIT VÍC**, a 1-2 věty proč.
+DŮLEŽITÉ - formátování: NEPIŠ markdown (žádné ##, žádné **). Místo nadpisů použij emoji + krátký název sekce na vlastním řádku (přesně podle vzoru níže), pod tím normální text/odrážky pomlčkou. Tučný text nepiš vůbec, emoji použij jen jako nadpisy sekcí (ne v každé větě).
 
-Buď stručný a konkrétní, žádné obecné fráze.`;
+Struktura (přesně v tomto pořadí):
+
+🚗 Shrnutí auta
+Model, rok, motor, nájezd, cena (cenu napiš PŘESNĚ podle řádku "Cena (přesně dopočítáno):" v datech, nepřepočítávej ji sám), stav v krátkosti.
+
+🔧 Co zkontrolovat
+Spojí typické známé problémy této motorizace/modelu (z obecných znalostí, NE z textu inzerátu) S tím, co je rozumné zkontrolovat KONKRÉTNĚ při tomto nájezdu (např. u vyššího nájezdu rozvody/spojka/podvozek, u nízkého spíš historie používání). Piš konkrétně k tomuto motoru, ne obecné fráze.
+
+🔍 Co prověřit u TOHOTO inzerátu
+Věcně a klidně (NE alarmisticky) shrň co stojí za prověření přímo z dat tohoto inzerátu. Import bez specifikovaného původu nebo "beznehodové" tvrzení bez dokladu jsou u ojetin BĚŽNÉ, ne podezřelé - napiš je jako standardní doporučení k ověření (např. "doporučuji prověřit historii přes Cebia nebo CARVERTICAL podle VIN", "stálo by za to zkontrolovat v servisní historii, jestli byl servis i v Polsku nebo jen v původní zemi"), ne jako varování. Skutečné red flags (poškození, podezřele nízká cena/nájezd, nejasný/prázdný popis) naopak napiš jasně.
+
+✅ Doporučení
+Jedno slovo: KOUPIT / NEKOUPIT / ZJISTIT VÍC, a 1-2 věty proč.
+
+Buď stručný a konkrétní, žádné obecné fráze, žádné přehnaně dramatické formulace.`;
 
 const HEADERS = { "User-Agent": "Mozilla/5.0 (CarFlip AI rozbor)" };
 
-type Zdroj = "otomoto" | "autoscout24" | "willhaben" | "bazos";
+type Mena = "PLN" | "CZK" | "EUR";
+type Cena = { hodnota: number; mena: Mena };
+type Vysledek = { obsah: string; cena?: Cena } | { chyba: string };
+
+type Zdroj = "otomoto" | "autoscout24" | "willhaben" | "bazos-cz" | "bazos-sk";
 
 function detekujZdroj(url: string): Zdroj | null {
   let host: string;
@@ -27,7 +43,8 @@ function detekujZdroj(url: string): Zdroj | null {
   if (host.endsWith("otomoto.pl")) return "otomoto";
   if (host.includes("autoscout24.")) return "autoscout24";
   if (host.endsWith("willhaben.at")) return "willhaben";
-  if (host.endsWith("bazos.cz") || host.endsWith("bazos.sk")) return "bazos";
+  if (host.endsWith("bazos.cz")) return "bazos-cz";
+  if (host.endsWith("bazos.sk")) return "bazos-sk";
   return null;
 }
 
@@ -41,12 +58,23 @@ function vytahniNextData(html: string): any | null {
   }
 }
 
+function formatCena(cena: Cena, kurz: Kurz): string {
+  const { hodnota, mena } = cena;
+  const czk = mena === "CZK" ? hodnota : mena === "PLN" ? hodnota * kurz.pln_czk : hodnota * kurz.eur_czk;
+  const eur = mena === "EUR" ? hodnota : czk / kurz.eur_czk;
+  const nativni = `${Math.round(hodnota).toLocaleString("cs-CZ")} ${mena === "PLN" ? "PLN" : mena === "CZK" ? "Kč" : "EUR"}`;
+  const casti = [nativni];
+  if (mena !== "CZK") casti.push(`≈ ${Math.round(czk).toLocaleString("cs-CZ")} Kč`);
+  if (mena !== "EUR") casti.push(`≈ ${Math.round(eur).toLocaleString("cs-CZ")} EUR`);
+  return casti.join(", ");
+}
+
 /** Otomoto.pl - JSON v __NEXT_DATA__.
  * POZOR: advert.images ma ~24000 znaku a je v objektu PRED description/
  * details/parametersDict (zive overeno) - kdyby se posilal cely advert,
  * slice(12000) by skoro vzdy usekl specifikace a poslal jen rozfoceny
  * seznam URL fotek. Proto vyber jen relevantnich poli. */
-async function dataZOtomoto(url: string): Promise<{ obsah: string } | { chyba: string }> {
+async function dataZOtomoto(url: string): Promise<Vysledek> {
   const r = await fetch(url, { headers: HEADERS });
   if (!r.ok) return { chyba: `Otomoto vrátilo chybu (${r.status}) – inzerát možná byl smazán.` };
   const html = await r.text();
@@ -62,7 +90,10 @@ async function dataZOtomoto(url: string): Promise<{ obsah: string } | { chyba: s
     equipment: advert.equipment,
     category: advert.category,
   };
-  return { obsah: JSON.stringify(vyber).slice(0, 12000) };
+  let cena: Cena | undefined;
+  const hodnota = Number(advert.price?.value);
+  if (hodnota) cena = { hodnota, mena: (advert.price?.currency as Mena) || "PLN" };
+  return { obsah: JSON.stringify(vyber).slice(0, 12000), cena };
 }
 
 /** AutoScout24 (DE/AT/IT...) - JSON v __NEXT_DATA__, listingDetails.
@@ -70,7 +101,7 @@ async function dataZOtomoto(url: string): Promise<{ obsah: string } | { chyba: s
  * (zive overeno) - kdyby se posilalo cele, slice(12000) by usekl presne
  * uprostred pole "vehicle" (motor/najezd/palivo). Proto se posila jen
  * vyber relevantnich poli, ne cely objekt. */
-async function dataZAutoscout24(url: string): Promise<{ obsah: string } | { chyba: string }> {
+async function dataZAutoscout24(url: string): Promise<Vysledek> {
   const r = await fetch(url, { headers: HEADERS });
   if (!r.ok) return { chyba: `AutoScout24 vrátilo chybu (${r.status}) – inzerát možná byl smazán.` };
   const html = await r.text();
@@ -85,11 +116,14 @@ async function dataZAutoscout24(url: string): Promise<{ obsah: string } | { chyb
     ratings: detail.ratings,
     warranty: detail.warranty,
   };
-  return { obsah: JSON.stringify(vyber).slice(0, 12000) };
+  let cena: Cena | undefined;
+  const hodnota = Number(detail.price?.priceRaw);
+  if (hodnota) cena = { hodnota, mena: "EUR" };
+  return { obsah: JSON.stringify(vyber).slice(0, 12000), cena };
 }
 
 /** Willhaben.at - JSON v __NEXT_DATA__, attribute-list format. */
-async function dataZWillhaben(url: string): Promise<{ obsah: string } | { chyba: string }> {
+async function dataZWillhaben(url: string): Promise<Vysledek> {
   const r = await fetch(url, { headers: HEADERS });
   if (!r.ok) return { chyba: `Willhaben vrátilo chybu (${r.status}) – inzerát možná byl smazán.` };
   const html = await r.text();
@@ -100,13 +134,16 @@ async function dataZWillhaben(url: string): Promise<{ obsah: string } | { chyba:
   for (const a of attrs) {
     if (a?.name && a?.values?.[0] != null) obj[a.name] = String(a.values[0]);
   }
-  return { obsah: JSON.stringify(obj).slice(0, 12000) };
+  let cena: Cena | undefined;
+  const hodnota = Number(obj["PRICE/AMOUNT"]);
+  if (hodnota) cena = { hodnota, mena: "EUR" };
+  return { obsah: JSON.stringify(obj).slice(0, 12000), cena };
 }
 
 /** Bazoš.cz/sk - zadny JSON, jen HTML. Vytahne blok div.popisdetail (strukturovane
  * udaje + volny popis) hrubou silou (bez DOM parseru - jen najde znacku a useka
  * dalsi rozumny kus HTML, pak ho ocisti od tagu). */
-async function dataZBazos(url: string): Promise<{ obsah: string } | { chyba: string }> {
+async function dataZBazos(url: string, mena: "CZK" | "EUR"): Promise<Vysledek> {
   const r = await fetch(url, { headers: HEADERS });
   if (!r.ok) return { chyba: `Bazoš vrátil chybu (${r.status}) – inzerát možná byl smazán.` };
   const html = await r.text();
@@ -125,13 +162,18 @@ async function dataZBazos(url: string): Promise<{ obsah: string } | { chyba: str
   blok = blok.replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
   blok = blok.replace(/[ \t]+/g, " ").trim();
 
+  let cena: Cena | undefined;
+  if (cenaText) {
+    const cislo = Number(cenaText.replace(/[^\d]/g, ""));
+    if (cislo) cena = { hodnota: cislo, mena };
+  }
+
   const obsah = [
     titleMatch ? `Název: ${titleMatch[1].trim()}` : "",
-    cenaText ? `Cena: ${cenaText}` : "",
     "Detail:",
     blok,
   ].filter(Boolean).join("\n");
-  return { obsah: obsah.slice(0, 8000) };
+  return { obsah: obsah.slice(0, 8000), cena };
 }
 
 export async function POST(req: Request) {
@@ -180,17 +222,24 @@ export async function POST(req: Request) {
     );
   }
 
-  let vysledekFetch: { obsah: string } | { chyba: string };
+  let vysledekFetch: Vysledek;
   try {
     if (zdroj === "otomoto") vysledekFetch = await dataZOtomoto(url);
     else if (zdroj === "autoscout24") vysledekFetch = await dataZAutoscout24(url);
     else if (zdroj === "willhaben") vysledekFetch = await dataZWillhaben(url);
-    else vysledekFetch = await dataZBazos(url);
+    else if (zdroj === "bazos-cz") vysledekFetch = await dataZBazos(url, "CZK");
+    else vysledekFetch = await dataZBazos(url, "EUR");
   } catch {
     return NextResponse.json({ error: "Nepodařilo se stáhnout inzerát." }, { status: 502 });
   }
   if ("chyba" in vysledekFetch) {
     return NextResponse.json({ error: vysledekFetch.chyba }, { status: 502 });
+  }
+
+  let obsahProAi = vysledekFetch.obsah;
+  if (vysledekFetch.cena) {
+    const kurz = await nactiKurzServer();
+    obsahProAi = `Cena (přesně dopočítáno): ${formatCena(vysledekFetch.cena, kurz)}\n\n${obsahProAi}`;
   }
 
   try {
@@ -199,7 +248,7 @@ export async function POST(req: Request) {
       model: "claude-sonnet-4-6",
       max_tokens: 800,
       system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: vysledekFetch.obsah }],
+      messages: [{ role: "user", content: obsahProAi }],
     });
     const text = response.content.find((b) => b.type === "text")?.text ?? "";
 
