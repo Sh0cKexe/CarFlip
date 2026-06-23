@@ -40,25 +40,43 @@ export default function DashboardOverview({
           {t.prehled}
         </motion.h1>
 
-        <div className="grid items-start gap-4 sm:grid-cols-2">
-          <Sekce titulek={t.celkovyZisk}>
-            <p className={`text-3xl font-semibold ${celkovyZisk >= 0 ? "text-gradient" : "text-red-400"}`}>
-              <CountUp value={celkovyZisk} formatuj={(n) => `${n.toLocaleString("cs-CZ")} ${t.mena}`} />
-            </p>
-          </Sekce>
-          <Sekce titulek={t.pocetAutCelkem}>
-            <p className="text-3xl font-semibold text-zinc-100">
-              <CountUp value={pocetAutCelkem} formatuj={(n) => `${n}`} />
-            </p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <span className="rounded-full bg-panel2/80 px-3 py-1 text-sm font-medium text-zinc-200">{t.koupeno}: {pocetKoupeno}</span>
-              <span className="rounded-full bg-panel2/80 px-3 py-1 text-sm font-medium text-zinc-200">{t.vInzerci}: {pocetVInzerci}</span>
-              <span className="rounded-full bg-panel2/80 px-3 py-1 text-sm font-medium text-zinc-200">{t.prodano}: {pocetProdano}</span>
-            </div>
-          </Sekce>
-          <Sekce titulek={`${t.otevreneUkoly} (${ukoly.length})`}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex flex-col gap-4">
+            <Sekce titulek={t.pocetAutCelkem}>
+              <p className="text-3xl font-semibold text-zinc-100">
+                <CountUp value={pocetAutCelkem} formatuj={(n) => `${n}`} />
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <span className="rounded-full bg-panel2/80 px-3 py-1 text-sm font-medium text-zinc-200">{t.koupeno}: {pocetKoupeno}</span>
+                <span className="rounded-full bg-panel2/80 px-3 py-1 text-sm font-medium text-zinc-200">{t.vInzerci}: {pocetVInzerci}</span>
+                <span className="rounded-full bg-panel2/80 px-3 py-1 text-sm font-medium text-zinc-200">{t.prodano}: {pocetProdano}</span>
+              </div>
+            </Sekce>
+            <Sekce titulek={t.celkovyZisk}>
+              <p className={`text-3xl font-semibold ${celkovyZisk >= 0 ? "text-gradient" : "text-red-400"}`}>
+                <CountUp value={celkovyZisk} formatuj={(n) => `${n.toLocaleString("cs-CZ")} ${t.mena}`} />
+              </p>
+            </Sekce>
+            {prumernyZiskAuto != null && (
+              <Sekce titulek={t.prumernyZiskAuto}>
+                <p className={`text-3xl font-semibold ${prumernyZiskAuto >= 0 ? "text-gradient" : "text-red-400"}`}>
+                  <CountUp value={prumernyZiskAuto} formatuj={(n) => `${n.toLocaleString("cs-CZ")} ${t.mena}`} />
+                </p>
+              </Sekce>
+            )}
+            {prumernaDobaDrzeniDni != null && (
+              <Sekce titulek={t.prumernaDobaDrzeni}>
+                <p className="text-3xl font-semibold text-zinc-100">
+                  <CountUp value={prumernaDobaDrzeniDni} formatuj={(n) => `${n} ${t.dniZkratka}`} />
+                </p>
+              </Sekce>
+            )}
+          </div>
+
+          <div className="glass flex h-full flex-col rounded-2xl border border-border p-6">
+            <h2 className="mb-4 text-base font-semibold text-zinc-100">{t.otevreneUkoly} ({ukoly.length})</h2>
             {ukoly.length === 0 && <p className="text-sm text-zinc-500">{t.zadneUkoly}</p>}
-            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
+            <div className="flex-1 space-y-2 overflow-y-auto pr-1">
               {ukoly.map((u) => (
                 <Link
                   key={u.id}
@@ -70,21 +88,7 @@ export default function DashboardOverview({
                 </Link>
               ))}
             </div>
-          </Sekce>
-          {prumernyZiskAuto != null && (
-            <Sekce titulek={t.prumernyZiskAuto}>
-              <p className={`text-3xl font-semibold ${prumernyZiskAuto >= 0 ? "text-gradient" : "text-red-400"}`}>
-                <CountUp value={prumernyZiskAuto} formatuj={(n) => `${n.toLocaleString("cs-CZ")} ${t.mena}`} />
-              </p>
-            </Sekce>
-          )}
-          {prumernaDobaDrzeniDni != null && (
-            <Sekce titulek={t.prumernaDobaDrzeni}>
-              <p className="text-3xl font-semibold text-zinc-100">
-                <CountUp value={prumernaDobaDrzeniDni} formatuj={(n) => `${n} ${t.dniZkratka}`} />
-              </p>
-            </Sekce>
-          )}
+          </div>
         </div>
 
         <h2 className="mb-4 mt-8 text-lg font-semibold text-zinc-100">{t.aiLimityNadpis}</h2>
