@@ -40,7 +40,7 @@ export default function DashboardOverview({
           {t.prehled}
         </motion.h1>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid items-start gap-4 sm:grid-cols-2">
           <Sekce titulek={t.celkovyZisk}>
             <p className={`text-3xl font-semibold ${celkovyZisk >= 0 ? "text-gradient" : "text-red-400"}`}>
               <CountUp value={celkovyZisk} formatuj={(n) => `${n.toLocaleString("cs-CZ")} ${t.mena}`} />
@@ -58,7 +58,7 @@ export default function DashboardOverview({
           </Sekce>
           <Sekce titulek={`${t.otevreneUkoly} (${ukoly.length})`}>
             {ukoly.length === 0 && <p className="text-sm text-zinc-500">{t.zadneUkoly}</p>}
-            <div className="space-y-2">
+            <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
               {ukoly.map((u) => (
                 <Link
                   key={u.id}
