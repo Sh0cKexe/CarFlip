@@ -139,6 +139,17 @@ const CS = {
   analyzuji: "Analyzuji...",
   aiVyuzitoZLimitu: "rozborů využito tento měsíc",
   aiLimitDosazen: "Dosáhl jsi měsíčního limitu AI rozborů. Limit se obnoví příští měsíc.",
+  aiDisclaimer: `⚠️ Než vyrazíte pro auto: Jak správně chápat tuto AI analýzu?
+Tento rozbor je skvělý parťák, ale umělá inteligence je stále jen stroj, který auto fyzicky neviděl a vychází pouze z textu inzerátu, obecných technických dat a často hlášených závad.
+
+Mějte proto na paměti, že AI:
+❌ Nevidí realitu: Vychází jen z toho, co prodejce v inzerátu přiznal (nebo záměrně zamlčel).
+❌ Nezná historii: Neodhalí stočené kilometry, zamaskovanou bouračku ani zanedbaný servis tohoto konkrétního kusu.
+
+Jak s tím správně naložit?
+Použijte tento rozbor jako super přípravu a vždy si ověřujte data z více zdrojů – i AI na něco může zapomenout, popřípadě říct něco, co u daného modelu nemusí být akurátní. Uložte si body, na které AI upozornila, a na místě to zkontrolujte.
+
+ℹ️ Právní doložka: Výstupy generované tímto AI nástrojem mají čistě orientační a informativní charakter a nenahrazují profesionální technickou inspekci. Rozhodnutí o koupi vozidla činíte výhradně na vlastní riziko a provozovatel webu nenese žádnou odpovědnost za případné vady vozidla, finanční ztráty nebo škody vzniklé nákupem vozu.`,
 
   aiInzeratNadpis: "AI generátor inzerátu",
   rokVyroby: "Rok výroby",
@@ -339,6 +350,17 @@ const SK: typeof CS = {
   analyzuji: "Analyzujem...",
   aiVyuzitoZLimitu: "rozborov využitých tento mesiac",
   aiLimitDosazen: "Dosiahol si mesačný limit AI rozborov. Limit sa obnoví budúci mesiac.",
+  aiDisclaimer: `⚠️ Skôr než vyrazíte pre auto: Ako správne chápať túto AI analýzu?
+Tento rozbor je skvelý parťák, ale umelá inteligencia je stále len stroj, ktorý auto fyzicky nevidel a vychádza len z textu inzerátu, všeobecných technických dát a často hlásených závad.
+
+Majte preto na pamäti, že AI:
+❌ Nevidí realitu: Vychádza len z toho, čo predajca v inzeráte priznal (alebo zámerne zamlčal).
+❌ Nepozná históriu: Neodhalí stočené kilometre, zamaskovanú nehodu ani zanedbaný servis tohto konkrétneho kusu.
+
+Ako s tým správne naložiť?
+Použite tento rozbor ako super prípravu a vždy si overujte dáta z viacerých zdrojov – aj AI môže na niečo zabudnúť, prípadne povedať niečo, čo pri danom modeli nemusí byť presné. Uložte si body, na ktoré AI upozornila, a na mieste to skontrolujte.
+
+ℹ️ Právna doložka: Výstupy generované týmto AI nástrojom majú čisto orientačný a informatívny charakter a nenahrádzajú profesionálnu technickú inšpekciu. Rozhodnutie o kúpe vozidla robíte výhradne na vlastné riziko a provozovateľ webu nenesie žiadnu zodpovednosť za prípadné vady vozidla, finančné straty alebo škody vzniknuté nákupom vozu.`,
 
   aiInzeratNadpis: "AI generátor inzerátu",
   rokVyroby: "Rok výroby",

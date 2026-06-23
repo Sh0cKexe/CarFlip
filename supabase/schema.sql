@@ -234,8 +234,13 @@ create table if not exists public.ai_rozbory (
   user_id uuid not null references auth.users (id) on delete cascade,
   url text not null default '',
   vysledek text not null default '',
-  vytvoreno timestamptz not null default now()
+  vytvoreno timestamptz not null default now(),
+  titulek text not null default ''
 );
+
+-- Pro existujici instalace (puvodni create table uz probehl bez titulku -
+-- "Znacka Model - Rok (Zeme)" pro zabalenou polozku v historii).
+alter table public.ai_rozbory add column if not exists titulek text not null default '';
 
 alter table public.ai_rozbory enable row level security;
 

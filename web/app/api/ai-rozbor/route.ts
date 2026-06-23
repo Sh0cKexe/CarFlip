@@ -9,7 +9,11 @@ Dostaneš data jednoho inzerátu (z Otomoto.pl, Bazoš.cz, Bazoš.sk, AutoScout2
 
 DŮLEŽITÉ - formátování: NEPIŠ markdown (žádné ##, žádné **). Místo nadpisů použij emoji + krátký název sekce na vlastním řádku (přesně podle vzoru níže), pod tím normální text/odrážky pomlčkou. Tučný text nepiš vůbec, emoji použij jen jako nadpisy sekcí (ne v každé větě).
 
-Struktura (přesně v tomto pořadí):
+NA VŮBEC PRVNÍ ŘÁDEK (před vším ostatním, přesně v tomto formátu, nic navíc na ten řádek) napiš:
+TITULEK: Značka Model - Rok
+(např. "TITULEK: Peugeot Partner 2 - 2012"; když rok nezjistíš, vynech ho)
+
+Pak prázdný řádek a struktura (přesně v tomto pořadí):
 
 🚗 Shrnutí auta
 Model, rok, motor, nájezd, cena (cenu napiš PŘESNĚ podle řádku "Cena (přesně dopočítáno):" v datech, nepřepočítávej ji sám), stav v krátkosti.
@@ -48,6 +52,21 @@ function detekujZdroj(url: string): Zdroj | null {
   if (host.endsWith("bazos.cz")) return "bazos-cz";
   if (host.endsWith("bazos.sk")) return "bazos-sk";
   return null;
+}
+
+/** Zeme zdroje pro zabalenou polozku v historii ("Znacka Model - Rok (Zeme)").
+ * Pocita se deterministicky z URL/zdroje, ne z odpovedi AI - spolehlivejsi. */
+function zemeZdroje(zdroj: Zdroj, host: string): string {
+  if (zdroj === "otomoto") return "Polsko";
+  if (zdroj === "bazos-cz") return "Česko";
+  if (zdroj === "bazos-sk") return "Slovensko";
+  if (zdroj === "willhaben") return "Rakousko";
+  if (zdroj === "autoscout24") {
+    if (host.endsWith(".de")) return "Německo";
+    if (host.endsWith(".at")) return "Rakousko";
+    if (host.endsWith(".it")) return "Itálie";
+  }
+  return "";
 }
 
 function vytahniNextData(html: string): any | null {
@@ -252,11 +271,21 @@ export async function POST(req: Request) {
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: obsahProAi }],
     });
-    const text = response.content.find((b) => b.type === "text")?.text ?? "";
+    let text = response.content.find((b) => b.type === "text")?.text ?? "";
+
+    // Prvni radek "TITULEK: Znacka Model - Rok" - vytahnout a odstranit
+    // z viditelneho textu, doplnit zemi (spocitana z URL, ne od AI).
+    let titulek = "";
+    const titulekM = /^TITULEK:\s*(.+?)\s*\n+/.exec(text);
+    if (titulekM) {
+      const zeme = zemeZdroje(zdroj, new URL(url).hostname);
+      titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
+      text = text.slice(titulekM[0].length);
+    }
 
     const { data: radek } = await supabase
       .from("ai_rozbory")
-      .insert({ user_id: user.id, url, vysledek: text })
+      .insert({ user_id: user.id, url, vysledek: text, titulek })
       .select("*")
       .single();
 

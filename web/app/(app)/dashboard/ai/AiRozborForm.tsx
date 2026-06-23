@@ -6,7 +6,7 @@ import { Sekce, Pole, input, btnGhost } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 import { AI_ROZBOR_LIMIT } from "@/lib/aiLimit";
 
-export type Rozbor = { id: string; url: string; vysledek: string; vytvoreno: string };
+export type Rozbor = { id: string; url: string; vysledek: string; vytvoreno: string; titulek?: string };
 
 export default function AiRozborForm({
   trh, historie: historieVychozi, vyuzitoVychozi,
@@ -77,12 +77,15 @@ export default function AiRozborForm({
           {chyba && <p className="mt-2 text-sm text-red-400">{chyba}</p>}
         </Sekce>
 
+        <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
+          {t.aiDisclaimer}
+        </div>
+
         <Sekce titulek={t.aiHistorie}>
           {historie.length === 0 && <p className="text-sm text-zinc-500">{t.zadneRozbory}</p>}
           <div className="space-y-3">
             {historie.map((h, i) => {
               const otevreno = rozbaleno.has(h.id);
-              const prvniRadek = h.vysledek.split("\n").find((l) => l.trim()) ?? "";
               return (
                 <motion.div
                   key={h.id}
@@ -97,7 +100,8 @@ export default function AiRozborForm({
                     className="flex w-full items-start justify-between gap-3 text-left"
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between text-xs text-zinc-500">
+                      <p className="truncate text-sm font-medium text-zinc-100">{h.titulek || h.url}</p>
+                      <div className="mt-0.5 flex items-center justify-between text-xs text-zinc-500">
                         <a
                           href={h.url} target="_blank" rel="noreferrer"
                           onClick={(e) => e.stopPropagation()}
@@ -107,9 +111,6 @@ export default function AiRozborForm({
                         </a>
                         <span className="ml-3 shrink-0">{new Date(h.vytvoreno).toLocaleString("cs-CZ")}</span>
                       </div>
-                      {!otevreno && (
-                        <p className="mt-1 truncate text-sm text-zinc-400">{prvniRadek}</p>
-                      )}
                     </div>
                     <span className="mt-0.5 shrink-0 text-zinc-500">{otevreno ? "▾" : "▸"}</span>
                   </button>
