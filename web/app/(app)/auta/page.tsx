@@ -7,22 +7,11 @@ export default async function AutaPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: auta } = await supabase
-    .from("auta")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("vytvoreno", { ascending: false });
-
-  const { data: naklady } = await supabase
-    .from("naklady")
-    .select("auto_id, castka_kc")
-    .eq("user_id", user.id);
-
-  const { data: nastaveni } = await supabase
-    .from("nastaveni")
-    .select("trh")
-    .eq("user_id", user.id)
-    .single();
+  const [{ data: auta }, { data: naklady }, { data: nastaveni }] = await Promise.all([
+    supabase.from("auta").select("*").eq("user_id", user.id).order("vytvoreno", { ascending: false }),
+    supabase.from("naklady").select("auto_id, castka_kc").eq("user_id", user.id),
+    supabase.from("nastaveni").select("trh").eq("user_id", user.id).single(),
+  ]);
 
   const nakladySuma: Record<string, number> = {};
   (naklady ?? []).forEach((row) => {

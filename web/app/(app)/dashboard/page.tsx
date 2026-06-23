@@ -7,21 +7,11 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: nastaveni } = await supabase
-    .from("nastaveni")
-    .select("trh")
-    .eq("user_id", user.id)
-    .single();
-
-  const { data: auta } = await supabase
-    .from("auta")
-    .select("id, stav, cena_koupeno_kc, cena_prodano_kc")
-    .eq("user_id", user.id);
-
-  const { data: naklady } = await supabase
-    .from("naklady")
-    .select("auto_id, castka_kc")
-    .eq("user_id", user.id);
+  const [{ data: nastaveni }, { data: auta }, { data: naklady }] = await Promise.all([
+    supabase.from("nastaveni").select("trh").eq("user_id", user.id).single(),
+    supabase.from("auta").select("id, stav, cena_koupeno_kc, cena_prodano_kc").eq("user_id", user.id),
+    supabase.from("naklady").select("auto_id, castka_kc").eq("user_id", user.id),
+  ]);
 
   const nakladySuma: Record<string, number> = {};
   (naklady ?? []).forEach((row) => {
