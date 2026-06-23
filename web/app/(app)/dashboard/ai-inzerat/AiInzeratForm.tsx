@@ -82,17 +82,17 @@ export default function AiInzeratForm({
 
       <Sekce titulek={t.aiInzeratNadpis}>
         <p className="mb-3 text-sm text-zinc-300">
-          <span className="font-medium text-accent2">{vyuzito}/{AI_INZERAT_LIMIT}</span> {t.aiInzeratVyuzitoZLimitu} · {t.aiInzeratNepovinne}
+          {vyuzito}/{AI_INZERAT_LIMIT} {t.aiInzeratVyuzitoZLimitu} · {t.aiInzeratNepovinne}
         </p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Pole label={t.nazevModel}>
-            <input className={input} value={nazev} onChange={(e) => setNazev(e.target.value)} placeholder="Škoda Octavia" />
+            <input className={input} value={nazev} onChange={(e) => setNazev(e.target.value)} placeholder="Škoda Octavia II" />
           </Pole>
-          <Pole label={t.mechMotor}>
+          <Pole label={t.motor}>
             <input className={input} value={motor} onChange={(e) => setMotor(e.target.value)} placeholder="2.0 TDI" />
           </Pole>
           <Pole label={t.rokVyroby}>
-            <input type="number" className={input} value={rok} onChange={(e) => setRok(e.target.value)} />
+            <input type="number" className={input} value={rok} onChange={(e) => setRok(e.target.value)} placeholder="2007" />
           </Pole>
           <Pole label={t.najezd}>
             <input type="number" className={input} value={najezd} onChange={(e) => setNajezd(e.target.value)} placeholder="km" />
@@ -123,7 +123,7 @@ export default function AiInzeratForm({
             <input className={input} value={spotreba} onChange={(e) => setSpotreba(e.target.value)} placeholder="l/100km" />
           </Pole>
           <Pole label={t.vinCislo}>
-            <input className={input} value={vin} onChange={(e) => setVin(e.target.value)} />
+            <input className={input} value={vin} onChange={(e) => setVin(e.target.value)} placeholder="TMBJJ7NE5N1234567" />
           </Pole>
         </div>
         <div className="mt-3">
