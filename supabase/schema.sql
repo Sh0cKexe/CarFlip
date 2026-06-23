@@ -255,15 +255,22 @@ create policy "ai_rozbory_delete_own" on public.ai_rozbory
   for delete using (auth.uid() = user_id);
 
 -- ---------------------------------------------------------------------
--- AI generator textu inzeratu: jen pocitadlo pro mesicni limit, zadna
--- historie textu (ten se na rozdil od AI rozboru nikam neuklada).
+-- AI generator textu inzeratu: pocitadlo pro mesicni limit + historie
+-- (nazev pro zabalenou polozku, vysledek pro rozbalenou - stejny princip
+-- jako ai_rozbory).
 -- ---------------------------------------------------------------------
 
 create table if not exists public.ai_inzeraty (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
-  vytvoreno timestamptz not null default now()
+  vytvoreno timestamptz not null default now(),
+  nazev text not null default '',
+  vysledek text not null default ''
 );
+
+-- Pro existujici instalace (puvodni create table uz probehl bez historie).
+alter table public.ai_inzeraty add column if not exists nazev text not null default '';
+alter table public.ai_inzeraty add column if not exists vysledek text not null default '';
 
 alter table public.ai_inzeraty enable row level security;
 
