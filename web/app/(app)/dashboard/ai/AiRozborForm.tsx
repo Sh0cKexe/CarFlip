@@ -70,9 +70,17 @@ export default function AiRozborForm({
           <Pole label={t.vlozLink}>
             <input className={input} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://www.otomoto.pl/... nebo Bazoš/AutoScout24/Willhaben" disabled={limitDosazen} />
           </Pole>
-          <button type="button" onClick={spustit} disabled={bezi || !url || limitDosazen} className={`mt-3 ${btnGhost}`}>
-            {bezi ? t.analyzuji : t.spustitRozbor}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" onClick={spustit} disabled={bezi || !url || limitDosazen} className={`mt-3 ${btnGhost}`}>
+              {bezi ? t.analyzuji : t.spustitRozbor}
+            </button>
+            {bezi && (
+              <span className="mt-3 flex items-center gap-2 text-sm text-accent">
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+                {t.aiRozborProbiha}
+              </span>
+            )}
+          </div>
           {limitDosazen && <p className="mt-2 text-sm text-amber-400">{t.aiLimitDosazen}</p>}
           {chyba && <p className="mt-2 text-sm text-red-400">{chyba}</p>}
         </Sekce>

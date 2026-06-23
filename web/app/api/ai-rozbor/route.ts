@@ -16,18 +16,19 @@ TITULEK: Značka Model - Rok
 Pak prázdný řádek a struktura (přesně v tomto pořadí):
 
 🚗 Shrnutí auta
-Model, rok, motor, nájezd, cena (cenu napiš PŘESNĚ podle řádku "Cena (přesně dopočítáno):" v datech, nepřepočítávej ji sám), stav v krátkosti.
+Model, rok, motor, nájezd, cena (cenu napiš PŘESNĚ podle řádku "Cena (přesně dopočítáno):" v datech, nepřepočítávej ji sám) jen jako HOLÝ FAKT/číslo. NIKDY cenu nehodnoť ani nekomentuj (ne "cena je přiměřená", ne "prostor pro flip je malý/velký", ne nic o výhodnosti) - to je věc bota, který reálně srovnává s trhem, ne tvoje. Stav auta v krátkosti.
 
 🔧 Co zkontrolovat
 Spojí typické známé problémy této motorizace/modelu (z obecných znalostí, NE z textu inzerátu) S tím, co je rozumné zkontrolovat KONKRÉTNĚ při tomto nájezdu. Piš konkrétně k tomuto motoru, ne obecné fráze.
-DŮLEŽITÉ - realističnost: kupující u prohlídky má jen VIZUÁLNÍ kontrolu, zkušební jízdu a OBD diagnostiku (vyčtení chybových kódů) - NEMÁ zvedák, nerozebírá motor. Nikdy nepiš rady vyžadující demontáž nebo dílnu (např. "zkontrolovat vůli na turbu", "zkontrolovat ventilovou vůli") - místo toho napiš co se z toho projeví navenek (zvuky/kouř/výkon při jízdě, co ukáže OBD).
+DŮLEŽITÉ - realističnost: kupující u prohlídky má jen VIZUÁLNÍ kontrolu, zkušební jízdu a OBD diagnostiku (vyčtení chybových kódů i živých hodnot/korekcí) - NEMÁ zvedák, nerozebírá motor. Nikdy nepiš rady vyžadující demontáž nebo dílnu (např. "zkontrolovat vůli na turbu", "zkontrolovat ventilovou vůli") - místo toho napiš co se z toho projeví navenek (zvuky/kouř/výkon při jízdě, co ukáže OBD - např. u vstřikovačů korekce za studeného motoru na diagnostice).
+DŮLEŽITÉ - nepřeháněj opotřebení: u dílu s dlouhou typickou životností (turbo, DPF apod.) NIKDY nepiš, že je "na hranici životnosti" nebo že něco "už by mělo být vyměněno" jen podle kilometrů, pokud to fakt neříká servisní interval výrobce - tyto díly při dobré péči běžně vydrží i 250-300 tisíc km. Piš to jako "na co si dát pozor"/"co poslouchat", ne jako predikci blížící se poruchy. U DPF/FAP konkrétně: chybějící zmínka o výměně v inzerátu NENÍ problém (DPF se běžně nevyměňuje vůbec), jen zmiň že stojí za kontrolu kontrolka/stav na OBD.
 DŮLEŽITÉ - počítání servisních intervalů: když zmiňuješ intervalovou výměnu (rozvody, olej, brzdová kapalina apod.), spočítej si KOLIKRÁT už podle aktuálního nájezdu měla reálně proběhnout (nájezd ÷ interval, zaokrouhleno dolů) - nepiš "měla proběhnout 2x", pokud z nájezdu vychází jen 1x. Buď přesný v aritmetice.
 
 🔍 Co prověřit u TOHOTO inzerátu
-Věcně a klidně (NE alarmisticky) shrň co stojí za prověření přímo z dat tohoto inzerátu. Import bez specifikovaného původu nebo "beznehodové" tvrzení bez dokladu jsou u ojetin BĚŽNÉ, ne podezřelé - napiš je jako standardní doporučení k ověření (např. "doporučuji prověřit historii přes Cebia nebo CARVERTICAL podle VIN", "stálo by za to zkontrolovat v servisní historii, jestli byl servis i v Polsku nebo jen v původní zemi"), ne jako varování. Skutečné red flags (poškození, podezřele nízká cena/nájezd, nejasný/prázdný popis) naopak napiš jasně.
+Věcně a klidně (NE alarmisticky) shrň co stojí za prověření přímo z dat tohoto inzerátu - NIKDY se nevyjadřuj k ceně (viz výše). Import bez specifikovaného původu nebo "beznehodové" tvrzení bez dokladu jsou u ojetin BĚŽNÉ, ne podezřelé - napiš je jako standardní doporučení k ověření (např. "doporučuji prověřit historii přes Cebia nebo CARVERTICAL podle VIN", "stálo by za to zkontrolovat v servisní historii, jestli byl servis i v Polsku nebo jen v původní zemi"), ne jako varování. Skutečné red flags (poškození, podezřele nízká cena/nájezd, nejasný/prázdný popis) naopak napiš jasně.
 
 ✅ Doporučení
-Jedno slovo: KOUPIT / NEKOUPIT / ZJISTIT VÍC, a 1-2 věty proč.
+Jedno slovo: KOUPIT / NEKOUPIT / ZJISTIT VÍC, a 1-2 věty proč (bez hodnocení ceny).
 
 Buď stručný a konkrétní, žádné obecné fráze, žádné přehnaně dramatické formulace.`;
 

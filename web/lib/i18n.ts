@@ -137,6 +137,7 @@ const CS = {
   vlozLink: "Vlož link na inzerát (Otomoto, Bazoš.cz/sk, AutoScout24, Willhaben)",
   spustitRozbor: "Spustit rozbor",
   analyzuji: "Analyzuji...",
+  aiRozborProbiha: "Rozbor probíhá – AI analyzuje data, vyčkej na výsledek (může trvat i 30 s).",
   aiVyuzitoZLimitu: "rozborů využito tento měsíc",
   aiLimitDosazen: "Dosáhl jsi měsíčního limitu AI rozborů. Limit se obnoví příští měsíc.",
   aiDisclaimer: `⚠️ Než vyrazíte pro auto: Jak správně chápat tuto AI analýzu?
@@ -348,6 +349,7 @@ const SK: typeof CS = {
   vlozLink: "Vlož link na inzerát (Otomoto, Bazoš.cz/sk, AutoScout24, Willhaben)",
   spustitRozbor: "Spustiť rozbor",
   analyzuji: "Analyzujem...",
+  aiRozborProbiha: "Rozbor prebieha – AI analyzuje dáta, vyčkaj na výsledok (môže trvať aj 30 s).",
   aiVyuzitoZLimitu: "rozborov využitých tento mesiac",
   aiLimitDosazen: "Dosiahol si mesačný limit AI rozborov. Limit sa obnoví budúci mesiac.",
   aiDisclaimer: `⚠️ Skôr než vyrazíte pre auto: Ako správne chápať túto AI analýzu?
