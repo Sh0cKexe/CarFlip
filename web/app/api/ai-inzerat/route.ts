@@ -20,17 +20,16 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Musíš být přihlášen." }, { status: 401 });
   }
 
-  if (!process.env.GOOGLE_AI_API_KEY) {
+  if (!process.env.GROQ_API_KEY) {
     return NextResponse.json(
-      { error: "AI generátor není nastaven (chybí GOOGLE_AI_API_KEY na serveru)." },
+      { error: "AI generátor není nastaven (chybí GROQ_API_KEY na serveru)." },
       { status: 500 }
     );
   }
 
   const jazykText = jazyk === "sk" ? "slovensky" : "česky";
-  const prompt = `Napiš inzerát na prodej ojetého auta na bazar (Bazoš) ${jazykText}. Piš přirozeně, jako normální člověk – ŽÁDNÉ reklamní klišé typu "Prodávám tuto raketu" nebo přehnaně nadšený tón. Krátké věty, věcné a důvěryhodné, ale ať auto zní lákavě. Nepřidávej nadpis ani emoji, vrať jen samotný text inzerátu.
-
-Model: ${nazev}
+  const systemPrompt = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš ${jazykText}, přirozeně, jako normální člověk – ŽÁDNÉ reklamní klišé typu "Prodávám tuto raketu" nebo přehnaně nadšený tón. Krátké věty, věcné a důvěryhodné, ale ať auto zní lákavě. Nepřidávej nadpis ani emoji, vrať jen samotný text inzerátu, žádné komentáře navíc.`;
+  const userPrompt = `Model: ${nazev}
 Rok výroby: ${rok || "neuvedeno"}
 Nájezd: ${najezd ? najezd + " km" : "neuvedeno"}
 Palivo: ${palivo || "neuvedeno"}
@@ -39,19 +38,25 @@ Cena: ${cena ? cena + " " + (mena || "") : "neuvedeno"}
 Doplňující info od majitele: ${poznamky || "žádné"}`;
 
   try {
-    const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${process.env.GOOGLE_AI_API_KEY}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      }
-    );
+    const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      }),
+    });
     const j = await r.json();
     if (!r.ok) {
       return NextResponse.json({ error: "Chyba AI: " + (j?.error?.message || r.statusText) }, { status: 502 });
     }
-    const text = j?.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+    const text = j?.choices?.[0]?.message?.content ?? "";
     return NextResponse.json({ text });
   } catch (e: any) {
     return NextResponse.json({ error: "Chyba AI: " + (e?.message || String(e)) }, { status: 502 });

@@ -100,16 +100,18 @@ Cena: i bez kreditu řádově desetiny Kč na jeden rozbor (model Claude Opus 4.
 Sleduj spotřebu v **console.anthropic.com → Usage**.
 
 **📝 AI generátor textu inzerátu** – vyplníš základní údaje o autě (model,
-rok, nájezd, cena, palivo, převodovka, volné poznámky) a AI (Google Gemini,
-zdarma) napíše text inzerátu na Bazoš v normálním jazyce, bez reklamních
-klišé. Text se nikam neukládá, jen na obrazovce + tlačítko "Zkopírovat".
+rok, nájezd, cena, palivo, převodovka, volné poznámky) a AI (Groq, model
+Llama 3.3, zdarma) napíše text inzerátu na Bazoš v normálním jazyce, bez
+reklamních klišé. Text se nikam neukládá, jen na obrazovce + tlačítko
+"Zkopírovat". (Pozn.: zkoušeli jsme nejdřív Google Gemini, ale jeho free
+tier je od Googlu zablokovaný pro EU/EEA – tedy i ČR, limit napevno 0,
+proto Groq.)
 
 Potřebuje API klíč (jen na serveru):
-1. **https://aistudio.google.com/app/apikey** → přihlaš se Google účtem →
-   **Create API key**. Zdarma, žádná platební karta potřeba (jen rate-limit
-   na free tieru, na tohle bohatě stačí).
+1. **https://console.groq.com/keys** → přihlaš se (e-mail nebo Google) →
+   **Create API Key**. Zdarma, žádná platební karta potřeba.
 2. Ve **Vercelu** → CarFlip projekt → **Settings → Environment Variables**:
-   - Name: `GOOGLE_AI_API_KEY`
+   - Name: `GROQ_API_KEY`
    - Value: ten klíč z kroku 1
    - Environments: Production + Preview
 3. **Redeploy**, ať se proměnná použije.
