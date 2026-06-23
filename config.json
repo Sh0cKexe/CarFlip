@@ -54,7 +54,8 @@
     "max_cena_pln": 12501,
     "min_cena_pln": 0,
     "zdroje": ["pl", "de", "at", "it"],
-    "max_cena_eur": 3000,
-    "min_cena_eur": 0
+    "cena_de": { "min": 0, "max": 3000 },
+    "cena_at": { "min": 0, "max": 3000 },
+    "cena_it": { "min": 0, "max": 3000 }
   }
 }

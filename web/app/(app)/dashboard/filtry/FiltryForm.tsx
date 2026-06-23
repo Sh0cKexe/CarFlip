@@ -14,6 +14,8 @@ type CenaRozsah = { min: number; max: number | null };
 type Oblast = {
   nazev: string; mesto_slug: string; okruh_km: number; lat?: number; lon?: number;
   zeme?: Zeme;
+  plz?: string;     // PSC - jen DE/IT (AutoScout24 zip+radius)
+  areaId?: number;  // spolkova zeme - jen AT (Willhaben nema radius, jen kraje)
 };
 
 type Filtry = {
@@ -26,12 +28,23 @@ type Filtry = {
   max_najezd_benzin: number;
   max_cena_pln: number;
   min_cena_pln: number;
-  max_cena_eur: number;
-  min_cena_eur: number;
   zdroje: Zeme[];
   cena_cz: CenaRozsah;
   cena_sk: CenaRozsah;
+  cena_de: CenaRozsah;
+  cena_at: CenaRozsah;
+  cena_it: CenaRozsah;
 };
+
+function Vlajka({ zeme, className }: { zeme: string; className?: string }) {
+  return (
+    <img
+      src={`https://flagcdn.com/h20/${zeme}.png`}
+      alt={zeme.toUpperCase()}
+      className={className ?? "inline-block h-3.5 w-auto rounded-[2px]"}
+    />
+  );
+}
 
 type Nastaveni = {
   user_id: string;
@@ -69,8 +82,8 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
         znacky: [], palivo: "vse", prevodovka: "vse", oblasti: [],
         min_rok: 2003, max_najezd_nafta: 250000, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
-        max_cena_eur: 3000, min_cena_eur: 0,
         zdroje: ["pl"], cena_cz: { min: 0, max: null }, cena_sk: { min: 0, max: null },
+        cena_de: { min: 0, max: 3000 }, cena_at: { min: 0, max: 3000 }, cena_it: { min: 0, max: 3000 },
       },
       min_zisk_kc: 20000, naklady_dovoz_kc: 10000, min_srovnani: 3,
     }
@@ -149,7 +162,7 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
     }
     setFiltr("oblasti", [
       ...n.filtry.oblasti,
-      { nazev: j.nazev, mesto_slug: j.slug, okruh_km: 50, lat, lon, zeme: j.zeme },
+      { nazev: j.nazev, mesto_slug: j.slug, okruh_km: 50, lat, lon, zeme: j.zeme, plz: j.plz, areaId: j.areaId },
     ]);
   }
   function odebratOblast(i: number) {
@@ -215,6 +228,7 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
                 }`}
               >
                 <input type="checkbox" checked={zdroje.includes(zdroj)} onChange={() => prepnoutZdroj(zdroj)} className="hidden" />
+                <Vlajka zeme={zdroj} />
                 {popisek}
               </label>
             ))}
@@ -333,19 +347,36 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
           )}
 
           {(zdroje.includes("de") || zdroje.includes("at") || zdroje.includes("it")) && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <CenovePole
-                label={bezJednotky(t.cenaZahranicniOd)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={Math.round(prevod(n.filtry.min_cena_eur, "EUR", domovskaMena, kurz))}
-                jednotkaNativni="€" hodnotaNativniHint={n.filtry.min_cena_eur}
-                onChange={(v) => setFiltr("min_cena_eur", Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)))}
-              />
-              <CenovePole
-                label={bezJednotky(t.cenaZahranicniDo)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={Math.round(prevod(n.filtry.max_cena_eur, "EUR", domovskaMena, kurz))}
-                jednotkaNativni="€" hodnotaNativniHint={n.filtry.max_cena_eur}
-                onChange={(v) => setFiltr("max_cena_eur", Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)))}
-              />
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {([
+                ["de", t.zdrojNemecko],
+                ["at", t.zdrojRakousko],
+                ["it", t.zdrojItalie],
+              ] as [Zeme, string][]).filter(([z]) => zdroje.includes(z)).map(([z, popisek]) => {
+                const klic = ("cena_" + z) as "cena_de" | "cena_at" | "cena_it";
+                const rozsah = n.filtry[klic];
+                return (
+                  <div key={z} className="rounded-lg border border-border bg-panel2/40 p-2.5">
+                    <p className="mb-1.5 flex items-center gap-1.5 text-xs text-zinc-300">
+                      <Vlajka zeme={z} /> {popisek.split(" - ")[0]}
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <CenovePole
+                        label="od" jednotkaDomovska={domovskaJednotka}
+                        hodnotaDomovska={Math.round(prevod(rozsah.min, "EUR", domovskaMena, kurz))}
+                        jednotkaNativni="€" hodnotaNativniHint={rozsah.min}
+                        onChange={(v) => setFiltr(klic, { ...rozsah, min: Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)) })}
+                      />
+                      <CenovePole
+                        label="do" jednotkaDomovska={domovskaJednotka}
+                        hodnotaDomovska={rozsah.max == null ? null : Math.round(prevod(rozsah.max, "EUR", domovskaMena, kurz))}
+                        jednotkaNativni="€" hodnotaNativniHint={rozsah.max}
+                        onChange={(v) => setFiltr(klic, { ...rozsah, max: v == null ? null : Math.round(prevod(v, domovskaMena, "EUR", kurz)) })}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </Sekce>
@@ -363,14 +394,26 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
                     <option value="pl">PL</option>
                     <option value="cz">CZ</option>
                     <option value="sk">SK</option>
+                    <option value="de">DE</option>
+                    <option value="at">AT</option>
+                    <option value="it">IT</option>
                   </select>
                 </Pole>
                 <Pole label={t.nazev}>
                   <input className={input} value={o.nazev} onChange={(e) => upravitOblast(i, "nazev", e.target.value)} />
+                  {o.zeme === "de" || o.zeme === "it" ? (
+                    <p className="mt-1 text-xs text-zinc-500">PSC: {o.plz ?? "?"}</p>
+                  ) : null}
                 </Pole>
-                <Pole label={t.okruhKm}>
-                  <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
-                </Pole>
+                {o.zeme === "at" ? (
+                  <Pole label={t.okruhKm}>
+                    <p className={`${input} flex items-center text-zinc-400`}>{t.celySpolkovyKraj}</p>
+                  </Pole>
+                ) : (
+                  <Pole label={t.okruhKm}>
+                    <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
+                  </Pole>
+                )}
                 <button type="button" onClick={() => odebratOblast(i)} className={`h-fit ${btnDanger}`}>
                   {t.smazat}
                 </button>

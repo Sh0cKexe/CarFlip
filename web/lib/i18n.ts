@@ -64,6 +64,7 @@ const CS = {
   cenaSkDo: "Cena SK do (EUR)",
   cenaZahranicniOd: "Cena DE/AT/IT od (EUR)",
   cenaZahranicniDo: "Cena DE/AT/IT do (EUR)",
+  celySpolkovyKraj: "Celý spolkový kraj",
   zeme: "Země",
 
   filtryAut: "Filtry aut",
@@ -260,6 +261,7 @@ const SK: typeof CS = {
   cenaSkDo: "Cena SK do (EUR)",
   cenaZahranicniOd: "Cena DE/AT/IT od (EUR)",
   cenaZahranicniDo: "Cena DE/AT/IT do (EUR)",
+  celySpolkovyKraj: "Celý spolkový kraj",
   zeme: "Krajina",
 
   filtryAut: "Filtre áut",

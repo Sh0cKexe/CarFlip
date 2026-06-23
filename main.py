@@ -556,12 +556,26 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
     for zahranicni_trh, modul in ZAHRANICNI_MODULY.items():
         if zahranicni_trh not in zdroje:
             continue
+        # Kazda zeme ma vlastni EUR cenovou hranici (cena_de/cena_at/cena_it),
+        # ne jednu sdilenou - injektujeme do kopie filtru pod spolecnym
+        # klicem max_cena_eur/min_cena_eur, ktery moduly (autoscout24/
+        # willhaben) uz cti.
+        cena_zeme = filtry.get("cena_{}".format(zahranicni_trh)) or {}
+        filtry_zeme = dict(filtry)
+        filtry_zeme["max_cena_eur"] = cena_zeme.get("max")
+        filtry_zeme["min_cena_eur"] = cena_zeme.get("min")
+
         okruhy_zahr = [o for o in vsechny_okruhy if o.get("zeme") == zahranicni_trh] or [None]
         for znacka in znacky:
             for okruh in okruhy_zahr:
-                kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cela zeme"
+                if okruh and okruh.get("area_id"):
+                    kde = okruh.get("nazev", "?")
+                elif okruh and okruh.get("okruh_km"):
+                    kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km"
+                else:
+                    kde = "cela zeme"
                 print("Kontroluji ({}):".format(zahranicni_trh.upper()), znacka, "|", kde)
-                auta = modul.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh)
+                auta = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh)
                 print("  nalezeno {} inzeratu".format(len(auta)))
                 for auto in auta:
                     try:

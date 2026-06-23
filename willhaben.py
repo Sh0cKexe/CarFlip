@@ -42,6 +42,14 @@ ZNACKA_MAP = {
     "volkswagen": "vw",
 }
 
+# Willhaben NEMA radius/PSC vyhledavani jako AutoScout24/Otomoto - jen
+# filtr na spolkovou zemi (areaId, zive overeno z navigatorGroups).
+# ISO3166-2-lvl4 kod z Nominatim (AT-1..AT-9) odpovida 1:1 krome Vidne
+# (ISO AT-9, ale Willhaben areaId pro Vidne je 900).
+AREA_ID = {
+    1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 900,
+}
+
 # Popis uz mame z vypisu (BODY_DYN), takze nacti_detail nemusi fetchovat
 # znovu - jen si schova popis pod URL, aby ho zpracuj_auto_zahranicni
 # mohlo prohlasit za "havarovano" pres nemecke fraze.
@@ -58,10 +66,13 @@ NEHAVAROVANE_FRAZE = (
 
 
 def _sestav_url(znacka, filtry, strana, okruh=None):
-    """Sestavi URL pro vyhledavani na Willhaben. okruh se zatim nepouziva
-    (cela Rakousko) - region/radius filtr neni v prvni verzi implementovan."""
+    """Sestavi URL pro vyhledavani na Willhaben.
+    okruh = None -> cele Rakousko; jinak dict {area_id: 1-9}."""
     base = "https://{}/iad/gebrauchtwagen/auto/{}".format(DOMENA, ZNACKA_MAP.get(znacka, znacka))
     params = {"page": str(strana)}
+
+    if okruh and okruh.get("area_id"):
+        params["areaId"] = AREA_ID.get(int(okruh["area_id"]), okruh["area_id"])
 
     if filtry.get("min_rok"):
         params["YEAR_MODEL_FROM"] = filtry["min_rok"]

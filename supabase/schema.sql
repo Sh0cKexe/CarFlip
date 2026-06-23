@@ -19,8 +19,9 @@ create table if not exists public.nastaveni (
     "zdroje": ["pl"],
     "cena_cz": {"min": 0, "max": null},
     "cena_sk": {"min": 0, "max": null},
-    "max_cena_eur": 3000,
-    "min_cena_eur": 0
+    "cena_de": {"min": 0, "max": 3000},
+    "cena_at": {"min": 0, "max": 3000},
+    "cena_it": {"min": 0, "max": 3000}
   }'::jsonb,
   min_zisk_kc integer not null default 20000,
   naklady_dovoz_kc integer not null default 10000,
@@ -50,12 +51,13 @@ set filtry = filtry
 where not (filtry ? 'zdroje') or not (filtry ? 'cena_cz') or not (filtry ? 'cena_sk');
 
 -- Pro existujici instalace: DE/AT/IT zdroje (AutoScout24 + Willhaben) -
--- sdileji jednu cenovou EUR hranici (import flow jako Polsko/PLN).
+-- kazda zeme ma vlastni EUR cenovou hranici (jako cena_cz/cena_sk).
 update public.nastaveni
 set filtry = filtry
-  || jsonb_build_object('max_cena_eur', coalesce(filtry->'max_cena_eur', '3000'::jsonb))
-  || jsonb_build_object('min_cena_eur', coalesce(filtry->'min_cena_eur', '0'::jsonb))
-where not (filtry ? 'max_cena_eur') or not (filtry ? 'min_cena_eur');
+  || jsonb_build_object('cena_de', coalesce(filtry->'cena_de', '{"min": 0, "max": 3000}'::jsonb))
+  || jsonb_build_object('cena_at', coalesce(filtry->'cena_at', '{"min": 0, "max": 3000}'::jsonb))
+  || jsonb_build_object('cena_it', coalesce(filtry->'cena_it', '{"min": 0, "max": 3000}'::jsonb))
+where not (filtry ? 'cena_de') or not (filtry ? 'cena_at') or not (filtry ? 'cena_it');
 
 create table if not exists public.videno (
   user_id uuid not null references auth.users (id) on delete cascade,
