@@ -29,8 +29,7 @@ export default function AiInzeratForm({ trh }: { trh: Trh }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, cena,
-          mena: t.mena, poznamky, jazyk: trh,
+          nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, poznamky, jazyk: trh,
         }),
       });
       const j = await r.json();

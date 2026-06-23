@@ -9,7 +9,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Chybný požadavek." }, { status: 400 });
   }
 
-  const { nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, cena, mena, poznamky, jazyk } = body;
+  const { nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, poznamky, jazyk } = body;
   if (!nazev) {
     return NextResponse.json({ error: "Vyplň název/model auta." }, { status: 400 });
   }
@@ -28,19 +28,20 @@ export async function POST(req: Request) {
   }
 
   const jazykText = jazyk === "sk" ? "slovensky" : "česky";
-  const systemPrompt = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš ${jazykText}. Dodrž přesně tuto strukturu:
+  const systemPrompt = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš VÝHRADNĚ ${jazykText}, žádná jiná jazyk ani cizí znaky (žádná čínština, žádné neobvyklé symboly). Dodrž přesně tuto strukturu:
 
-1. Na začátku technické specifikace, KAŽDÁ NA VLASTNÍ ŘÁDEK, ve formátu "Popisek - hodnota" (např. "Palivo - nafta"). Použij jen ty údaje, které dostaneš, vynech řádky bez hodnoty, nevymýšlej si nic.
+1. Na začátku technické specifikace, KAŽDÁ NA VLASTNÍ ŘÁDEK, ve formátu "Popisek - hodnota" (např. "Palivo - nafta"). Použij jen ty údaje, které dostaneš, vynech řádky bez hodnoty, nevymýšlej si nic. NIKDY nepiš cenu, cena je na Bazoši v samostatné kolonce a do textu inzerátu nepatří.
 2. Prázdný řádek.
-3. Pár krátkých odstavců normálním lidským jazykem (NE reklamní klišé typu "Prodávám tuto raketu", NE přehnaně nadšený tón) – k čemu se auto hodí, jaký je technický/karosériový stav, co bylo nedávno uděláno/vyměněno, jaká výbava je součástí, jestli auto potřebuje nějaké investice. Vychází z poznámek od majitele, nic si nepřidávej navíc. Pár emoji je v pořádku (střídmě, ne v každé větě).
+3. Pár krátkých odstavců normálním, věcným jazykem – k čemu se auto hodí, jaký je technický/karosériový stav, co bylo nedávno uděláno/vyměněno, jaká výbava je součástí, jestli auto potřebuje nějaké investice. Vychází jen z poznámek od majitele, nic si nepřidávej navíc a nezmiňuj cenu.
+
+Styl: piš jako majitel popisující auto, NE jako prodejce oslovující kupujícího. Nikdy nepiš "vy/vám/hledáte/mohlo by vám vyhovovat" ani jiné přímé oslovení čtenáře, žádné řečnické otázky, žádná reklamní klišé ("Prodávám tuto raketu", přehnané nadšení). Pár emoji je v pořádku (střídmě, ne v každé větě).
 
 Vrať jen samotný text inzerátu, žádný nadpis ani komentáře navíc.`;
   const userPrompt = `Model: ${nazev}
 ${vykon ? `Výkon: ${vykon} kW\n` : ""}Palivo: ${palivo || "neuvedeno"}
 Nájezd: ${najezd ? najezd + " km" : "neuvedeno"}
 Rok výroby: ${rok || "neuvedeno"}
-${spotreba ? `Kombinovaná spotřeba: ${spotreba} l/100km\n` : ""}Cena: ${cena ? cena + " " + (mena || "") : "neuvedeno"}
-
+${spotreba ? `Kombinovaná spotřeba: ${spotreba} l/100km\n` : ""}
 Poznámky od majitele (stav, výbava, co bylo uděláno, důvod prodeje apod.): ${poznamky || "žádné"}`;
 
   try {
