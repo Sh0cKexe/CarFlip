@@ -35,8 +35,19 @@ create table if not exists public.nastaveni (
 -- Pro existujici instalace (puvodni create table uz probehl bez "trh"):
 alter table public.nastaveni add column if not exists trh text not null default 'cz';
 
--- Pro existujici instalace (tlacitko "Najdi ted" - cooldown per uzivatel):
+-- Pro existujici instalace (tlacitko "Najdi ted" - cooldown per uzivatel).
+-- POZOR vyznam: "posledni_najdi_ted" znaci kdy DOBEHL posledni beh (ne kdy
+-- byl kliknuty) - zapisuje ho az najdi_ted_cloud.py na konci, ne web pri
+-- kliknuti, aby cooldown zacinal po dokonceni, ne po kliku.
 alter table public.nastaveni add column if not exists posledni_najdi_ted timestamptz;
+
+-- Stav behu "Najdi ted" pro live odezvu ve webu (bezi/hotovo/chyba).
+alter table public.nastaveni add column if not exists najdi_ted_stav text;
+
+-- Kdy byl beh SPUSTEN (na rozdil od posledni_najdi_ted = kdy DOBEHL) - jen
+-- pro detekci "zaseknuteho" behu (GitHub Actions spadl driv, nez stihl
+-- zapsat hotovo/chyba), aby tlacitko nezustalo navzdy blokovane na "bezi".
+alter table public.nastaveni add column if not exists najdi_ted_spusteno timestamptz;
 
 -- Pro existujici instalace: doplnit nove klice do filtry jsonb (zdrojove trhy
 -- PL/CZ/SK - Faze 1 multi-market). Vychozi zdroje=["pl"] zachovava soucasne

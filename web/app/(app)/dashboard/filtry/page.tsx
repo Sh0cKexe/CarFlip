@@ -9,7 +9,7 @@ export default async function FiltryPage() {
 
   const { data: nastaveni, error } = await supabase
     .from("nastaveni")
-    .select("user_id, filtry, trh, min_zisk_kc, naklady_dovoz_kc, min_srovnani, posledni_najdi_ted")
+    .select("user_id, filtry, trh, min_zisk_kc, naklady_dovoz_kc, min_srovnani, posledni_najdi_ted, najdi_ted_stav, najdi_ted_spusteno")
     .eq("user_id", user.id)
     .single();
 

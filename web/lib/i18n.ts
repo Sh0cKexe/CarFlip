@@ -47,6 +47,9 @@ const CS = {
   najdiTed: "Najít teď",
   najdiTedSpoustim: "Spouštím...",
   najdiTedSpusteno: "Hledám podle filtrů, výsledek přijde na Telegram za chvíli.",
+  najdiTedBezi: "🔎 Hledám podle filtrů... může to trvat několik minut.",
+  najdiTedHotovo: "✅ Hotovo, zkontroluj Telegram.",
+  najdiTedChyba: "❌ Něco se nepovedlo, zkus to znovu.",
   najdiTedCooldown: "Zkus to znovu za",
   najdiTedMinut: "min",
 
@@ -244,6 +247,9 @@ const SK: typeof CS = {
   najdiTed: "Nájsť teraz",
   najdiTedSpoustim: "Spúšťam...",
   najdiTedSpusteno: "Hľadám podľa filtrov, výsledok prijde na Telegram za chvíľu.",
+  najdiTedBezi: "🔎 Hľadám podľa filtrov... môže to trvať niekoľko minút.",
+  najdiTedHotovo: "✅ Hotovo, skontroluj Telegram.",
+  najdiTedChyba: "❌ Niečo sa nepodarilo, skús to znova.",
   najdiTedCooldown: "Skús to znova za",
   najdiTedMinut: "min",
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, CenovePole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
@@ -54,7 +54,11 @@ type Nastaveni = {
   naklady_dovoz_kc: number;
   min_srovnani: number;
   posledni_najdi_ted?: string | null;
+  najdi_ted_stav?: string | null;
+  najdi_ted_spusteno?: string | null;
 };
+
+const NAJDI_TED_COOLDOWN_MIN = 60;
 
 const ZNAME_ZNACKY = [
   "abarth", "acura", "aixam", "alfa-romeo", "alpine", "asia", "aston-martin",
@@ -96,28 +100,60 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
   const zdroje = n.filtry.zdroje ?? ["pl"];
-  const [najdiTedBezi, setNajdiTedBezi] = useState(false);
-  const [najdiTedZprava, setNajdiTedZprava] = useState<string | null>(null);
+  const [najdiTedOdesilani, setNajdiTedOdesilani] = useState(false);
+  const [najdiTedStav, setNajdiTedStav] = useState<string | null>(n.najdi_ted_stav ?? null);
+  const [posledniDokonceni, setPosledniDokonceni] = useState<string | null>(n.posledni_najdi_ted ?? null);
+  const [najdiTedChyba, setNajdiTedChyba] = useState<string | null>(null);
+  const [ted, setTed] = useState(() => Date.now());
+
+  // Tikajici hodiny pro live countdown cooldownu (kazdou sekundu).
+  useEffect(() => {
+    const id = setInterval(() => setTed(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Kdyz beh bezi, kazde 4s zkontroluj stav primo v Supabase (RLS dovoli
+  // cist jen svuj radek) - az najdi_ted_cloud.py dopise hotovo/chyba na
+  // konci, prestane se pollovat a zacne tikat cooldown.
+  useEffect(() => {
+    if (najdiTedStav !== "bezi") return;
+    const id = setInterval(async () => {
+      const { data } = await supabase
+        .from("nastaveni")
+        .select("najdi_ted_stav, posledni_najdi_ted")
+        .eq("user_id", n.user_id)
+        .single();
+      if (data) {
+        setNajdiTedStav(data.najdi_ted_stav ?? null);
+        setPosledniDokonceni(data.posledni_najdi_ted ?? null);
+      }
+    }, 4000);
+    return () => clearInterval(id);
+  }, [najdiTedStav, supabase, n.user_id]);
+
+  const zbyvaSekund = posledniDokonceni
+    ? Math.max(0, Math.ceil((new Date(posledniDokonceni).getTime() + NAJDI_TED_COOLDOWN_MIN * 60000 - ted) / 1000))
+    : 0;
 
   async function najitTed() {
-    setNajdiTedBezi(true);
-    setNajdiTedZprava(null);
+    setNajdiTedOdesilani(true);
+    setNajdiTedChyba(null);
     try {
       const r = await fetch("/api/najdi-ted", { method: "POST" });
       const j = await r.json();
       if (!r.ok) {
         if (j.zbyvaMinut) {
-          setNajdiTedZprava(`${t.najdiTedCooldown} ${j.zbyvaMinut} ${t.najdiTedMinut}`);
-        } else {
-          setNajdiTedZprava("Chyba: " + (j.error || "neznámá"));
+          setNajdiTedChyba(`${t.najdiTedCooldown} ${j.zbyvaMinut} ${t.najdiTedMinut}`);
+        } else if (j.error !== "bezi") {
+          setNajdiTedChyba("Chyba: " + (j.error || "neznámá"));
         }
         return;
       }
-      setNajdiTedZprava(t.najdiTedSpusteno);
+      setNajdiTedStav("bezi");
     } catch (e: any) {
-      setNajdiTedZprava("Chyba sítě: " + e.message);
+      setNajdiTedChyba("Chyba sítě: " + e.message);
     } finally {
-      setNajdiTedBezi(false);
+      setNajdiTedOdesilani(false);
     }
   }
 
@@ -197,16 +233,25 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
           <button
             type="button"
             onClick={najitTed}
-            disabled={najdiTedBezi}
+            disabled={najdiTedOdesilani || najdiTedStav === "bezi" || zbyvaSekund > 0}
             className={btnPrimary}
           >
-            {najdiTedBezi ? t.najdiTedSpoustim : `🔎 ${t.najdiTed}`}
+            {najdiTedOdesilani ? t.najdiTedSpoustim : `🔎 ${t.najdiTed}`}
           </button>
-          {najdiTedZprava && (
-            <span className={`text-sm ${najdiTedZprava.startsWith("Chyba") ? "text-red-400" : "text-accent"}`}>
-              {najdiTedZprava}
+          {najdiTedStav === "bezi" ? (
+            <span className="flex items-center gap-2 text-sm text-accent">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+              {t.najdiTedBezi}
             </span>
-          )}
+          ) : najdiTedChyba ? (
+            <span className="text-sm text-red-400">{najdiTedChyba}</span>
+          ) : najdiTedStav === "chyba" ? (
+            <span className="text-sm text-red-400">{t.najdiTedChyba}</span>
+          ) : zbyvaSekund > 0 ? (
+            <span className="text-sm text-zinc-400">
+              {t.najdiTedHotovo} {t.najdiTedCooldown} {Math.floor(zbyvaSekund / 60)}:{String(zbyvaSekund % 60).padStart(2, "0")}
+            </span>
+          ) : null}
         </div>
 
         <Sekce titulek={t.zdrojoveTrhy}>

@@ -78,3 +78,14 @@ def uz_videno(sb, user_id, ad_id):
 
 def oznac_videno(sb, user_id, ad_id):
     sb.table("videno").upsert({"user_id": user_id, "ad_id": str(ad_id)}).execute()
+
+
+def nastav_najdi_ted_stav(sb, user_id, stav, dokonceno=False):
+    """Zapise stav behu 'Najdi ted' (bezi/hotovo/chyba) pro live odezvu ve
+    webu. Kdyz dokonceno=True, zapise i posledni_najdi_ted=now() - cooldown
+    pak zacina po DOKONCENI behu, ne po kliknuti."""
+    import datetime
+    data = {"najdi_ted_stav": stav}
+    if dokonceno:
+        data["posledni_najdi_ted"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    sb.table("nastaveni").update(data).eq("user_id", user_id).execute()

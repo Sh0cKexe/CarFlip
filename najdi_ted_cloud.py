@@ -123,6 +123,74 @@ def _najdi_domaci(cfg, zdroj_trh):
     return vysledky
 
 
+def _najdi_zahranicni(cfg, zahranicni_trh, modul):
+    """Projede celou aktualni nabidku zahranicniho EUR zdroje (DE/AT/IT),
+    bez dedup, stejny princip jako _najdi_pl."""
+    filtry = cfg["filtry"]
+    trh = cfg.get("trh", "cz")
+    naklady = cfg["naklady_dovoz_kc"]
+    min_zisk = cfg["min_zisk_kc"]
+    min_srovnani = cfg.get("min_srovnani", 5)
+
+    cena_zeme = filtry.get("cena_{}".format(zahranicni_trh)) or {}
+    filtry_zeme = dict(filtry)
+    filtry_zeme["max_cena_eur"] = cena_zeme.get("max")
+    filtry_zeme["min_cena_eur"] = cena_zeme.get("min")
+
+    okruhy = [o for o in (filtry.get("oblasti") or []) if o.get("zeme") == zahranicni_trh] or [None]
+    info = main.ZAHRANICNI_INFO[zahranicni_trh]
+    kurz_eur = main._kurz_zahranicni_eur(trh)
+
+    videno_id = set()
+    auta = []
+    for znacka in filtry.get("znacky", []):
+        for okruh in okruhy:
+            try:
+                davka = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=MAX_STRAN, okruh=okruh, zeme=zahranicni_trh)
+            except Exception as e:
+                print("  chyba {}:".format(zahranicni_trh.upper()), e)
+                continue
+            for a in davka:
+                if a["id"] not in videno_id:
+                    videno_id.add(a["id"])
+                    auta.append(a)
+    print("{}: k vyhodnoceni {} aut".format(zahranicni_trh.upper(), len(auta)))
+
+    vysledky = []
+    for a in auta:
+        if not a.get("cena") or not a.get("znacka"):
+            continue
+        if main._je_plyn(a):
+            continue
+        if not main._najezd_ok(a, filtry):
+            continue
+        cena_mistni = int(round(a["cena"] * kurz_eur))
+        odhad = bazos.odhad_ceny(a["znacka"], a.get("model"), rok=a.get("rok"),
+                                  najezd_km=a.get("najezd_km"),
+                                  cena_anchor_czk=cena_mistni,
+                                  palivo=a.get("palivo_kod"),
+                                  objem_l=a.get("objem_l"),
+                                  min_pocet=min_srovnani,
+                                  trh=trh)
+        if not odhad["median"] or odhad["pocet"] < min_srovnani:
+            continue
+        zisk = odhad["median"] - cena_mistni - naklady
+        if zisk < min_zisk:
+            continue
+        detail = modul.nacti_detail(a["url"])
+        if detail["poskozeno"]:
+            continue
+        cilovy_jazyk = {"cz": "cs", "sk": "sk"}.get(trh, "cs")
+        popis_prelozeny = preklad.prelozit(detail["popis"], source=info["jazyk_popis"], target=cilovy_jazyk)
+        popisek = main.naformatuj_zpravu_zahranicni(a, cena_mistni, odhad, zisk, naklady, zahranicni_trh, trh)
+        detail_zprava = main.naformatuj_detail_zahranicni(popis_prelozeny, odhad, trh)
+        vysledky.append((zisk, popisek, detail_zprava, a.get("foto")))
+        print("  >>> {} kandidat: {} | zisk {}".format(zahranicni_trh.upper(), a["titulek"][:40], zisk))
+
+    vysledky.sort(key=lambda x: -x[0])
+    return vysledky
+
+
 def main_najdi(user_id):
     sb = supa.klient()
     cfg = supa.nacti_uzivatele_jeden(sb, user_id)
@@ -130,38 +198,48 @@ def main_najdi(user_id):
         print("!!! Uzivatel nenalezen nebo nema telegram token/chat_id.")
         return
 
-    token = cfg["telegram"]["token"]
-    prijemci = main._prijemci(cfg)
-    trh = cfg.get("trh", "cz")
-    zdroje = cfg["filtry"].get("zdroje") or ["pl"]
+    supa.nastav_najdi_ted_stav(sb, user_id, "bezi")
+    try:
+        token = cfg["telegram"]["token"]
+        prijemci = main._prijemci(cfg)
+        trh = cfg.get("trh", "cz")
+        zdroje = cfg["filtry"].get("zdroje") or ["pl"]
 
-    vysledky = []
-    if "pl" in zdroje:
-        kurz_pln = kurz.kurz_pln_eur() if trh == "sk" else kurz.kurz_pln_czk()
-        vysledky += _najdi_pl(cfg, kurz_pln)
-    for domaci_trh in ("cz", "sk"):
-        if domaci_trh in zdroje:
-            vysledky += _najdi_domaci(cfg, domaci_trh)
+        vysledky = []
+        if "pl" in zdroje:
+            kurz_pln = kurz.kurz_pln_eur() if trh == "sk" else kurz.kurz_pln_czk()
+            vysledky += _najdi_pl(cfg, kurz_pln)
+        for domaci_trh in ("cz", "sk"):
+            if domaci_trh in zdroje:
+                vysledky += _najdi_domaci(cfg, domaci_trh)
+        for zahranicni_trh, modul in main.ZAHRANICNI_MODULY.items():
+            if zahranicni_trh in zdroje:
+                vysledky += _najdi_zahranicni(cfg, zahranicni_trh, modul)
 
-    uvod = "🔎 <b>Najdi teď</b> – aktuální nabídka.\nZiskových aut: {}.".format(len(vysledky))
-    for cid in prijemci:
-        tg.posli_zpravu(token, cid, uvod)
-
-    for zisk, popisek, detail, foto in vysledky:
+        uvod = "🔎 <b>Najdi teď</b> – aktuální nabídka.\nZiskových aut: {}.".format(len(vysledky))
         for cid in prijemci:
-            if foto:
-                tg.posli_foto(token, cid, foto, popisek)
-            else:
-                tg.posli_zpravu(token, cid, popisek)
-            if detail.strip():
-                tg.posli_zpravu(token, cid, detail)
-        time.sleep(0.5)
+            tg.posli_zpravu(token, cid, uvod)
 
-    if not vysledky:
-        for cid in prijemci:
-            tg.posli_zpravu(token, cid, "ℹ️ Teď podle tvých filtrů nevyšlo žádné ziskové auto.")
+        for zisk, popisek, detail, foto in vysledky:
+            for cid in prijemci:
+                if foto:
+                    tg.posli_foto(token, cid, foto, popisek)
+                else:
+                    tg.posli_zpravu(token, cid, popisek)
+                if detail.strip():
+                    tg.posli_zpravu(token, cid, detail)
+            time.sleep(0.5)
 
-    print("=== HOTOVO === poslano:", len(vysledky))
+        if not vysledky:
+            for cid in prijemci:
+                tg.posli_zpravu(token, cid, "ℹ️ Teď podle tvých filtrů nevyšlo žádné ziskové auto.")
+
+        print("=== HOTOVO === poslano:", len(vysledky))
+        supa.nastav_najdi_ted_stav(sb, user_id, "hotovo", dokonceno=True)
+    except Exception as e:
+        print("!!! Chyba behu Najdi ted:", e)
+        supa.nastav_najdi_ted_stav(sb, user_id, "chyba", dokonceno=True)
+        raise
 
 
 if __name__ == "__main__":
