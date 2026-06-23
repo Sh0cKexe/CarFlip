@@ -92,7 +92,6 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
   const kurz = useKurz();
   const domovskaMena: Mena = n.trh === "sk" ? "EUR" : "CZK";
   const domovskaJednotka = domovskaMena === "EUR" ? "€" : "Kč";
-  const bezJednotky = (label: string) => label.replace(/\s*\([^)]*\)\s*$/, "");
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
@@ -295,90 +294,56 @@ export default function FiltryForm({ nastaveni }: { nastaveni: Nastaveni | null 
             </Pole>
           </div>
 
-          {zdroje.includes("pl") && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <CenovePole
-                label={bezJednotky(t.cenaPlOd)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={Math.round(prevod(n.filtry.min_cena_pln, "PLN", domovskaMena, kurz))}
-                jednotkaNativni="PLN" hodnotaNativniHint={n.filtry.min_cena_pln}
-                onChange={(v) => setFiltr("min_cena_pln", Math.round(prevod(v ?? 0, domovskaMena, "PLN", kurz)))}
-              />
-              <CenovePole
-                label={bezJednotky(t.cenaPlDo)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={Math.round(prevod(n.filtry.max_cena_pln, "PLN", domovskaMena, kurz))}
-                jednotkaNativni="PLN" hodnotaNativniHint={n.filtry.max_cena_pln}
-                onChange={(v) => setFiltr("max_cena_pln", Math.round(prevod(v ?? 0, domovskaMena, "PLN", kurz)))}
-              />
-            </div>
-          )}
+          {(() => {
+            const JEDNOTKA: Record<Mena, string> = { PLN: "PLN", CZK: "Kč", EUR: "€" };
+            function radek(
+              zeme: Zeme, label: string, mena: Mena, min: number, max: number | null,
+              setMin: (v: number) => void, setMax: (v: number | null) => void
+            ) {
+              return { zeme, label, mena, min, max, setMin, setMax };
+            }
+            const zdrojeCen = [
+              radek("pl", t.zdrojPolsko.split(" - ")[0], "PLN", n.filtry.min_cena_pln, n.filtry.max_cena_pln,
+                (v) => setFiltr("min_cena_pln", v), (v) => setFiltr("max_cena_pln", v ?? 0)),
+              radek("cz", t.zdrojCesko.split(" - ")[0], "CZK", n.filtry.cena_cz?.min ?? 0, n.filtry.cena_cz?.max ?? null,
+                (v) => setFiltr("cena_cz", { ...n.filtry.cena_cz, min: v }), (v) => setFiltr("cena_cz", { ...n.filtry.cena_cz, max: v })),
+              radek("sk", t.zdrojSlovensko.split(" - ")[0], "EUR", n.filtry.cena_sk?.min ?? 0, n.filtry.cena_sk?.max ?? null,
+                (v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, min: v }), (v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, max: v })),
+              radek("de", t.zdrojNemecko.split(" - ")[0], "EUR", n.filtry.cena_de?.min ?? 0, n.filtry.cena_de?.max ?? null,
+                (v) => setFiltr("cena_de", { ...n.filtry.cena_de, min: v }), (v) => setFiltr("cena_de", { ...n.filtry.cena_de, max: v })),
+              radek("at", t.zdrojRakousko.split(" - ")[0], "EUR", n.filtry.cena_at?.min ?? 0, n.filtry.cena_at?.max ?? null,
+                (v) => setFiltr("cena_at", { ...n.filtry.cena_at, min: v }), (v) => setFiltr("cena_at", { ...n.filtry.cena_at, max: v })),
+              radek("it", t.zdrojItalie.split(" - ")[0], "EUR", n.filtry.cena_it?.min ?? 0, n.filtry.cena_it?.max ?? null,
+                (v) => setFiltr("cena_it", { ...n.filtry.cena_it, min: v }), (v) => setFiltr("cena_it", { ...n.filtry.cena_it, max: v })),
+            ].filter((c) => zdroje.includes(c.zeme));
 
-          {zdroje.includes("cz") && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <CenovePole
-                label={bezJednotky(t.cenaCzOd)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={Math.round(prevod(n.filtry.cena_cz?.min ?? 0, "CZK", domovskaMena, kurz))}
-                jednotkaNativni="Kč" hodnotaNativniHint={n.filtry.cena_cz?.min ?? 0}
-                onChange={(v) => setFiltr("cena_cz", { ...n.filtry.cena_cz, min: Math.round(prevod(v ?? 0, domovskaMena, "CZK", kurz)) })}
-              />
-              <CenovePole
-                label={bezJednotky(t.cenaCzDo)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={n.filtry.cena_cz?.max == null ? null : Math.round(prevod(n.filtry.cena_cz.max, "CZK", domovskaMena, kurz))}
-                jednotkaNativni="Kč" hodnotaNativniHint={n.filtry.cena_cz?.max ?? null}
-                onChange={(v) => setFiltr("cena_cz", { ...n.filtry.cena_cz, max: v == null ? null : Math.round(prevod(v, domovskaMena, "CZK", kurz)) })}
-              />
-            </div>
-          )}
-
-          {zdroje.includes("sk") && (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <CenovePole
-                label={bezJednotky(t.cenaSkOd)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={Math.round(prevod(n.filtry.cena_sk?.min ?? 0, "EUR", domovskaMena, kurz))}
-                jednotkaNativni="€" hodnotaNativniHint={n.filtry.cena_sk?.min ?? 0}
-                onChange={(v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, min: Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)) })}
-              />
-              <CenovePole
-                label={bezJednotky(t.cenaSkDo)} jednotkaDomovska={domovskaJednotka}
-                hodnotaDomovska={n.filtry.cena_sk?.max == null ? null : Math.round(prevod(n.filtry.cena_sk.max, "EUR", domovskaMena, kurz))}
-                jednotkaNativni="€" hodnotaNativniHint={n.filtry.cena_sk?.max ?? null}
-                onChange={(v) => setFiltr("cena_sk", { ...n.filtry.cena_sk, max: v == null ? null : Math.round(prevod(v, domovskaMena, "EUR", kurz)) })}
-              />
-            </div>
-          )}
-
-          {(zdroje.includes("de") || zdroje.includes("at") || zdroje.includes("it")) && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-              {([
-                ["de", t.zdrojNemecko],
-                ["at", t.zdrojRakousko],
-                ["it", t.zdrojItalie],
-              ] as [Zeme, string][]).filter(([z]) => zdroje.includes(z)).map(([z, popisek]) => {
-                const klic = ("cena_" + z) as "cena_de" | "cena_at" | "cena_it";
-                const rozsah = n.filtry[klic];
-                return (
-                  <div key={z} className="rounded-lg border border-border bg-panel2/40 p-2.5">
+            if (zdrojeCen.length === 0) return null;
+            return (
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {zdrojeCen.map((c) => (
+                  <div key={c.zeme} className="rounded-lg border border-border bg-panel2/40 p-2.5">
                     <p className="mb-1.5 flex items-center gap-1.5 text-xs text-zinc-300">
-                      <Vlajka zeme={z} /> {popisek.split(" - ")[0]}
+                      <Vlajka zeme={c.zeme} /> {c.label}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <CenovePole
                         label="od" jednotkaDomovska={domovskaJednotka}
-                        hodnotaDomovska={Math.round(prevod(rozsah.min, "EUR", domovskaMena, kurz))}
-                        jednotkaNativni="€" hodnotaNativniHint={rozsah.min}
-                        onChange={(v) => setFiltr(klic, { ...rozsah, min: Math.round(prevod(v ?? 0, domovskaMena, "EUR", kurz)) })}
+                        hodnotaDomovska={Math.round(prevod(c.min, c.mena, domovskaMena, kurz))}
+                        jednotkaNativni={JEDNOTKA[c.mena]} hodnotaNativniHint={c.min}
+                        onChange={(v) => c.setMin(Math.round(prevod(v ?? 0, domovskaMena, c.mena, kurz)))}
                       />
                       <CenovePole
                         label="do" jednotkaDomovska={domovskaJednotka}
-                        hodnotaDomovska={rozsah.max == null ? null : Math.round(prevod(rozsah.max, "EUR", domovskaMena, kurz))}
-                        jednotkaNativni="€" hodnotaNativniHint={rozsah.max}
-                        onChange={(v) => setFiltr(klic, { ...rozsah, max: v == null ? null : Math.round(prevod(v, domovskaMena, "EUR", kurz)) })}
+                        hodnotaDomovska={c.max == null ? null : Math.round(prevod(c.max, c.mena, domovskaMena, kurz))}
+                        jednotkaNativni={JEDNOTKA[c.mena]} hodnotaNativniHint={c.max}
+                        onChange={(v) => c.setMax(v == null ? null : Math.round(prevod(v, domovskaMena, c.mena, kurz)))}
                       />
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </Sekce>
 
         <Sekce titulek={t.oblasti}>
