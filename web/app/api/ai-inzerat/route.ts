@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Chybný požadavek." }, { status: 400 });
   }
 
-  const { nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, vin, poznamky, jazyk } = body;
+  const { nazev, motor, rok, najezd, palivo, prevodovka, vykon, spotreba, vin, poznamky, jazyk } = body;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -54,6 +54,7 @@ export async function POST(req: Request) {
   const jazykText = jazyk === "sk" ? "slovensky" : "česky";
   const userPrompt = `Jazyk: ${jazykText}
 Model: ${nazev || "neuvedeno"}
+Motor: ${motor || "neuvedeno"}
 ${vykon ? `Výkon: ${vykon} kW\n` : ""}Palivo: ${palivo || "neuvedeno"}
 Nájezd: ${najezd ? najezd + " km" : "neuvedeno"}
 Rok výroby: ${rok || "neuvedeno"}
@@ -71,9 +72,13 @@ Poznámky od majitele (stav, výbava, co bylo uděláno, důvod prodeje apod.): 
     });
     const text = response.content.find((b) => b.type === "text")?.text ?? "";
 
+    // Titulek pro historii: "Nazev Motor - Rok" (cokoliv chybi se vynecha).
+    const titulekCasti = [nazev, motor].filter(Boolean).join(" ");
+    const titulek = (titulekCasti || "Bez názvu") + (rok ? ` - ${rok}` : "");
+
     const { data: radek } = await supabase
       .from("ai_inzeraty")
-      .insert({ user_id: user.id, nazev: nazev || "Bez názvu", vysledek: text })
+      .insert({ user_id: user.id, nazev: titulek, vysledek: text })
       .select("*")
       .single();
 

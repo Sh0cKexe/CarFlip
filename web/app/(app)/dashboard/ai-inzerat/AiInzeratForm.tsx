@@ -13,6 +13,7 @@ export default function AiInzeratForm({
 }: { trh: Trh; vyuzitoVychozi: number; historie: Inzerat[] }) {
   const t = T(trh);
   const [nazev, setNazev] = useState("");
+  const [motor, setMotor] = useState("");
   const [rok, setRok] = useState("");
   const [najezd, setNajezd] = useState("");
   const [palivo, setPalivo] = useState("");
@@ -48,7 +49,7 @@ export default function AiInzeratForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nazev, rok, najezd, palivo, prevodovka, vykon, spotreba, vin, poznamky, jazyk: trh,
+          nazev, motor, rok, najezd, palivo, prevodovka, vykon, spotreba, vin, poznamky, jazyk: trh,
         }),
       });
       const j = await r.json();
@@ -80,12 +81,15 @@ export default function AiInzeratForm({
       <h1 className="mb-4 text-xl font-semibold text-zinc-100">{t.aiInzeratNadpis}</h1>
 
       <Sekce titulek={t.aiInzeratNadpis}>
-        <p className="mb-2 text-xs text-zinc-500">
-          {vyuzito}/{AI_INZERAT_LIMIT} {t.aiInzeratVyuzitoZLimitu} · {t.aiInzeratNepovinne}
+        <p className="mb-3 text-sm text-zinc-300">
+          <span className="font-medium text-accent2">{vyuzito}/{AI_INZERAT_LIMIT}</span> {t.aiInzeratVyuzitoZLimitu} · {t.aiInzeratNepovinne}
         </p>
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
           <Pole label={t.nazevModel}>
-            <input className={input} value={nazev} onChange={(e) => setNazev(e.target.value)} placeholder="Škoda Octavia 2.0 TDI" />
+            <input className={input} value={nazev} onChange={(e) => setNazev(e.target.value)} placeholder="Škoda Octavia" />
+          </Pole>
+          <Pole label={t.mechMotor}>
+            <input className={input} value={motor} onChange={(e) => setMotor(e.target.value)} placeholder="2.0 TDI" />
           </Pole>
           <Pole label={t.rokVyroby}>
             <input type="number" className={input} value={rok} onChange={(e) => setRok(e.target.value)} />
@@ -101,11 +105,11 @@ export default function AiInzeratForm({
               <option value="">{t.vse}</option>
               <option value={t.benzin}>{t.benzin}</option>
               <option value={t.diesel}>{t.diesel}</option>
-              <option value={t.palivoLpg}>{t.palivoLpg}</option>
-              <option value={t.palivoCng}>{t.palivoCng}</option>
-              <option value={t.palivoElektrina}>{t.palivoElektrina}</option>
+              <option value={t.palivoBenzinLpg}>{t.palivoBenzinLpg}</option>
+              <option value={t.palivoBenzinCng}>{t.palivoBenzinCng}</option>
               <option value={t.palivoHybrid}>{t.palivoHybrid}</option>
               <option value={t.palivoPluginHybrid}>{t.palivoPluginHybrid}</option>
+              <option value={t.palivoElektrina}>{t.palivoElektrina}</option>
             </select>
           </Pole>
           <Pole label={t.prevodovka}>
@@ -127,9 +131,17 @@ export default function AiInzeratForm({
             <textarea className={`${input} min-h-20`} value={poznamky} onChange={(e) => setPoznamky(e.target.value)} />
           </Pole>
         </div>
-        <button type="button" onClick={generovat} disabled={bezi || limitDosazen} className={`mt-3 ${btnGhost}`}>
-          {bezi ? t.generuji : t.generujInzerat}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={generovat} disabled={bezi || limitDosazen} className={`mt-3 ${btnGhost}`}>
+            {bezi ? t.generuji : t.generujInzerat}
+          </button>
+          {bezi && (
+            <span className="mt-3 flex items-center gap-2 text-sm text-accent">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+              {t.aiInzeratProbiha}
+            </span>
+          )}
+        </div>
         {limitDosazen && <p className="mt-2 text-sm text-amber-400">{t.aiInzeratLimitDosazen}</p>}
         {chyba && <p className="mt-2 text-sm text-red-400">{chyba}</p>}
       </Sekce>
