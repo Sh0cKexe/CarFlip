@@ -17,9 +17,7 @@ export default function AiRozborForm({
   const [chyba, setChyba] = useState<string | null>(null);
   const [historie, setHistorie] = useState<Rozbor[]>(historieVychozi);
   const [vyuzito, setVyuzito] = useState(vyuzitoVychozi);
-  const [rozbaleno, setRozbaleno] = useState<Set<string>>(
-    () => new Set(historieVychozi[0] ? [historieVychozi[0].id] : [])
-  );
+  const [rozbaleno, setRozbaleno] = useState<Set<string>>(() => new Set());
 
   function prepnoutRozbaleni(id: string) {
     setRozbaleno((aktualni) => {
