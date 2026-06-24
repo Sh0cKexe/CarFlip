@@ -21,7 +21,9 @@ create table if not exists public.nastaveni (
     "cena_sk": {"min": 0, "max": null},
     "cena_de": {"min": 0, "max": 3000},
     "cena_at": {"min": 0, "max": 3000},
-    "cena_it": {"min": 0, "max": 3000}
+    "cena_it": {"min": 0, "max": 3000},
+    "max_rok": null,
+    "karoserie": "vse"
   }'::jsonb,
   min_zisk_kc integer not null default 20000,
   naklady_dovoz_kc integer not null default 10000,
@@ -74,6 +76,13 @@ set filtry = filtry
   || jsonb_build_object('cena_at', coalesce(filtry->'cena_at', '{"min": 0, "max": 3000}'::jsonb))
   || jsonb_build_object('cena_it', coalesce(filtry->'cena_it', '{"min": 0, "max": 3000}'::jsonb))
 where not (filtry ? 'cena_de') or not (filtry ? 'cena_at') or not (filtry ? 'cena_it');
+
+-- Pro existujici instalace: karoserie + rok do (doplnek k "rok od").
+update public.nastaveni
+set filtry = filtry
+  || jsonb_build_object('karoserie', coalesce(filtry->'karoserie', '"vse"'::jsonb))
+  || jsonb_build_object('max_rok', coalesce(filtry->'max_rok', 'null'::jsonb))
+where not (filtry ? 'karoserie') or not (filtry ? 'max_rok');
 
 create table if not exists public.videno (
   user_id uuid not null references auth.users (id) on delete cascade,

@@ -41,6 +41,17 @@ PREVODOVKA_MAP = {
     "manual": "M",
 }
 
+# Prevod karoserie (nas zapis -> AutoScout24 "body" kod, zive overeno)
+KAROSERIE_MAP = {
+    "kombi": "5",
+    "sedan": "6",
+    "hatchback": "1",
+    "suv": "4",
+    "kupe": "3",
+    "kabriolet": "2",
+    "van": "12",
+}
+
 # Plynove palivo - kody AutoScout24 (allFuelTypes/fuel obsahuje neco z tohoto)
 PLYN_SLOVA = ("lpg", "autogas", "cng", "erdgas")
 
@@ -61,6 +72,12 @@ def _sestav_url(znacka, filtry, strana, zeme, okruh=None):
     }
     if filtry.get("min_rok"):
         params["fregfrom"] = filtry["min_rok"]
+    if filtry.get("max_rok"):
+        params["fregto"] = filtry["max_rok"]
+
+    karoserie = filtry.get("karoserie")
+    if karoserie in KAROSERIE_MAP:
+        params["body"] = KAROSERIE_MAP[karoserie]
 
     palivo = filtry.get("palivo", "vse")
     naj_nafta = filtry.get("max_najezd_nafta")

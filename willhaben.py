@@ -38,6 +38,17 @@ TRANSMISSION_MAP = {
     "automat": "180004",
 }
 
+# Prevod karoserie (nas zapis -> Willhaben CAR_TYPE kod, zive overeno)
+KAROSERIE_MAP = {
+    "kombi": "5",
+    "sedan": "6",
+    "hatchback": "4",
+    "suv": "10",
+    "kupe": "9",
+    "kabriolet": "2",
+    "van": "12",
+}
+
 PLYN_SLOVA = ("lpg", "autogas", "cng", "erdgas")
 
 # Willhaben ma jiny slug nez Otomoto/AutoScout24 jen u par znacek
@@ -80,6 +91,12 @@ def _sestav_url(znacka, filtry, strana, okruh=None):
 
     if filtry.get("min_rok"):
         params["YEAR_MODEL_FROM"] = filtry["min_rok"]
+    if filtry.get("max_rok"):
+        params["YEAR_MODEL_TO"] = filtry["max_rok"]
+
+    karoserie = filtry.get("karoserie")
+    if karoserie in KAROSERIE_MAP:
+        params["CAR_TYPE"] = KAROSERIE_MAP[karoserie]
 
     palivo = filtry.get("palivo", "vse")
     naj_nafta = filtry.get("max_najezd_nafta")

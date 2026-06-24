@@ -24,6 +24,8 @@ type Filtry = {
   prevodovka: string;
   oblasti: Oblast[];
   min_rok: number;
+  max_rok: number | null;
+  karoserie: string;
   max_najezd_nafta: number;
   max_najezd_benzin: number;
   max_cena_pln: number;
@@ -84,7 +86,8 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
       user_id: "", trh: "cz",
       filtry: {
         znacky: [], palivo: "vse", prevodovka: "vse", oblasti: [],
-        min_rok: 2003, max_najezd_nafta: 250000, max_najezd_benzin: 200000,
+        min_rok: 2003, max_rok: null, karoserie: "vse",
+        max_najezd_nafta: 250000, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
         zdroje: ["pl"], cena_cz: { min: 0, max: null }, cena_sk: { min: 0, max: null },
         cena_de: { min: 0, max: 3000 }, cena_at: { min: 0, max: 3000 }, cena_it: { min: 0, max: 3000 },
@@ -288,26 +291,43 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
           </div>
         </Sekce>
 
-        <Sekce titulek={t.znacky}>
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-xs text-zinc-300">
-              {vybraneZname.size} {t.vybrano}
-            </p>
-            <input
-              placeholder={t.hledatZnacku}
-              value={hledatZnacku}
-              onChange={(e) => setHledatZnacku(e.target.value)}
-              className="w-44 rounded-lg border border-border bg-bg px-3 py-1.5 text-xs outline-none ring-accent2 focus:ring-2"
-            />
-          </div>
-          <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border bg-panel2/40 p-2 sm:grid-cols-4">
+        <Sekce titulek={t.znacky} badge={{ text: `${vybraneZname.size} ${t.vybrano}`, tone: vybraneZname.size > 0 ? "green" : "zinc" }}>
+          {vybraneZname.size > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+              {Array.from(vybraneZname).sort().map((z) => (
+                <span
+                  key={z}
+                  className="flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent"
+                >
+                  {z}
+                  <button type="button" onClick={() => prepnoutZnacku(z)} className="text-accent/70 hover:text-accent" aria-label={t.smazat}>
+                    ×
+                  </button>
+                </span>
+              ))}
+              <button
+                type="button"
+                onClick={() => setFiltr("znacky", [])}
+                className="rounded-full px-2.5 py-1 text-xs text-zinc-400 underline hover:text-zinc-200"
+              >
+                {t.zrusit}
+              </button>
+            </div>
+          )}
+          <input
+            placeholder={t.hledatZnacku}
+            value={hledatZnacku}
+            onChange={(e) => setHledatZnacku(e.target.value)}
+            className="mb-2 w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm outline-none ring-accent2 focus:ring-2"
+          />
+          <div className="grid max-h-56 grid-cols-2 gap-1.5 overflow-y-auto rounded-lg border border-border bg-panel2/40 p-2 sm:grid-cols-4">
             {filtrovaneZname.length === 0 && (
               <p className="col-span-full py-4 text-center text-sm text-zinc-500">{t.zadnaZnacka}</p>
             )}
             {filtrovaneZname.map((z) => (
               <label
                 key={z}
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition ${
                   vybraneZname.has(z) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
                 }`}
               >
@@ -319,36 +339,68 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
         </Sekce>
 
         <Sekce titulek={t.filtryAut}>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Pole label={t.palivo}>
-              <select className={input} value={n.filtry.palivo} onChange={(e) => setFiltr("palivo", e.target.value)}>
-                <option value="vse">{t.vse}</option>
-                <option value="benzin">{t.benzin}</option>
-                <option value="diesel">{t.diesel}</option>
-              </select>
-            </Pole>
-            <Pole label={t.prevodovka}>
-              <select className={input} value={n.filtry.prevodovka} onChange={(e) => setFiltr("prevodovka", e.target.value)}>
-                <option value="vse">{t.vse}</option>
-                <option value="manual">{t.manual}</option>
-                <option value="automat">{t.automat}</option>
-              </select>
-            </Pole>
-          </div>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border border-border bg-panel2/40 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">⛽ {t.palivo} / {t.prevodovka}</p>
+              <div className="grid gap-3">
+                <Pole label={t.palivo}>
+                  <select className={input} value={n.filtry.palivo} onChange={(e) => setFiltr("palivo", e.target.value)}>
+                    <option value="vse">{t.vse}</option>
+                    <option value="benzin">{t.benzin}</option>
+                    <option value="diesel">{t.diesel}</option>
+                  </select>
+                </Pole>
+                <Pole label={t.prevodovka}>
+                  <select className={input} value={n.filtry.prevodovka} onChange={(e) => setFiltr("prevodovka", e.target.value)}>
+                    <option value="vse">{t.vse}</option>
+                    <option value="manual">{t.manual}</option>
+                    <option value="automat">{t.automat}</option>
+                  </select>
+                </Pole>
+                <Pole label={t.karoserie}>
+                  <select className={input} value={n.filtry.karoserie ?? "vse"} onChange={(e) => setFiltr("karoserie", e.target.value)}>
+                    <option value="vse">{t.karoserieVse}</option>
+                    <option value="kombi">{t.karoserieKombi}</option>
+                    <option value="sedan">{t.karoserieSedan}</option>
+                    <option value="hatchback">{t.karoserieHatchback}</option>
+                    <option value="suv">{t.karoserieSuv}</option>
+                    <option value="kupe">{t.karoserieKupe}</option>
+                    <option value="kabriolet">{t.karoserieKabriolet}</option>
+                    <option value="van">{t.karoserieVan}</option>
+                  </select>
+                </Pole>
+              </div>
+            </div>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <Pole label={t.rokOd}>
-              <input type="number" className={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} />
+            <div className="rounded-xl border border-border bg-panel2/40 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">📅 {t.rokOd} – {t.rokDo}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Pole label={t.rokOd}>
+                  <input type="number" className={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} />
+                </Pole>
+                <Pole label={t.rokDo}>
+                  <input
+                    type="number" className={input} value={n.filtry.max_rok ?? ""}
+                    onChange={(e) => setFiltr("max_rok", e.target.value ? Number(e.target.value) : null)}
+                  />
+                </Pole>
+              </div>
               {n.filtry.min_rok > new Date().getFullYear() && (
                 <p className="mt-1 text-xs text-red-400">{t.rokVBudoucnostiVarovani}</p>
               )}
-            </Pole>
-            <Pole label={t.maxNajezdDiesel}>
-              <input type="number" className={input} value={n.filtry.max_najezd_nafta} onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))} />
-            </Pole>
-            <Pole label={t.maxNajezdBenzin}>
-              <input type="number" className={input} value={n.filtry.max_najezd_benzin} onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))} />
-            </Pole>
+            </div>
+
+            <div className="rounded-xl border border-border bg-panel2/40 p-3">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🛣️ {t.maxNajezdDiesel.split(" (")[0]}</p>
+              <div className="grid gap-3">
+                <Pole label={t.maxNajezdDiesel}>
+                  <input type="number" className={input} value={n.filtry.max_najezd_nafta} onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))} />
+                </Pole>
+                <Pole label={t.maxNajezdBenzin}>
+                  <input type="number" className={input} value={n.filtry.max_najezd_benzin} onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))} />
+                </Pole>
+              </div>
+            </div>
           </div>
 
           {(() => {

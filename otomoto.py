@@ -33,6 +33,17 @@ PREVODOVKA_MAP = {
     "manual": "manual",
 }
 
+# Prevod karoserie (nas zapis -> Otomoto enum, zive overeno)
+KAROSERIE_MAP = {
+    "kombi": "combi",
+    "sedan": "sedan",
+    "hatchback": "compact",
+    "suv": "suv",
+    "kupe": "coupe",
+    "kabriolet": "cabrio",
+    "van": "minivan",
+}
+
 
 def _km_na_kw(km):
     """Prepocet vykonu z koni (KM) na kilowatty (kW)."""
@@ -57,6 +68,12 @@ def _sestav_url(znacka, filtry, strana=1, okruh=None):
     }
     if filtry.get("min_rok"):
         params["search[filter_float_year:from]"] = filtry["min_rok"]
+    if filtry.get("max_rok"):
+        params["search[filter_float_year:to]"] = filtry["max_rok"]
+
+    karoserie = filtry.get("karoserie")
+    if karoserie in KAROSERIE_MAP:
+        params["search[filter_enum_body_type]"] = KAROSERIE_MAP[karoserie]
 
     # Max najezd: nafta a benzin maji vlastni limit. Na Otomoto posleme
     # vyssi z relevantnich (at stahneme obojí), presne doladíme u kazdeho auta.

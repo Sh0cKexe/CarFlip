@@ -36,6 +36,28 @@ DIESEL_SLOVA = ("tdi", "nafta", "diesel", "cdti", "dci", "hdi", "crdi",
 BENZIN_SLOVA = ("benzin", "tsi", "tfsi", "mpi", "fsi", "16v", "12v", "htp",
                 "vti", "gti", "tce", "puretech")
 
+# Bazos nema strukturovany filtr na karoserii (na rozdil od Otomoto/AS24/
+# Willhaben, kde je to URL parametr) - hadame ze slov v titulku/popisu.
+# Slabsi presnost nez strukturovany filtr, ale lepsi nez nic a aspon
+# konzistentni princip (vse zalozene na textu, zadny zdroj se nevynechava).
+KAROSERIE_SLOVA = {
+    "kombi": ("kombi", "combi"),
+    "sedan": ("sedan", "limuzina"),
+    "hatchback": ("hatchback", "liftback"),
+    "suv": ("suv", "crossover"),
+    "kupe": ("kupe", "coupe"),
+    "kabriolet": ("kabriolet", "cabrio", "kabrio"),
+    "van": ("van", "mpv", "dodavka"),
+}
+
+
+def _karoserie_sedi(titulek, popis, karoserie):
+    slova = KAROSERIE_SLOVA.get(karoserie)
+    if not slova:
+        return True
+    text = _bez_diakritiky((titulek or "") + " " + (popis or ""))
+    return any(s in text for s in slova)
+
 
 def _palivo_z_textu(text):
     """Z textu inzeratu odhadne palivo: 'nafta' / 'benzin' / None."""
@@ -552,6 +574,8 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
                               lokalita=lokalita, okruh_km=okruh_km)
 
     min_rok = filtry.get("min_rok")
+    max_rok = filtry.get("max_rok")
+    karoserie = filtry.get("karoserie")
     min_srovnatelnych = min_srovnani
 
     vysledky = []
@@ -559,6 +583,10 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
         if not x.get("cena") or x["cena"] < min_cena:
             continue
         if min_rok and x.get("rok") and x["rok"] < min_rok:
+            continue
+        if max_rok and x.get("rok") and x["rok"] > max_rok:
+            continue
+        if karoserie and not _karoserie_sedi(x.get("titulek"), x.get("popis"), karoserie):
             continue
 
         cena_domovska = _prevod(x["cena"], zdroj_trh, domovsky_trh)
