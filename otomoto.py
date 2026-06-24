@@ -11,6 +11,7 @@ import time
 import requests
 
 import ochrana_scrapingu
+import palivo_filtr
 
 _OCHRANA = ochrana_scrapingu.vytvor_ochranu("otomoto_cache.json")
 
@@ -21,10 +22,14 @@ HEADERS = {
     "Accept-Language": "pl-PL,pl;q=0.9,en;q=0.8",
 }
 
-# Prevod nazvu paliva (nas zapis -> Otomoto hodnota)
+# Prevod nazvu paliva (nas zapis -> Otomoto enum, zive overeno; vice
+# enum hodnot za kategorii se posila jako vicenasobny filtr - OR).
 PALIVO_MAP = {
-    "nafta": "diesel",
-    "benzin": "petrol",
+    "benzin": ["petrol"],
+    "nafta": ["diesel"],
+    "hybrid": ["hybrid", "plugin-hybrid"],
+    "elektro": ["electric"],
+    "lpg_cng": ["petrol-lpg"],
 }
 
 # Prevod prevodovky (nas zapis -> Otomoto hodnota)
@@ -77,17 +82,8 @@ def _sestav_url(znacka, filtry, strana=1, okruh=None):
 
     # Max najezd: nafta a benzin maji vlastni limit. Na Otomoto posleme
     # vyssi z relevantnich (at stahneme obojí), presne doladíme u kazdeho auta.
-    palivo = filtry.get("palivo", "vse")
-    naj_nafta = filtry.get("max_najezd_nafta")
-    naj_benzin = filtry.get("max_najezd_benzin")
-    naj_stary = filtry.get("max_najezd_km")  # zpetna kompatibilita
-    if palivo == "nafta":
-        cap = naj_nafta or naj_stary
-    elif palivo == "benzin":
-        cap = naj_benzin or naj_stary
-    else:
-        kandidati = [v for v in (naj_nafta, naj_benzin, naj_stary) if v]
-        cap = max(kandidati) if kandidati else None
+    vybrane_palivo = palivo_filtr.normalizuj(filtry)
+    cap = palivo_filtr.naj_cap(filtry, vybrane_palivo)
     if cap:
         params["search[filter_float_mileage:to]"] = cap
     if filtry.get("max_cena_pln"):
@@ -95,9 +91,11 @@ def _sestav_url(znacka, filtry, strana=1, okruh=None):
     if filtry.get("min_cena_pln"):
         params["search[filter_float_price:from]"] = filtry["min_cena_pln"]
 
-    palivo = filtry.get("palivo", "vse")
-    if palivo in PALIVO_MAP:
-        params["search[filter_enum_fuel_type]"] = PALIVO_MAP[palivo]
+    hodnoty_paliva = []
+    for p in vybrane_palivo:
+        hodnoty_paliva += PALIVO_MAP.get(p, [])
+    for i, hodnota in enumerate(hodnoty_paliva):
+        params["search[filter_enum_fuel_type][{}]".format(i)] = hodnota
 
     prevodovka = filtry.get("prevodovka", "vse")
     if prevodovka in PREVODOVKA_MAP:

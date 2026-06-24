@@ -23,6 +23,7 @@ import kurz
 import preklad
 import telegram_send as tg
 import databaze
+import palivo_filtr
 
 # Aby sla cestina do Windows konzole
 try:
@@ -361,8 +362,9 @@ def zpracuj_auto(auto, cfg, kurz_pln, uz_videno=databaze.uz_videno,
     if not auto.get("cena_pln") or not auto.get("znacka"):
         return False
 
-    # LPG/CNG nechceme - poznáme uz ze seznamu (setrime dotaz na Bazos)
-    if _je_plyn(auto):
+    # LPG/CNG vyrazujeme jen kdyz uzivatel "lpg_cng" sam nezaskrtl v palivu
+    # (vychozi bezpecny stav - drive bylo VZDY tvrde vyrazene).
+    if palivo_filtr.vyloucit_plyn(cfg["filtry"]) and _je_plyn(auto):
         return False
 
     # Najezd podle paliva (nafta 250k / benzin 200k - dle nastaveni)
@@ -435,7 +437,8 @@ def zpracuj_auto_zahranicni(auto, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
     if not auto.get("cena") or not auto.get("znacka"):
         return False
 
-    if _je_plyn(auto):
+    vyloucit_plyn = palivo_filtr.vyloucit_plyn(cfg["filtry"])
+    if vyloucit_plyn and _je_plyn(auto):
         return False
 
     if not _najezd_ok(auto, cfg["filtry"]):
@@ -465,6 +468,9 @@ def zpracuj_auto_zahranicni(auto, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
     detail = modul.nacti_detail(auto["url"])
     if detail["poskozeno"]:
         print("  - preskoceno (havarovane/poskozene):", auto["titulek"][:40])
+        return False
+    if vyloucit_plyn and detail.get("ma_plyn"):
+        print("  - preskoceno (LPG/CNG dle popisu):", auto["titulek"][:40])
         return False
 
     print("  >>> FLIP ({}): {} | zisk {} Kc".format(info["nazev"], auto["titulek"], zisk))

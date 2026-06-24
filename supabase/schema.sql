@@ -8,7 +8,7 @@ create table if not exists public.nastaveni (
   dalsi_prijemci jsonb not null default '[]'::jsonb,
   filtry jsonb not null default '{
     "znacky": [],
-    "palivo": "vse",
+    "palivo": [],
     "prevodovka": "vse",
     "oblasti": [],
     "min_rok": 2003,
@@ -83,6 +83,18 @@ set filtry = filtry
   || jsonb_build_object('karoserie', coalesce(filtry->'karoserie', '"vse"'::jsonb))
   || jsonb_build_object('max_rok', coalesce(filtry->'max_rok', 'null'::jsonb))
 where not (filtry ? 'karoserie') or not (filtry ? 'max_rok');
+
+-- Pro existujici instalace: "palivo" byl jednovyberovy string ("vse"/
+-- "benzin"/"diesel"), ted je vicevyberovy seznam (+ hybrid/elektro/lpg_cng).
+-- "vse" -> [] (bez filtru), "benzin"/"diesel" -> jednoprvkovy seznam.
+update public.nastaveni
+set filtry = filtry || jsonb_build_object('palivo',
+  case filtry->>'palivo'
+    when 'benzin' then '["benzin"]'::jsonb
+    when 'diesel' then '["nafta"]'::jsonb
+    else '[]'::jsonb
+  end)
+where jsonb_typeof(filtry->'palivo') = 'string';
 
 create table if not exists public.videno (
   user_id uuid not null references auth.users (id) on delete cascade,

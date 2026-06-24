@@ -19,6 +19,7 @@ import requests
 from bs4 import BeautifulSoup
 
 import kurz
+import palivo_filtr
 
 
 def _bez_diakritiky(text):
@@ -57,6 +58,27 @@ def _karoserie_sedi(titulek, popis, karoserie):
         return True
     text = _bez_diakritiky((titulek or "") + " " + (popis or ""))
     return any(s in text for s in slova)
+
+
+# Bazos nema strukturovany filtr na palivo (na rozdil od Otomoto/AS24/
+# Willhaben) - pri vyberu konkretni kategorie hadame ze slov v titulku/
+# popisu. Pri PRAZDNEM vyberu (vse) se nefiltruje vubec (zadna zmena
+# oproti puvodnimu chovani) - tahle cast je pripustna jen kdyz uzivatel
+# nejakou kategorii fakt zaskrtne.
+PALIVO_SLOVA = {
+    "benzin": BENZIN_SLOVA,
+    "nafta": DIESEL_SLOVA,
+    "hybrid": ("hybrid", "phev", "hev"),
+    "elektro": ("elektromobil", "elektroauto", "ev "),
+    "lpg_cng": ("lpg", "cng", "autogas", "plyn"),
+}
+
+
+def _palivo_vyhovuje(titulek, popis, vybrane):
+    if not vybrane:
+        return True
+    text = _bez_diakritiky((titulek or "") + " " + (popis or ""))
+    return any(s in text for kat in vybrane for s in PALIVO_SLOVA.get(kat, ()))
 
 
 def _palivo_z_textu(text):
@@ -576,6 +598,7 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
     min_rok = filtry.get("min_rok")
     max_rok = filtry.get("max_rok")
     karoserie = filtry.get("karoserie")
+    vybrane_palivo = palivo_filtr.normalizuj(filtry)
     min_srovnatelnych = min_srovnani
 
     vysledky = []
@@ -587,6 +610,8 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
         if max_rok and x.get("rok") and x["rok"] > max_rok:
             continue
         if karoserie and not _karoserie_sedi(x.get("titulek"), x.get("popis"), karoserie):
+            continue
+        if vybrane_palivo and not _palivo_vyhovuje(x.get("titulek"), x.get("popis"), vybrane_palivo):
             continue
 
         cena_domovska = _prevod(x["cena"], zdroj_trh, domovsky_trh)

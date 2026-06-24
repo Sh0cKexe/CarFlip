@@ -15,6 +15,7 @@ import time
 import requests
 
 import ochrana_scrapingu
+import palivo_filtr
 
 _OCHRANA = ochrana_scrapingu.vytvor_ochranu("autoscout24_cache.json")
 
@@ -29,10 +30,14 @@ DOMENA = {
     "it": "www.autoscout24.it",
 }
 
-# Prevod paliva (nas zapis -> AutoScout24 kod)
+# Prevod paliva (nas zapis -> AutoScout24 kod, zive overeno; vice kodu za
+# kategorii se posila jako carkou oddeleny seznam - OR).
 PALIVO_MAP = {
-    "nafta": "D",
-    "benzin": "B",
+    "benzin": ["B"],
+    "nafta": ["D"],
+    "hybrid": ["2", "3"],
+    "elektro": ["E"],
+    "lpg_cng": ["L", "C"],
 }
 
 # Prevod prevodovky (nas zapis -> AutoScout24 kod)
@@ -79,16 +84,8 @@ def _sestav_url(znacka, filtry, strana, zeme, okruh=None):
     if karoserie in KAROSERIE_MAP:
         params["body"] = KAROSERIE_MAP[karoserie]
 
-    palivo = filtry.get("palivo", "vse")
-    naj_nafta = filtry.get("max_najezd_nafta")
-    naj_benzin = filtry.get("max_najezd_benzin")
-    if palivo == "nafta":
-        cap = naj_nafta
-    elif palivo == "benzin":
-        cap = naj_benzin
-    else:
-        kandidati = [v for v in (naj_nafta, naj_benzin) if v]
-        cap = max(kandidati) if kandidati else None
+    vybrane_palivo = palivo_filtr.normalizuj(filtry)
+    cap = palivo_filtr.naj_cap(filtry, vybrane_palivo)
     if cap:
         params["kmto"] = cap
 
@@ -97,8 +94,11 @@ def _sestav_url(znacka, filtry, strana, zeme, okruh=None):
     if filtry.get("min_cena_eur"):
         params["pricefrom"] = filtry["min_cena_eur"]
 
-    if palivo in PALIVO_MAP:
-        params["fuel"] = PALIVO_MAP[palivo]
+    hodnoty_paliva = []
+    for p in vybrane_palivo:
+        hodnoty_paliva += PALIVO_MAP.get(p, [])
+    if hodnoty_paliva:
+        params["fuel"] = ",".join(hodnoty_paliva)
 
     prevodovka = filtry.get("prevodovka", "vse")
     if prevodovka in PREVODOVKA_MAP:

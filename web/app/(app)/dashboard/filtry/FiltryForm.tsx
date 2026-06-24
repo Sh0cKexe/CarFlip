@@ -20,7 +20,7 @@ type Oblast = {
 
 type Filtry = {
   znacky: string[];
-  palivo: string;
+  palivo: string[];
   prevodovka: string;
   oblasti: Oblast[];
   min_rok: number;
@@ -85,7 +85,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     nastaveni ?? {
       user_id: "", trh: "cz",
       filtry: {
-        znacky: [], palivo: "vse", prevodovka: "vse", oblasti: [],
+        znacky: [], palivo: [], prevodovka: "vse", oblasti: [],
         min_rok: 2003, max_rok: null, karoserie: "vse",
         max_najezd_nafta: 250000, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
@@ -188,6 +188,17 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     if (aktualni.has(zdroj)) aktualni.delete(zdroj);
     else aktualni.add(zdroj);
     setFiltr("zdroje", Array.from(aktualni));
+  }
+
+  // Zpetna kompatibilita: stary format byl jednovyberovy string ("vse"/
+  // "benzin"/"diesel") - schema.sql migruje na pole, ale dokud uzivatel
+  // znovu nespusti schema.sql, muze prijit jeste stary tvar.
+  const paliva = Array.isArray(n.filtry.palivo) ? n.filtry.palivo : [];
+  function prepnoutPalivo(kategorie: string) {
+    const aktualni = new Set(paliva);
+    if (aktualni.has(kategorie)) aktualni.delete(kategorie);
+    else aktualni.add(kategorie);
+    setFiltr("palivo", Array.from(aktualni));
   }
 
   function pridatOblast() {
@@ -341,22 +352,8 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
         <Sekce titulek={t.filtryAut}>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">⛽ {t.palivo} / {t.prevodovka}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🚘 {t.karoserie} / {t.palivo}</p>
               <div className="grid gap-3">
-                <Pole label={t.palivo}>
-                  <select className={input} value={n.filtry.palivo} onChange={(e) => setFiltr("palivo", e.target.value)}>
-                    <option value="vse">{t.vse}</option>
-                    <option value="benzin">{t.benzin}</option>
-                    <option value="diesel">{t.diesel}</option>
-                  </select>
-                </Pole>
-                <Pole label={t.prevodovka}>
-                  <select className={input} value={n.filtry.prevodovka} onChange={(e) => setFiltr("prevodovka", e.target.value)}>
-                    <option value="vse">{t.vse}</option>
-                    <option value="manual">{t.manual}</option>
-                    <option value="automat">{t.automat}</option>
-                  </select>
-                </Pole>
                 <Pole label={t.karoserie}>
                   <select className={input} value={n.filtry.karoserie ?? "vse"} onChange={(e) => setFiltr("karoserie", e.target.value)}>
                     <option value="vse">{t.karoserieVse}</option>
@@ -369,25 +366,55 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                     <option value="van">{t.karoserieVan}</option>
                   </select>
                 </Pole>
+                <Pole label={`${t.palivo} (${paliva.length === 0 ? t.palivoVse : paliva.length + " " + t.vybrano})`}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {([
+                      ["benzin", t.benzin],
+                      ["nafta", t.diesel],
+                      ["hybrid", t.palivoFiltrHybrid],
+                      ["elektro", t.palivoElektroKratce],
+                      ["lpg_cng", t.palivoLpgCng],
+                    ] as [string, string][]).map(([kod, popisek]) => (
+                      <label
+                        key={kod}
+                        className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                          paliva.includes(kod) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
+                        }`}
+                      >
+                        <input type="checkbox" checked={paliva.includes(kod)} onChange={() => prepnoutPalivo(kod)} className="hidden" />
+                        {popisek}
+                      </label>
+                    ))}
+                  </div>
+                </Pole>
               </div>
             </div>
 
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">📅 {t.rokOd} – {t.rokDo}</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <Pole label={t.rokOd}>
-                  <input type="number" className={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} />
-                </Pole>
-                <Pole label={t.rokDo}>
-                  <input
-                    type="number" className={input} value={n.filtry.max_rok ?? ""}
-                    onChange={(e) => setFiltr("max_rok", e.target.value ? Number(e.target.value) : null)}
-                  />
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">📅 {t.rokOd} – {t.rokDo} / {t.prevodovka}</p>
+              <div className="grid gap-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <Pole label={t.rokOd}>
+                    <input type="number" className={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} />
+                  </Pole>
+                  <Pole label={t.rokDo}>
+                    <input
+                      type="number" className={input} value={n.filtry.max_rok ?? ""}
+                      onChange={(e) => setFiltr("max_rok", e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </Pole>
+                </div>
+                {n.filtry.min_rok > new Date().getFullYear() && (
+                  <p className="text-xs text-red-400">{t.rokVBudoucnostiVarovani}</p>
+                )}
+                <Pole label={t.prevodovka}>
+                  <select className={input} value={n.filtry.prevodovka} onChange={(e) => setFiltr("prevodovka", e.target.value)}>
+                    <option value="vse">{t.vse}</option>
+                    <option value="manual">{t.manual}</option>
+                    <option value="automat">{t.automat}</option>
+                  </select>
                 </Pole>
               </div>
-              {n.filtry.min_rok > new Date().getFullYear() && (
-                <p className="mt-1 text-xs text-red-400">{t.rokVBudoucnostiVarovani}</p>
-              )}
             </div>
 
             <div className="rounded-xl border border-border bg-panel2/40 p-3">

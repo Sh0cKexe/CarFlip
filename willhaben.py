@@ -14,6 +14,7 @@ import time
 import requests
 
 import ochrana_scrapingu
+import palivo_filtr
 
 _OCHRANA = ochrana_scrapingu.vytvor_ochranu("willhaben_cache.json")
 
@@ -26,10 +27,14 @@ HEADERS = {
 DOMENA = "www.willhaben.at"
 CDN_FOTO = "https://cache.willhaben.at/mmo/"
 
-# Prevod paliva (nas zapis -> Willhaben kod atributu ENGINE/FUEL)
+# Prevod paliva (nas zapis -> Willhaben kod atributu ENGINE/FUEL, zive
+# overeno; vice kodu za kategorii se posila jako opakovany parametr - OR).
 FUEL_MAP = {
-    "nafta": "100003",
-    "benzin": "100001",
+    "benzin": ["100001"],
+    "nafta": ["100003"],
+    "hybrid": ["100013", "100022"],
+    "elektro": ["100004"],
+    "lpg_cng": ["100011"],
 }
 
 # Prevod prevodovky (nas zapis -> Willhaben kod atributu TRANSMISSION)
@@ -98,16 +103,8 @@ def _sestav_url(znacka, filtry, strana, okruh=None):
     if karoserie in KAROSERIE_MAP:
         params["CAR_TYPE"] = KAROSERIE_MAP[karoserie]
 
-    palivo = filtry.get("palivo", "vse")
-    naj_nafta = filtry.get("max_najezd_nafta")
-    naj_benzin = filtry.get("max_najezd_benzin")
-    if palivo == "nafta":
-        cap = naj_nafta
-    elif palivo == "benzin":
-        cap = naj_benzin
-    else:
-        kandidati = [v for v in (naj_nafta, naj_benzin) if v]
-        cap = max(kandidati) if kandidati else None
+    vybrane_palivo = palivo_filtr.normalizuj(filtry)
+    cap = palivo_filtr.naj_cap(filtry, vybrane_palivo)
     if cap:
         params["MILEAGE_TO"] = cap
 
@@ -122,8 +119,10 @@ def _sestav_url(znacka, filtry, strana, okruh=None):
         extra += "&TRANSMISSION={}".format(TRANSMISSION_MAP[prevodovka])
     # ENGINE/FUEL ma lomeno v nazvu - posilame rovnou url-encoded v query
     # stringu, aby nedoslo k nejasnostem s kodovanim klice ve slovniku.
-    if palivo in FUEL_MAP:
-        extra += "&ENGINE%2FFUEL={}".format(FUEL_MAP[palivo])
+    # Vice hodnot za kategorii (napr. hybrid) = vic opakovanych parametru.
+    for p in vybrane_palivo:
+        for hodnota in FUEL_MAP.get(p, []):
+            extra += "&ENGINE%2FFUEL={}".format(hodnota)
 
     return base, params, extra
 
@@ -271,11 +270,7 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="at"
 
 def _problem_v_popisu(popis):
     t = (popis or "").lower()
-    if any(fr in t for fr in NEHAVAROVANE_FRAZE):
-        return True
-    if _je_plyn_text(t):
-        return True
-    return False
+    return any(fr in t for fr in NEHAVAROVANE_FRAZE)
 
 
 def nacti_detail(url):
@@ -284,10 +279,12 @@ def nacti_detail(url):
     uz mame z vypisu (BODY_DYN, ulozeny v _POPIS_CACHE behem nacti_inzeraty),
     takze tu jen hledame nemecke fraze napovidajici skodu/nepojizdnost.
     Zadny dalsi HTTP dotaz (detail stranka ma ve skutecnosti KRATSI popis
-    nez vypis, zivě overeno). Vraci {"popis": str, "poskozeno": bool}.
-    """
+    nez vypis, zivě overeno). Vraci {"popis": str, "poskozeno": bool,
+    "ma_plyn": bool} - "ma_plyn" je SAMOSTATNE od "poskozeno" (drive bylo
+    spojene, plyn = vzdy tvrde vyrazeno; ted o vyrazeni rozhoduje
+    palivo_filtr.vyloucit_plyn v main.py, ne tahle funkce)."""
     popis = _POPIS_CACHE.get(url, "")
-    return {"popis": popis, "poskozeno": _problem_v_popisu(popis)}
+    return {"popis": popis, "poskozeno": _problem_v_popisu(popis), "ma_plyn": _je_plyn_text(popis)}
 
 
 if __name__ == "__main__":
