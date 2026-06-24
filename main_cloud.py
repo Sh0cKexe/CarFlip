@@ -36,6 +36,7 @@ def main():
         try:
             poslano = beh_uzivatele(sb, uziv)
             print("  Hotovo. Poslano upozorneni:", poslano)
+            supa.nastav_posledni_beh(sb, uid)
         except Exception as e:
             print("  Chyba u uzivatele {}: {}".format(uid, e))
 

@@ -13,14 +13,22 @@ type Nastaveni = {
   dalsi_prijemci: string[];
   aktivni: boolean;
   trh: Trh;
+  posledni_beh: string | null;
 };
+
+function formatPredCasem(iso: string | null, t: ReturnType<typeof T>): string {
+  if (!iso) return t.nikdyNebehl;
+  const minuty = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
+  if (minuty < 60) return t.predMinutami.replace("{n}", String(minuty));
+  return t.predHodinami.replace("{n}", String(Math.floor(minuty / 60)));
+}
 
 export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
     nastaveni ?? {
       user_id: "", telegram_token: "", telegram_chat_id: "",
-      dalsi_prijemci: [], aktivni: true, trh: "cz",
+      dalsi_prijemci: [], aktivni: true, trh: "cz", posledni_beh: null,
     }
   );
   const t = T(n.trh);
@@ -30,6 +38,10 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
   const [navodOtevreno, setNavodOtevreno] = useState(false);
 
   async function ulozit() {
+    if (n.aktivni && (!n.telegram_token.trim() || !n.telegram_chat_id.trim())) {
+      setZprava(t.vyplnTokenChatId);
+      return;
+    }
     setUklada(true);
     setZprava(null);
     const { error } = await supabase
@@ -87,6 +99,9 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
             </button>
             <Toggle checked={n.aktivni} onChange={(v) => setN({ ...n, aktivni: v })} label={t.botAktivni} />
           </div>
+          <p className="mt-3 text-xs text-zinc-500">
+            {t.posledniKontrola}: {formatPredCasem(n.posledni_beh, t)}
+          </p>
         </Sekce>
 
         <motion.section
@@ -133,7 +148,7 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
           {uklada ? t.ukladam : t.ulozitNastaveni}
         </button>
         {zprava && (
-          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>
+          <p className={`mt-3 text-sm ${zprava.startsWith("Chyb") || zprava === t.vyplnTokenChatId ? "text-red-400" : "text-accent"}`}>{zprava}</p>
       )}
     </main>
   );

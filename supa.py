@@ -80,6 +80,15 @@ def oznac_videno(sb, user_id, ad_id):
     sb.table("videno").upsert({"user_id": user_id, "ad_id": str(ad_id)}).execute()
 
 
+def nastav_posledni_beh(sb, user_id):
+    """Zapise timestamp dokonceni automaticke kontroly (volano z main_cloud.py
+    po kazdem uzivateli) - aby web mohl ukazat 'posledni kontrola: pred X min'."""
+    import datetime
+    sb.table("nastaveni").update({
+        "posledni_beh": datetime.datetime.now(datetime.timezone.utc).isoformat()
+    }).eq("user_id", user_id).execute()
+
+
 def nastav_najdi_ted_stav(sb, user_id, stav, dokonceno=False):
     """Zapise stav behu 'Najdi ted' (bezi/hotovo/chyba) pro live odezvu ve
     webu. Kdyz dokonceno=True, zapise i posledni_najdi_ted=now() - cooldown
