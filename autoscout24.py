@@ -14,6 +14,10 @@ import json
 import time
 import requests
 
+import ochrana_scrapingu
+
+_OCHRANA = ochrana_scrapingu.vytvor_ochranu("autoscout24_cache.json")
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -178,10 +182,24 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="de"
 
     for strana in range(1, max_stran + 1):
         base, params = _sestav_url(znacka, filtry, strana, zeme, okruh=okruh)
+        klic = json.dumps([base, sorted(params.items())])
+
+        zcache = _OCHRANA["cache_get"](klic)
+        if zcache is not None:
+            vysledky.extend(zcache)
+            continue
+        if _OCHRANA["je_blokovano"]():
+            break
+
+        _OCHRANA["pockej_na_radu"]()
         try:
             r = session.get(base, params=params, timeout=30)
         except Exception as e:
             print("  [autoscout24] chyba site:", e)
+            break
+        if r.status_code in (403, 429):
+            print("  [autoscout24] HTTP", r.status_code, "(mozna blokace) pro", znacka)
+            _OCHRANA["nahlas_blokaci"]()
             break
         if r.status_code != 200:
             print("  [autoscout24] HTTP", r.status_code, "pro", znacka)
@@ -195,11 +213,14 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="de"
         listings = pp.get("listings") or []
         if not listings:
             break
+        stranka = []
         for item in listings:
             try:
-                vysledky.append(_zpracuj_listing(item, zeme))
+                stranka.append(_zpracuj_listing(item, zeme))
             except Exception as e:
                 print("  [autoscout24] chyba zpracovani inzeratu:", e)
+        _OCHRANA["cache_set"](klic, stranka)
+        vysledky.extend(stranka)
 
         if strana < max_stran:
             time.sleep(pauza)
@@ -222,6 +243,7 @@ def nacti_detail(url):
     Pouziva se jen u nalezenych flipu (1 dotaz navic).
     """
     vychozi = {"popis": "", "poskozeno": False}
+    _OCHRANA["pockej_na_radu"]()
     try:
         r = requests.get(url, headers=HEADERS, timeout=30)
         if r.status_code != 200:

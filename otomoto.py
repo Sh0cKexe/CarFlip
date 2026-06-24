@@ -10,6 +10,10 @@ import json
 import time
 import requests
 
+import ochrana_scrapingu
+
+_OCHRANA = ochrana_scrapingu.vytvor_ochranu("otomoto_cache.json")
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -194,10 +198,24 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None):
 
     for strana in range(1, max_stran + 1):
         base, params = _sestav_url(znacka, filtry, strana, okruh=okruh)
+        klic = json.dumps([base, sorted(params.items())])
+
+        zcache = _OCHRANA["cache_get"](klic)
+        if zcache is not None:
+            vysledky.extend(zcache)
+            continue
+        if _OCHRANA["je_blokovano"]():
+            break
+
+        _OCHRANA["pockej_na_radu"]()
         try:
             r = session.get(base, params=params, timeout=30)
         except Exception as e:
             print("  [otomoto] chyba site:", e)
+            break
+        if r.status_code in (403, 429):
+            print("  [otomoto] HTTP", r.status_code, "(mozna blokace) pro", znacka)
+            _OCHRANA["nahlas_blokaci"]()
             break
         if r.status_code != 200:
             print("  [otomoto] HTTP", r.status_code, "pro", znacka)
@@ -211,10 +229,13 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None):
         edges = adv.get("edges", [])
         if not edges:
             break
+        stranka = []
         for e in edges:
             node = e.get("node")
             if node and node.get("__typename") == "Advert":
-                vysledky.append(_zpracuj_node(node))
+                stranka.append(_zpracuj_node(node))
+        _OCHRANA["cache_set"](klic, stranka)
+        vysledky.extend(stranka)
 
         if strana < max_stran:
             time.sleep(pauza)
@@ -246,6 +267,7 @@ def nacti_detail(url):
     Pouziva se jen u nalezenych flipu (1 dotaz navic).
     """
     vychozi = {"popis": "", "registrovano_pl": True, "puvod": None, "poskozeno": False}
+    _OCHRANA["pockej_na_radu"]()
     try:
         r = requests.get(url, headers=HEADERS, timeout=30)
         if r.status_code != 200:

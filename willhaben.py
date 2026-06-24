@@ -13,6 +13,10 @@ import json
 import time
 import requests
 
+import ochrana_scrapingu
+
+_OCHRANA = ochrana_scrapingu.vytvor_ochranu("willhaben_cache.json")
+
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) "
@@ -199,10 +203,26 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="at"
 
     for strana in range(1, max_stran + 1):
         base, params, extra = _sestav_url(znacka, filtry, strana, okruh=okruh)
+        klic = json.dumps([base, extra, sorted(params.items())])
+
+        zcache = _OCHRANA["cache_get"](klic)
+        if zcache is not None:
+            for ad in zcache:
+                _POPIS_CACHE[ad["url"]] = ad.get("popis_kratky") or ""
+            vysledky.extend(zcache)
+            continue
+        if _OCHRANA["je_blokovano"]():
+            break
+
+        _OCHRANA["pockej_na_radu"]()
         try:
             r = session.get(base + ("?" + extra.lstrip("&") if extra else ""), params=params, timeout=30)
         except Exception as e:
             print("  [willhaben] chyba site:", e)
+            break
+        if r.status_code in (403, 429):
+            print("  [willhaben] HTTP", r.status_code, "(mozna blokace) pro", znacka)
+            _OCHRANA["nahlas_blokaci"]()
             break
         if r.status_code != 200:
             print("  [willhaben] HTTP", r.status_code, "pro", znacka)
@@ -217,11 +237,14 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="at"
         ads = sr.get("advertSummaryList", {}).get("advertSummary") or []
         if not ads:
             break
+        stranka = []
         for ad in ads:
             try:
-                vysledky.append(_zpracuj_listing(ad))
+                stranka.append(_zpracuj_listing(ad))
             except Exception as e:
                 print("  [willhaben] chyba zpracovani inzeratu:", e)
+        _OCHRANA["cache_set"](klic, stranka)
+        vysledky.extend(stranka)
 
         if strana < max_stran:
             time.sleep(pauza)

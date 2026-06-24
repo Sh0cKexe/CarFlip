@@ -15,6 +15,12 @@ concurrency:
   group: carflip-cloud
   cancel-in-progress: false
 
+# Aby program mohl ulozit cache scrapovani (cena_cache/otomoto_cache/...)
+# zpatky do repozitare - bez toho by kazdy beh zacinal s prazdnou cache
+# a pri vic uzivatelich by rostl pocet HTTP dotazu na inzertni portaly.
+permissions:
+  contents: write
+
 jobs:
   hlidat_cloud:
     runs-on: ubuntu-latest
@@ -35,3 +41,16 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python main_cloud.py
+
+      - name: Ulozit cache scrapovani zpatky do repozitare
+        run: |
+          git config user.name "carflip-bot"
+          git config user.email "carflip-bot@users.noreply.github.com"
+          git add cena_cache.json kurz_cache.json otomoto_cache.json autoscout24_cache.json willhaben_cache.json 2>/dev/null || true
+          if git diff --cached --quiet; then
+            echo "Zadna zmena cache k ulozeni."
+          else
+            git commit -m "stav cache (cloud)"
+            git pull --rebase --autostash
+            git push
+          fi
