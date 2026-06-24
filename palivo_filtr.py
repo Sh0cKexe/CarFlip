@@ -27,9 +27,15 @@ def normalizuj(filtry):
 
 
 def vyloucit_plyn(filtry):
-    """True = auta s LPG/CNG se nemaji fetchnout/zobrazit - vychozi stav,
-    dokud uzivatel "lpg_cng" sam nezaskrtne."""
-    return "lpg_cng" not in normalizuj(filtry)
+    """True = auta s LPG/CNG se nemaji fetchnout/zobrazit. Prazdny vyber
+    (zadna kategorie) znamena "fakt vse" (i LPG/CNG) - stejny princip jako
+    u karoserie/ostatnich filtru. Vyrazeni nastane jen kdyz je vybrana
+    aspon jedna kategorie A "lpg_cng" mezi nimi NENI (uzivatel chce konkretni
+    typy, plyn vedome nechce)."""
+    vybrane = normalizuj(filtry)
+    if not vybrane:
+        return False
+    return "lpg_cng" not in vybrane
 
 
 def naj_cap(filtry, vybrane=None):

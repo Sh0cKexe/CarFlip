@@ -15,6 +15,7 @@ import requests
 
 import ochrana_scrapingu
 import palivo_filtr
+import karoserie_filtr
 
 _OCHRANA = ochrana_scrapingu.vytvor_ochranu("willhaben_cache.json")
 
@@ -99,10 +100,6 @@ def _sestav_url(znacka, filtry, strana, okruh=None):
     if filtry.get("max_rok"):
         params["YEAR_MODEL_TO"] = filtry["max_rok"]
 
-    karoserie = filtry.get("karoserie")
-    if karoserie in KAROSERIE_MAP:
-        params["CAR_TYPE"] = KAROSERIE_MAP[karoserie]
-
     vybrane_palivo = palivo_filtr.normalizuj(filtry)
     cap = palivo_filtr.naj_cap(filtry, vybrane_palivo)
     if cap:
@@ -123,6 +120,11 @@ def _sestav_url(znacka, filtry, strana, okruh=None):
     for p in vybrane_palivo:
         for hodnota in FUEL_MAP.get(p, []):
             extra += "&ENGINE%2FFUEL={}".format(hodnota)
+    # CAR_TYPE nema slozite znaky v nazvu, ale dame ho take do "extra" -
+    # vic hodnot = vic opakovanych parametru (stejny princip jako ENGINE/FUEL).
+    for k in karoserie_filtr.normalizuj(filtry):
+        if k in KAROSERIE_MAP:
+            extra += "&CAR_TYPE={}".format(KAROSERIE_MAP[k])
 
     return base, params, extra
 

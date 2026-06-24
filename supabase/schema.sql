@@ -23,7 +23,7 @@ create table if not exists public.nastaveni (
     "cena_at": {"min": 0, "max": 3000},
     "cena_it": {"min": 0, "max": 3000},
     "max_rok": null,
-    "karoserie": "vse"
+    "karoserie": []
   }'::jsonb,
   min_zisk_kc integer not null default 20000,
   naklady_dovoz_kc integer not null default 10000,
@@ -95,6 +95,16 @@ set filtry = filtry || jsonb_build_object('palivo',
     else '[]'::jsonb
   end)
 where jsonb_typeof(filtry->'palivo') = 'string';
+
+-- Pro existujici instalace: "karoserie" byl jednovyberovy string ("vse"
+-- nebo jedna kategorie), ted je vicevyberovy seznam.
+update public.nastaveni
+set filtry = filtry || jsonb_build_object('karoserie',
+  case
+    when filtry->>'karoserie' = 'vse' or filtry->>'karoserie' is null then '[]'::jsonb
+    else jsonb_build_array(filtry->>'karoserie')
+  end)
+where jsonb_typeof(filtry->'karoserie') = 'string';
 
 create table if not exists public.videno (
   user_id uuid not null references auth.users (id) on delete cascade,

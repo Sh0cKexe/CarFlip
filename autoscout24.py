@@ -16,6 +16,7 @@ import requests
 
 import ochrana_scrapingu
 import palivo_filtr
+import karoserie_filtr
 
 _OCHRANA = ochrana_scrapingu.vytvor_ochranu("autoscout24_cache.json")
 
@@ -80,9 +81,9 @@ def _sestav_url(znacka, filtry, strana, zeme, okruh=None):
     if filtry.get("max_rok"):
         params["fregto"] = filtry["max_rok"]
 
-    karoserie = filtry.get("karoserie")
-    if karoserie in KAROSERIE_MAP:
-        params["body"] = KAROSERIE_MAP[karoserie]
+    hodnoty_karoserie = [KAROSERIE_MAP[k] for k in karoserie_filtr.normalizuj(filtry) if k in KAROSERIE_MAP]
+    if hodnoty_karoserie:
+        params["body"] = ",".join(hodnoty_karoserie)
 
     vybrane_palivo = palivo_filtr.normalizuj(filtry)
     cap = palivo_filtr.naj_cap(filtry, vybrane_palivo)

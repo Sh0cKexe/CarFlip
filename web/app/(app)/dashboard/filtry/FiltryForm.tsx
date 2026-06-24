@@ -25,7 +25,7 @@ type Filtry = {
   oblasti: Oblast[];
   min_rok: number;
   max_rok: number | null;
-  karoserie: string;
+  karoserie: string[];
   max_najezd_nafta: number;
   max_najezd_benzin: number;
   max_cena_pln: number;
@@ -86,7 +86,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
       user_id: "", trh: "cz",
       filtry: {
         znacky: [], palivo: [], prevodovka: "vse", oblasti: [],
-        min_rok: 2003, max_rok: null, karoserie: "vse",
+        min_rok: 2003, max_rok: null, karoserie: [],
         max_najezd_nafta: 250000, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
         zdroje: ["pl"], cena_cz: { min: 0, max: null }, cena_sk: { min: 0, max: null },
@@ -199,6 +199,14 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     if (aktualni.has(kategorie)) aktualni.delete(kategorie);
     else aktualni.add(kategorie);
     setFiltr("palivo", Array.from(aktualni));
+  }
+
+  const karoserie = Array.isArray(n.filtry.karoserie) ? n.filtry.karoserie : [];
+  function prepnoutKaroserii(kategorie: string) {
+    const aktualni = new Set(karoserie);
+    if (aktualni.has(kategorie)) aktualni.delete(kategorie);
+    else aktualni.add(kategorie);
+    setFiltr("karoserie", Array.from(aktualni));
   }
 
   function pridatOblast() {
@@ -354,19 +362,30 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🚘 {t.karoserie} / {t.palivo}</p>
               <div className="grid gap-3">
-                <Pole label={t.karoserie}>
-                  <select className={input} value={n.filtry.karoserie ?? "vse"} onChange={(e) => setFiltr("karoserie", e.target.value)}>
-                    <option value="vse">{t.karoserieVse}</option>
-                    <option value="kombi">{t.karoserieKombi}</option>
-                    <option value="sedan">{t.karoserieSedan}</option>
-                    <option value="hatchback">{t.karoserieHatchback}</option>
-                    <option value="suv">{t.karoserieSuv}</option>
-                    <option value="kupe">{t.karoserieKupe}</option>
-                    <option value="kabriolet">{t.karoserieKabriolet}</option>
-                    <option value="van">{t.karoserieVan}</option>
-                  </select>
+                <Pole label={`${t.karoserie} (${karoserie.length === 0 ? t.vse : karoserie.length + " " + t.vybrano})`}>
+                  <div className="flex flex-wrap gap-1.5">
+                    {([
+                      ["kombi", t.karoserieKombi],
+                      ["sedan", t.karoserieSedan],
+                      ["hatchback", t.karoserieHatchback],
+                      ["suv", t.karoserieSuv],
+                      ["kupe", t.karoserieKupe],
+                      ["kabriolet", t.karoserieKabriolet],
+                      ["van", t.karoserieVan],
+                    ] as [string, string][]).map(([kod, popisek]) => (
+                      <label
+                        key={kod}
+                        className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                          karoserie.includes(kod) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
+                        }`}
+                      >
+                        <input type="checkbox" checked={karoserie.includes(kod)} onChange={() => prepnoutKaroserii(kod)} className="hidden" />
+                        {popisek}
+                      </label>
+                    ))}
+                  </div>
                 </Pole>
-                <Pole label={`${t.palivo} (${paliva.length === 0 ? t.palivoVse : paliva.length + " " + t.vybrano})`}>
+                <Pole label={`${t.palivo} (${paliva.length === 0 ? t.vse : paliva.length + " " + t.vybrano})`}>
                   <div className="flex flex-wrap gap-1.5">
                     {([
                       ["benzin", t.benzin],

@@ -12,6 +12,7 @@ import requests
 
 import ochrana_scrapingu
 import palivo_filtr
+import karoserie_filtr
 
 _OCHRANA = ochrana_scrapingu.vytvor_ochranu("otomoto_cache.json")
 
@@ -76,9 +77,12 @@ def _sestav_url(znacka, filtry, strana=1, okruh=None):
     if filtry.get("max_rok"):
         params["search[filter_float_year:to]"] = filtry["max_rok"]
 
-    karoserie = filtry.get("karoserie")
-    if karoserie in KAROSERIE_MAP:
-        params["search[filter_enum_body_type]"] = KAROSERIE_MAP[karoserie]
+    hodnoty_karoserie = []
+    for k in karoserie_filtr.normalizuj(filtry):
+        if k in KAROSERIE_MAP:
+            hodnoty_karoserie.append(KAROSERIE_MAP[k])
+    for i, hodnota in enumerate(hodnoty_karoserie):
+        params["search[filter_enum_body_type][{}]".format(i)] = hodnota
 
     # Max najezd: nafta a benzin maji vlastni limit. Na Otomoto posleme
     # vyssi z relevantnich (at stahneme obojí), presne doladíme u kazdeho auta.

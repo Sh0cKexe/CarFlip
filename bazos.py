@@ -20,6 +20,7 @@ from bs4 import BeautifulSoup
 
 import kurz
 import palivo_filtr
+import karoserie_filtr
 
 
 def _bez_diakritiky(text):
@@ -52,12 +53,11 @@ KAROSERIE_SLOVA = {
 }
 
 
-def _karoserie_sedi(titulek, popis, karoserie):
-    slova = KAROSERIE_SLOVA.get(karoserie)
-    if not slova:
+def _karoserie_sedi(titulek, popis, vybrane):
+    if not vybrane:
         return True
     text = _bez_diakritiky((titulek or "") + " " + (popis or ""))
-    return any(s in text for s in slova)
+    return any(s in text for k in vybrane for s in KAROSERIE_SLOVA.get(k, ()))
 
 
 # Bazos nema strukturovany filtr na palivo (na rozdil od Otomoto/AS24/
@@ -597,7 +597,7 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
 
     min_rok = filtry.get("min_rok")
     max_rok = filtry.get("max_rok")
-    karoserie = filtry.get("karoserie")
+    vybrane_karoserie = karoserie_filtr.normalizuj(filtry)
     vybrane_palivo = palivo_filtr.normalizuj(filtry)
     min_srovnatelnych = min_srovnani
 
@@ -609,7 +609,7 @@ def najdi_podhodnocene(znacka, filtry, zdroj_trh, domovsky_trh, min_zisk_kc=0,
             continue
         if max_rok and x.get("rok") and x["rok"] > max_rok:
             continue
-        if karoserie and not _karoserie_sedi(x.get("titulek"), x.get("popis"), karoserie):
+        if not _karoserie_sedi(x.get("titulek"), x.get("popis"), vybrane_karoserie):
             continue
         if vybrane_palivo and not _palivo_vyhovuje(x.get("titulek"), x.get("popis"), vybrane_palivo):
             continue
