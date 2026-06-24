@@ -61,20 +61,20 @@ type Nastaveni = {
 const NAJDI_TED_COOLDOWN_MIN = 60;
 
 const ZNAME_ZNACKY = [
-  "abarth", "acura", "aixam", "alfa-romeo", "alpine", "asia", "aston-martin",
-  "audi", "austin", "baw", "bentley", "bmw", "brilliance", "buick", "byd",
-  "cadillac", "casalini", "chatenet", "chevrolet", "chrysler", "citroen",
-  "cupra", "dacia", "daewoo", "daihatsu", "dodge", "dr-automobiles",
-  "ds-automobiles", "ferrari", "fiat", "fisker", "ford", "gaz", "gmc",
-  "great-wall", "honda", "hummer", "hyundai", "infiniti", "isuzu", "iveco",
+  "abarth", "alfa-romeo", "alpine", "aston-martin",
+  "audi", "austin", "bentley", "bmw", "buick", "byd",
+  "cadillac", "chevrolet", "chrysler", "citroen",
+  "cupra", "dacia", "daewoo", "daihatsu", "dodge",
+  "ds-automobiles", "ferrari", "fiat", "fisker", "ford", "gmc",
+  "honda", "hummer", "hyundai", "infiniti", "isuzu", "iveco",
   "jaguar", "jeep", "kia", "ktm", "lada", "lamborghini", "lancia",
-  "land-rover", "leapmotor", "lexus", "ligier", "lincoln", "lotus",
-  "mahindra", "maserati", "maxus", "maybach", "mazda", "mclaren",
-  "mercedes-benz", "mg", "microcar", "mini", "mitsubishi", "morgan",
-  "nissan", "oldsmobile", "opel", "peugeot", "plymouth", "polestar",
+  "land-rover", "leapmotor", "lexus", "lincoln", "lotus",
+  "maserati", "maxus", "maybach", "mazda", "mclaren",
+  "mercedes-benz", "mg", "mini", "mitsubishi", "morgan",
+  "nissan", "oldsmobile", "opel", "peugeot", "polestar",
   "pontiac", "porsche", "renault", "rolls-royce", "rover", "saab", "seat",
   "skoda", "smart", "ssangyong", "subaru", "suzuki", "tata", "tesla",
-  "toyota", "uaz", "volkswagen", "volvo", "zastava",
+  "toyota", "volkswagen", "volvo",
 ].sort();
 
 export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaveni | null; jeAdmin?: boolean }) {
