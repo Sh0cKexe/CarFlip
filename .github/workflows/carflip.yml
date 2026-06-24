@@ -40,10 +40,11 @@ jobs:
         run: |
           git config user.name "carflip-bot"
           git config user.email "carflip-bot@users.noreply.github.com"
-          git add videno.db cena_cache.json kurz_cache.json 2>/dev/null || true
+          git add videno.db cena_cache.json kurz_cache.json otomoto_cache.json autoscout24_cache.json willhaben_cache.json 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "Zadna zmena stavu k ulozeni."
           else
             git commit -m "stav hlidani"
+            git pull --rebase --autostash
             git push
           fi
