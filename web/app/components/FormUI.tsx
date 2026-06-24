@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 
 export function Sekce({
   titulek, children, badge,
-}: { titulek: string; children: React.ReactNode; badge?: { text: string; tone: "green" | "zinc" } }) {
+}: { titulek: string; children: React.ReactNode; badge?: { text: string; tone: "green" | "zinc" | "red" } }) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 14 }}
@@ -18,7 +18,9 @@ export function Sekce({
         {badge && (
           <span
             className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-              badge.tone === "green" ? "bg-accent/15 text-accent" : "bg-zinc-700/40 text-zinc-300"
+              badge.tone === "green" ? "bg-accent/15 text-accent"
+                : badge.tone === "red" ? "bg-red-500/15 text-red-400"
+                : "bg-zinc-700/40 text-zinc-300"
             }`}
           >
             {badge.text}

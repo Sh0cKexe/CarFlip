@@ -25,12 +25,14 @@ function formatPredCasem(iso: string | null, t: ReturnType<typeof T>): string {
   return t.predHodinami.replace("{n}", String(Math.floor(minuty / 60)));
 }
 
-function statusBota(n: Nastaveni, t: ReturnType<typeof T>): { text: string; tone: "green" | "red" | "zinc" } {
-  if (!n.aktivni) return { text: t.botVypnuty, tone: "zinc" };
-  if (!n.posledni_beh) return { text: t.botCekaPrvniKontrola, tone: "zinc" };
+function statusBota(n: Nastaveni, t: ReturnType<typeof T>): { badge: string; text: string; tone: "green" | "red" | "zinc" } {
+  if (!n.aktivni) return { badge: t.botBadgeVypnuto, text: t.botVypnuty, tone: "zinc" };
+  if (!n.posledni_beh) return { badge: t.botBadgeCeka, text: t.botCekaPrvniKontrola, tone: "zinc" };
   const minuty = Math.floor((Date.now() - new Date(n.posledni_beh).getTime()) / 60000);
-  if (minuty <= BOT_PRAH_MINUT) return { text: `${t.botBezi} (${t.posledniKontrola.toLowerCase()}: ${formatPredCasem(n.posledni_beh, t)})`, tone: "green" };
-  return { text: `${t.botDlouhoBezKontroly} (${formatPredCasem(n.posledni_beh, t)})`, tone: "red" };
+  if (minuty <= BOT_PRAH_MINUT) {
+    return { badge: t.botBadgeBezi, text: `${t.botBezi} – ${t.posledniKontrola.toLowerCase()}: ${formatPredCasem(n.posledni_beh, t)}`, tone: "green" };
+  }
+  return { badge: t.botBadgeProblem, text: `${t.botDlouhoBezKontroly} (${t.posledniKontrola.toLowerCase()}: ${formatPredCasem(n.posledni_beh, t)})`, tone: "red" };
 }
 
 export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
@@ -89,7 +91,7 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
     <main className="flex-1 px-4 pb-8 pt-20 md:px-8 md:pt-8">
       <h1 className="mb-6 text-xl font-semibold text-zinc-100">{t.nastaveniBota}</h1>
 
-        <Sekce titulek={t.telegramBot} badge={n.aktivni ? { text: t.aktivni, tone: "green" } : { text: t.pozastaveno, tone: "zinc" }}>
+        <Sekce titulek={t.telegramBot} badge={{ text: statusBota(n, t).badge, tone: statusBota(n, t).tone }}>
           <div className="grid gap-4 sm:grid-cols-2">
             <Pole label={t.tokenBota}>
               <LockInput value={n.telegram_token} onChange={(v) => setN({ ...n, telegram_token: v })} />
@@ -109,8 +111,8 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
             </button>
             <Toggle checked={n.aktivni} onChange={(v) => setN({ ...n, aktivni: v })} label={t.botAktivni} />
           </div>
-          <p className={`mt-3 text-xs ${
-            statusBota(n, t).tone === "green" ? "text-accent" : statusBota(n, t).tone === "red" ? "text-red-400" : "text-zinc-500"
+          <p className={`mt-3 text-sm font-medium ${
+            statusBota(n, t).tone === "green" ? "text-accent" : statusBota(n, t).tone === "red" ? "text-red-400" : "text-zinc-400"
           }`}>
             {statusBota(n, t).text}
           </p>
