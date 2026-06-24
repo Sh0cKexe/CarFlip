@@ -16,11 +16,21 @@ type Nastaveni = {
   posledni_beh: string | null;
 };
 
+const BOT_PRAH_MINUT = 20; // cron jede kazdych 15 min, +rezerva nez se to bere jako problem
+
 function formatPredCasem(iso: string | null, t: ReturnType<typeof T>): string {
   if (!iso) return t.nikdyNebehl;
   const minuty = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 60000));
   if (minuty < 60) return t.predMinutami.replace("{n}", String(minuty));
   return t.predHodinami.replace("{n}", String(Math.floor(minuty / 60)));
+}
+
+function statusBota(n: Nastaveni, t: ReturnType<typeof T>): { text: string; tone: "green" | "red" | "zinc" } {
+  if (!n.aktivni) return { text: t.botVypnuty, tone: "zinc" };
+  if (!n.posledni_beh) return { text: t.botCekaPrvniKontrola, tone: "zinc" };
+  const minuty = Math.floor((Date.now() - new Date(n.posledni_beh).getTime()) / 60000);
+  if (minuty <= BOT_PRAH_MINUT) return { text: `${t.botBezi} (${t.posledniKontrola.toLowerCase()}: ${formatPredCasem(n.posledni_beh, t)})`, tone: "green" };
+  return { text: `${t.botDlouhoBezKontroly} (${formatPredCasem(n.posledni_beh, t)})`, tone: "red" };
 }
 
 export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
@@ -99,8 +109,10 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
             </button>
             <Toggle checked={n.aktivni} onChange={(v) => setN({ ...n, aktivni: v })} label={t.botAktivni} />
           </div>
-          <p className="mt-3 text-xs text-zinc-500">
-            {t.posledniKontrola}: {formatPredCasem(n.posledni_beh, t)}
+          <p className={`mt-3 text-xs ${
+            statusBota(n, t).tone === "green" ? "text-accent" : statusBota(n, t).tone === "red" ? "text-red-400" : "text-zinc-500"
+          }`}>
+            {statusBota(n, t).text}
           </p>
         </Sekce>
 

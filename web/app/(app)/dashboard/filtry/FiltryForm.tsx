@@ -262,6 +262,9 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
 
         <Sekce titulek={t.zdrojoveTrhy}>
           <p className="mb-3 text-xs text-zinc-400">{t.zdrojoveTrhyInfo}</p>
+          {zdroje.length === 0 && (
+            <p className="mb-3 text-xs text-red-400">{t.zadnyZdrojVarovani}</p>
+          )}
           <div className="grid gap-2 sm:grid-cols-3">
             {([
               ["pl", t.zdrojPolsko],
@@ -336,6 +339,9 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <Pole label={t.rokOd}>
               <input type="number" className={input} value={n.filtry.min_rok} onChange={(e) => setFiltr("min_rok", Number(e.target.value))} />
+              {n.filtry.min_rok > new Date().getFullYear() && (
+                <p className="mt-1 text-xs text-red-400">{t.rokVBudoucnostiVarovani}</p>
+              )}
             </Pole>
             <Pole label={t.maxNajezdDiesel}>
               <input type="number" className={input} value={n.filtry.max_najezd_nafta} onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))} />
@@ -390,6 +396,9 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                         onChange={(v) => c.setMax(v == null ? null : Math.round(prevod(v, domovskaMena, c.mena, kurz)))}
                       />
                     </div>
+                    {c.max != null && c.max < c.min && (
+                      <p className="mt-1.5 text-xs text-red-400">{t.cenaOdDoVarovani}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -420,6 +429,11 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                   {o.zeme === "de" || o.zeme === "it" ? (
                     <p className="mt-1 text-xs text-zinc-500">PSC: {o.plz ?? "?"}</p>
                   ) : null}
+                  {o.zeme && !zdroje.includes(o.zeme) && (
+                    <p className="mt-1 text-xs text-red-400">
+                      {t.oblastNepouzitaVarovani.replace("{zeme}", o.zeme.toUpperCase())}
+                    </p>
+                  )}
                 </Pole>
                 {o.zeme === "at" ? (
                   <Pole label={t.okruhKm}>
