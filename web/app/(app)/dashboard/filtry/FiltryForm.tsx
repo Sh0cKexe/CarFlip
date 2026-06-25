@@ -6,6 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, CenovePole, VicevyberMenu, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 import { useKurz, prevod, type Mena } from "@/lib/kurz";
+import { BARVA_ZEME } from "@/lib/zemeBarvy";
 
 const MapaOkruhy = dynamic(() => import("@/app/components/MapaOkruhy"), { ssr: false });
 
@@ -523,7 +524,12 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
           <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
           <div className="space-y-3">
             {n.filtry.oblasti.map((o, i) => (
-              <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[80px_1fr_100px_auto]">
+              <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[16px_80px_1fr_100px_auto]">
+                <span
+                  className="mb-2.5 hidden h-2.5 w-2.5 shrink-0 self-end rounded-full sm:block"
+                  style={{ backgroundColor: BARVA_ZEME[o.zeme ?? "pl"] }}
+                  title={t.zeme}
+                />
                 <Pole label={t.zeme}>
                   <select
                     className={input} value={o.zeme ?? "pl"}
