@@ -58,6 +58,10 @@ alter table public.nastaveni add column if not exists najdi_ted_spusteno timesta
 -- "aktivni" (= ma se hledat), ale nevi jestli posledni beh skutecne probehl.
 alter table public.nastaveni add column if not exists posledni_beh timestamptz;
 
+-- Text posledni chyby automatickeho bota (main_cloud.py) - zobrazen ve webu
+-- kdyz status ukazuje "Problem". Vymaze se po uspesnem behu (None).
+alter table public.nastaveni add column if not exists posledni_chyba text;
+
 -- Pro existujici instalace: doplnit nove klice do filtry jsonb (zdrojove trhy
 -- PL/CZ/SK - Faze 1 multi-market). Vychozi zdroje=["pl"] zachovava soucasne
 -- chovani beze zmeny, dokud si uzivatel sam nezapne CZ/SK v nastaveni.

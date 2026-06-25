@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, Toggle, LockInput, btnPrimary, btnGhost } from "@/app/components/FormUI";
@@ -14,6 +15,10 @@ type Nastaveni = {
   aktivni: boolean;
   trh: Trh;
   posledni_beh: string | null;
+  najdi_ted_stav: string | null;
+  posledni_najdi_ted: string | null;
+  najdi_ted_spusteno: string | null;
+  posledni_chyba: string | null;
 };
 
 const BOT_PRAH_MINUT = 20; // cron jede kazdych 15 min, +rezerva nez se to bere jako problem
@@ -35,12 +40,17 @@ function statusBota(n: Nastaveni, t: ReturnType<typeof T>): { badge: string; tex
   return { badge: t.botBadgeProblem, text: `${t.botDlouhoBezKontroly} (${t.posledniKontrola.toLowerCase()}: ${formatPredCasem(n.posledni_beh, t)})`, tone: "red" };
 }
 
+const COOLDOWN_MINUT = 60;
+const STUCK_MS = 20 * 60000;
+
 export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) {
+  const router = useRouter();
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
     nastaveni ?? {
       user_id: "", telegram_token: "", telegram_chat_id: "",
       dalsi_prijemci: [], aktivni: true, trh: "cz", posledni_beh: null,
+      najdi_ted_stav: null, posledni_najdi_ted: null, najdi_ted_spusteno: null, posledni_chyba: null,
     }
   );
   const t = T(n.trh);
@@ -48,6 +58,33 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
   const [uklada, setUklada] = useState(false);
   const [testuje, setTestuje] = useState(false);
   const [navodOtevreno, setNavodOtevreno] = useState(false);
+  const [spoustimNajdi, setSpoustimNajdi] = useState(false);
+
+  // Sync najdit-ted status fields from server after router.refresh()
+  useEffect(() => {
+    if (!nastaveni) return;
+    setN(prev => ({
+      ...prev,
+      najdi_ted_stav: nastaveni.najdi_ted_stav,
+      posledni_najdi_ted: nastaveni.posledni_najdi_ted,
+      najdi_ted_spusteno: nastaveni.najdi_ted_spusteno,
+      posledni_chyba: nastaveni.posledni_chyba,
+      posledni_beh: nastaveni.posledni_beh,
+    }));
+  }, [nastaveni?.najdi_ted_stav, nastaveni?.posledni_najdi_ted, nastaveni?.posledni_beh, nastaveni?.posledni_chyba]);
+
+  const behZaseknuty = !!n.najdi_ted_spusteno && Date.now() - new Date(n.najdi_ted_spusteno).getTime() > STUCK_MS;
+  const jeBezi = n.najdi_ted_stav === "bezi" && !behZaseknuty;
+  const cooldownZbyva = n.posledni_najdi_ted && !jeBezi
+    ? Math.max(0, COOLDOWN_MINUT - Math.floor((Date.now() - new Date(n.posledni_najdi_ted).getTime()) / 60000))
+    : 0;
+
+  // Poll for status update while running
+  useEffect(() => {
+    if (!jeBezi) return;
+    const id = setInterval(() => router.refresh(), 20000);
+    return () => clearInterval(id);
+  }, [jeBezi, router]);
 
   async function ulozit() {
     if (n.aktivni && (!n.telegram_token.trim() || !n.telegram_chat_id.trim())) {
@@ -67,6 +104,29 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
       .eq("user_id", n.user_id);
     setUklada(false);
     setZprava(error ? t.chybaUkladani + error.message : t.ulozeno);
+  }
+
+  async function spustitNajdiTed() {
+    setSpoustimNajdi(true);
+    try {
+      const r = await fetch("/api/najdi-ted", { method: "POST" });
+      const j = await r.json();
+      if (!r.ok) {
+        if (j.error === "cooldown") {
+          setZprava(`${t.najdiTedCooldown} ${j.zbyvaMinut} ${t.najdiTedMinut}.`);
+        } else if (j.error === "bezi") {
+          setN(prev => ({ ...prev, najdi_ted_stav: "bezi" }));
+        } else {
+          setZprava(j.error || t.neznama);
+        }
+      } else {
+        setN(prev => ({ ...prev, najdi_ted_stav: "bezi", najdi_ted_spusteno: new Date().toISOString() }));
+      }
+    } catch (e: any) {
+      setZprava(t.chybaSite + e.message);
+    } finally {
+      setSpoustimNajdi(false);
+    }
   }
 
   async function testSpojeni() {
@@ -116,6 +176,40 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
           }`}>
             {statusBota(n, t).text}
           </p>
+          {statusBota(n, t).tone === "red" && n.posledni_chyba && (
+            <p className="mt-2 rounded-lg border border-red-500/30 bg-red-500/[0.06] px-3 py-2 font-mono text-xs text-red-400">
+              {n.posledni_chyba}
+            </p>
+          )}
+        </Sekce>
+
+        <Sekce titulek={t.najdiTed}>
+          {jeBezi ? (
+            <div className="flex items-center gap-2 text-sm text-accent">
+              <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+              {t.najdiTedBezi}
+            </div>
+          ) : cooldownZbyva > 0 ? (
+            <div>
+              <button disabled className={`${btnGhost} opacity-50`}>{t.najdiTed}</button>
+              <p className="mt-2 text-xs text-zinc-500">{t.najdiTedCooldown} {cooldownZbyva} {t.najdiTedMinut}.</p>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={spustitNajdiTed}
+              disabled={spoustimNajdi || !n.aktivni || !n.telegram_token || !n.telegram_chat_id}
+              className={btnGhost}
+            >
+              {spoustimNajdi ? t.najdiTedSpoustim : `🔎 ${t.najdiTed}`}
+            </button>
+          )}
+          {!jeBezi && n.najdi_ted_stav === "hotovo" && (
+            <p className="mt-2 text-sm text-accent">{t.najdiTedHotovo}</p>
+          )}
+          {!jeBezi && n.najdi_ted_stav === "chyba" && (
+            <p className="mt-2 text-sm text-red-400">{t.najdiTedChyba}</p>
+          )}
         </Sekce>
 
         <motion.section

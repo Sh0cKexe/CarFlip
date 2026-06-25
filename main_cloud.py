@@ -37,8 +37,11 @@ def main():
             poslano = beh_uzivatele(sb, uziv)
             print("  Hotovo. Poslano upozorneni:", poslano)
             supa.nastav_posledni_beh(sb, uid)
+            supa.nastav_chybu(sb, uid, None)
         except Exception as e:
-            print("  Chyba u uzivatele {}: {}".format(uid, e))
+            chyba_text = "{}: {}".format(type(e).__name__, str(e))[:500]
+            print("  Chyba u uzivatele {}: {}".format(uid, chyba_text))
+            supa.nastav_chybu(sb, uid, chyba_text)
 
 
 if __name__ == "__main__":
