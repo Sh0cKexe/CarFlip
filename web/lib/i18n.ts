@@ -292,7 +292,7 @@ Co od AI NIKDY nebrat vážně:
 
   novyAutoNazev: "Název auta",
   vytvoritAuto: "Vytvořit auto",
-  zalozitProjekt: "Nový projekt — auto",
+  zalozitProjekt: "Nové auto",
   upravit: "Upravit",
   ukoly: "Úkoly",
   novyUkol: "Co je potřeba udělat...",
@@ -591,7 +591,7 @@ Tento AI asistent slúži výhradne ako myšlienková inšpirácia, kde začať 
 
   novyAutoNazev: "Názov auta",
   vytvoritAuto: "Vytvoriť auto",
-  zalozitProjekt: "Nový projekt — auto",
+  zalozitProjekt: "Nové auto",
   upravit: "Upraviť",
   ukoly: "Úlohy",
   novyUkol: "Čo treba urobiť...",

@@ -44,7 +44,6 @@ export default function AutaList({
   const [novyNazev, setNovyNazev] = useState("");
   const [novyDatum, setNovyDatum] = useState(dnesIso());
   const [novaCena, setNovaCena] = useState("");
-  const [novaPoznamka, setNovaPoznamka] = useState("");
   const t = T(trh);
 
   async function vytvoritAuto() {
@@ -57,7 +56,6 @@ export default function AutaList({
         titulek: novyNazev.trim(),
         datum_koupeno: novyDatum,
         cena_koupeno_kc: novaCena ? Number(novaCena) : null,
-        poznamky: novaPoznamka,
       })
       .select("id")
       .single();
@@ -133,12 +131,7 @@ export default function AutaList({
                     onChange={(e) => setNovaCena(e.target.value)}
                   />
                 </Pole>
-                <Pole label={t.poznamky}>
-                  <textarea
-                    className={`${input} min-h-[80px]`} value={novaPoznamka}
-                    onChange={(e) => setNovaPoznamka(e.target.value)}
-                  />
-                </Pole>
+
               </div>
               <div className="mt-5 flex justify-end gap-3">
                 <button onClick={() => setModalOtevren(false)} className={btnGhost}>{t.zrusit}</button>
