@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import KebabMenu, { KebabPolozka } from "@/app/components/KebabMenu";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
@@ -60,8 +60,10 @@ export default function AutoDetail({
   const [uklada, setUklada] = useState(false);
   const [nahravam, setNahravam] = useState(false);
   const [zprava, setZprava] = useState<string | null>(null);
-  const [editOtevreno, setEditOtevreno] = useState(false);
+  const [editModalOtevren, setEditModalOtevren] = useState(false);
   const [prodejOtevren, setProdejOtevren] = useState(false);
+  const [stavMenuOtevren, setStavMenuOtevren] = useState(false);
+  const stavMenuRef = useRef<HTMLDivElement>(null);
   const [prodejCena, setProdejCena] = useState("");
   const [prodejDatum, setProdejDatum] = useState(dnesIso());
   const [prodavam, setProdavam] = useState(false);
@@ -73,6 +75,15 @@ export default function AutoDetail({
   const [upravujiNaklad, setUpravujiNaklad] = useState<string | null>(null);
   const [upravaNaklad, setUpravaNaklad] = useState({ popis: "", castka_kc: "", datum: "" });
   const [lightbox, setLightbox] = useState<number | null>(null);
+
+  const zavritStavMenu = useCallback((e: MouseEvent) => {
+    if (stavMenuRef.current && !stavMenuRef.current.contains(e.target as Node)) setStavMenuOtevren(false);
+  }, []);
+  useEffect(() => {
+    if (!stavMenuOtevren) return;
+    window.addEventListener("click", zavritStavMenu);
+    return () => window.removeEventListener("click", zavritStavMenu);
+  }, [stavMenuOtevren, zavritStavMenu]);
 
   useEffect(() => {
     if (lightbox === null) return;
@@ -107,12 +118,12 @@ export default function AutoDetail({
     setAuto({ ...auto, [klic]: hodnota });
   }
 
-  function onStavChange(novaStav: string) {
+  async function zmenitStav(novaStav: "koupeno" | "inzerce") {
     const update: Partial<Auto> = { stav: novaStav };
-    if (novaStav === "inzerce" && !auto.datum_inzerce) {
-      update.datum_inzerce = dnesIso();
-    }
+    if (novaStav === "inzerce" && !auto.datum_inzerce) update.datum_inzerce = dnesIso();
+    await supabase.from("auta").update(update).eq("id", auto.id);
     setAuto({ ...auto, ...update });
+    setStavMenuOtevren(false);
   }
 
   async function ulozit() {
@@ -131,7 +142,8 @@ export default function AutoDetail({
       })
       .eq("id", auto.id);
     setUklada(false);
-    setZprava(error ? t.chybaUkladani + error.message : t.ulozeno);
+    if (error) setZprava(t.chybaUkladani + error.message);
+    else setEditModalOtevren(false);
   }
 
   async function ulozitPoznamky() {
@@ -299,10 +311,55 @@ export default function AutoDetail({
           {auto.stav === "prodano" ? (
             <button onClick={zrusitProdej} className={btnGhost}>{t.zrusitProdej}</button>
           ) : (
-            <button onClick={() => setProdejOtevren(true)} className={btnPrimary}>{t.prodatAuto}</button>
+            <div ref={stavMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setStavMenuOtevren(!stavMenuOtevren); }}
+                className={btnGhost}
+              >
+                Změnit stav ▾
+              </button>
+              <AnimatePresence>
+                {stavMenuOtevren && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.15 }}
+                    className="glass absolute right-0 top-full z-20 mt-1 min-w-[160px] overflow-hidden rounded-lg border border-border py-1 shadow-glow-lg"
+                  >
+                    {auto.stav === "koupeno" && (
+                      <button
+                        type="button"
+                        onClick={() => zmenitStav("inzerce")}
+                        className="block w-full px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-sidebar2"
+                      >
+                        📢 V inzerci
+                      </button>
+                    )}
+                    {auto.stav === "inzerce" && (
+                      <button
+                        type="button"
+                        onClick={() => zmenitStav("koupeno")}
+                        className="block w-full px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-sidebar2"
+                      >
+                        🛒 Zpět ke koupenému
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => { setStavMenuOtevren(false); setProdejOtevren(true); }}
+                      className="block w-full px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-sidebar2"
+                    >
+                      ✅ Prodat
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           )}
           <KebabMenu>
-            <KebabPolozka onClick={() => setEditOtevreno(!editOtevreno)}>{t.upravit}</KebabPolozka>
+            <KebabPolozka onClick={() => { setZprava(null); setEditModalOtevren(true); }}>{t.upravit}</KebabPolozka>
             <KebabPolozka onClick={smazatAuto} danger>{t.smazatAuto}</KebabPolozka>
           </KebabMenu>
         </div>
@@ -339,72 +396,6 @@ export default function AutoDetail({
       </div>
       <div className="mb-6 border-t border-border/60" />
 
-      <AnimatePresence initial={false}>
-        {editOtevreno && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeOut" }}
-            className="overflow-hidden"
-          >
-            <Sekce titulek={t.zakladniInfo}>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Pole label={t.nazevModel}>
-                  <input className={input} value={auto.titulek} onChange={(e) => setPole("titulek", e.target.value)} />
-                </Pole>
-                <Pole label={t.stav}>
-                  <select
-                    className={input}
-                    value={auto.stav === "prodano" ? "koupeno" : auto.stav}
-                    onChange={(e) => onStavChange(e.target.value)}
-                    disabled={auto.stav === "prodano"}
-                  >
-                    <option value="koupeno">{t.koupeno}</option>
-                    <option value="inzerce">{t.vInzerci}</option>
-                  </select>
-                </Pole>
-              </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
-                  <input
-                    type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
-                    onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
-                  />
-                </Pole>
-                <Pole label={t.datumKoupeno}>
-                  <input
-                    type="date" className={input} value={auto.datum_koupeno ?? ""}
-                    onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
-                  />
-                </Pole>
-              </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <Pole label={t.datumInzerce}>
-                  <input
-                    type="date" className={input} value={auto.datum_inzerce ?? ""}
-                    onChange={(e) => setPole("datum_inzerce", e.target.value || null)}
-                  />
-                </Pole>
-              </div>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <Pole label={`${t.najezd} (km)`}>
-                  <input
-                    type="number" className={input} value={auto.najezd_km ?? ""}
-                    onChange={(e) => setPole("najezd_km", e.target.value ? Number(e.target.value) : null)}
-                  />
-                </Pole>
-              </div>
-              <div className="mt-4 flex items-center gap-4">
-                <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
-                  {uklada ? t.ukladam : t.ulozit}
-                </button>
-                {zprava && <p className={`text-sm ${zprava.startsWith("Chyb") ? "text-red-400" : "text-accent"}`}>{zprava}</p>}
-              </div>
-            </Sekce>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <div className="grid gap-6 lg:grid-cols-3">
       <div className="lg:col-span-2">
@@ -614,6 +605,68 @@ export default function AutoDetail({
                 {lightbox + 1} / {auto.fotky.length}
               </p>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {editModalOtevren && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+            onClick={() => setEditModalOtevren(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass w-full max-w-md rounded-2xl border border-border p-6 shadow-glow-lg"
+            >
+              <h2 className="mb-4 text-base font-semibold text-zinc-100">{t.upravit}</h2>
+              <div className="space-y-4">
+                <Pole label={t.nazevModel}>
+                  <input autoFocus className={input} value={auto.titulek} onChange={(e) => setPole("titulek", e.target.value)} />
+                </Pole>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
+                    <input
+                      type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
+                      onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </Pole>
+                  <Pole label={`${t.najezd} (km)`}>
+                    <input
+                      type="number" className={input} value={auto.najezd_km ?? ""}
+                      onChange={(e) => setPole("najezd_km", e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </Pole>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Pole label={t.datumKoupeno}>
+                    <input
+                      type="date" className={input} value={auto.datum_koupeno ?? ""}
+                      onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
+                    />
+                  </Pole>
+                  <Pole label={t.datumInzerce}>
+                    <input
+                      type="date" className={input} value={auto.datum_inzerce ?? ""}
+                      onChange={(e) => setPole("datum_inzerce", e.target.value || null)}
+                    />
+                  </Pole>
+                </div>
+                {zprava && <p className="text-sm text-red-400">{zprava}</p>}
+              </div>
+              <div className="mt-5 flex justify-end gap-3">
+                <button onClick={() => setEditModalOtevren(false)} className={btnGhost}>{t.zrusit}</button>
+                <button onClick={ulozit} disabled={uklada} className={btnPrimary}>
+                  {uklada ? t.ukladam : t.ulozit}
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
