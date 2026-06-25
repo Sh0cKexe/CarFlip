@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
-import { Sekce, Pole, CenovePole, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
+import { Sekce, Pole, CenovePole, VicevyberMenu, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
 import { useKurz, prevod, type Mena } from "@/lib/kurz";
 
@@ -26,7 +26,9 @@ type Filtry = {
   min_rok: number;
   max_rok: number | null;
   karoserie: string[];
+  min_najezd_nafta: number;
   max_najezd_nafta: number;
+  min_najezd_benzin: number;
   max_najezd_benzin: number;
   max_cena_pln: number;
   min_cena_pln: number;
@@ -87,7 +89,8 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
       filtry: {
         znacky: [], palivo: [], prevodovka: "vse", oblasti: [],
         min_rok: 2003, max_rok: null, karoserie: [],
-        max_najezd_nafta: 250000, max_najezd_benzin: 200000,
+        min_najezd_nafta: 0, max_najezd_nafta: 250000,
+        min_najezd_benzin: 0, max_najezd_benzin: 200000,
         max_cena_pln: 12501, min_cena_pln: 0,
         zdroje: ["pl"], cena_cz: { min: 0, max: null }, cena_sk: { min: 0, max: null },
         cena_de: { min: 0, max: 3000 }, cena_at: { min: 0, max: 3000 }, cena_it: { min: 0, max: 3000 },
@@ -362,50 +365,34 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🚘 {t.karoserie} / {t.palivo}</p>
               <div className="grid gap-3">
-                <Pole label={`${t.karoserie} (${karoserie.length === 0 ? t.vse : karoserie.length + " " + t.vybrano})`}>
-                  <div className="flex flex-wrap gap-1.5">
-                    {([
-                      ["kombi", t.karoserieKombi],
-                      ["sedan", t.karoserieSedan],
-                      ["hatchback", t.karoserieHatchback],
-                      ["suv", t.karoserieSuv],
-                      ["kupe", t.karoserieKupe],
-                      ["kabriolet", t.karoserieKabriolet],
-                      ["van", t.karoserieVan],
-                    ] as [string, string][]).map(([kod, popisek]) => (
-                      <label
-                        key={kod}
-                        className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
-                          karoserie.includes(kod) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
-                        }`}
-                      >
-                        <input type="checkbox" checked={karoserie.includes(kod)} onChange={() => prepnoutKaroserii(kod)} className="hidden" />
-                        {popisek}
-                      </label>
-                    ))}
-                  </div>
-                </Pole>
-                <Pole label={`${t.palivo} (${paliva.length === 0 ? t.vse : paliva.length + " " + t.vybrano})`}>
-                  <div className="flex flex-wrap gap-1.5">
-                    {([
-                      ["benzin", t.benzin],
-                      ["nafta", t.diesel],
-                      ["hybrid", t.palivoFiltrHybrid],
-                      ["elektro", t.palivoElektroKratce],
-                      ["lpg_cng", t.palivoLpgCng],
-                    ] as [string, string][]).map(([kod, popisek]) => (
-                      <label
-                        key={kod}
-                        className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
-                          paliva.includes(kod) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
-                        }`}
-                      >
-                        <input type="checkbox" checked={paliva.includes(kod)} onChange={() => prepnoutPalivo(kod)} className="hidden" />
-                        {popisek}
-                      </label>
-                    ))}
-                  </div>
-                </Pole>
+                <VicevyberMenu
+                  label={t.karoserie}
+                  vseText={t.vse}
+                  vybrane={karoserie}
+                  onToggle={prepnoutKaroserii}
+                  hodnoty={[
+                    ["kombi", t.karoserieKombi],
+                    ["sedan", t.karoserieSedan],
+                    ["hatchback", t.karoserieHatchback],
+                    ["suv", t.karoserieSuv],
+                    ["kupe", t.karoserieKupe],
+                    ["kabriolet", t.karoserieKabriolet],
+                    ["van", t.karoserieVan],
+                  ]}
+                />
+                <VicevyberMenu
+                  label={t.palivo}
+                  vseText={t.vse}
+                  vybrane={paliva}
+                  onToggle={prepnoutPalivo}
+                  hodnoty={[
+                    ["benzin", t.benzin],
+                    ["nafta", t.diesel],
+                    ["hybrid", t.palivoFiltrHybrid],
+                    ["elektro", t.palivoElektroKratce],
+                    ["lpg_cng", t.palivoLpgCng],
+                  ]}
+                />
               </div>
             </div>
 
@@ -437,14 +424,42 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
             </div>
 
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🛣️ {t.maxNajezdDiesel.split(" (")[0]}</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🛣️ {t.najezd} (km)</p>
               <div className="grid gap-3">
-                <Pole label={t.maxNajezdDiesel}>
-                  <input type="number" className={input} value={n.filtry.max_najezd_nafta} onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))} />
-                </Pole>
-                <Pole label={t.maxNajezdBenzin}>
-                  <input type="number" className={input} value={n.filtry.max_najezd_benzin} onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))} />
-                </Pole>
+                <div>
+                  <p className="mb-1.5 text-xs text-zinc-400">{t.najezdNafta}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Pole label="od">
+                      <input
+                        type="number" className={input} value={n.filtry.min_najezd_nafta ?? 0}
+                        onChange={(e) => setFiltr("min_najezd_nafta", Number(e.target.value))}
+                      />
+                    </Pole>
+                    <Pole label="do">
+                      <input
+                        type="number" className={input} value={n.filtry.max_najezd_nafta ?? 0}
+                        onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))}
+                      />
+                    </Pole>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1.5 text-xs text-zinc-400">{t.najezdBenzinOstatni}</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Pole label="od">
+                      <input
+                        type="number" className={input} value={n.filtry.min_najezd_benzin ?? 0}
+                        onChange={(e) => setFiltr("min_najezd_benzin", Number(e.target.value))}
+                      />
+                    </Pole>
+                    <Pole label="do">
+                      <input
+                        type="number" className={input} value={n.filtry.max_najezd_benzin ?? 0}
+                        onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))}
+                      />
+                    </Pole>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

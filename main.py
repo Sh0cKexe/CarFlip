@@ -327,16 +327,19 @@ def _je_plyn(auto):
 
 
 def _najezd_ok(auto, filtry):
-    """Nafta a benzin maji vlastni limit najezdu. True kdyz auto vyhovuje."""
+    """Nafta a benzin+ostatni pohony maji vlastni rozsah najezdu (od/do).
+    True kdyz auto vyhovuje."""
     naj = auto.get("najezd_km")
     if not naj:
         return True  # neznamy najezd -> nefiltrujeme
     palivo = (auto.get("palivo_kod") or "").lower()
     if "diesel" in palivo:
-        limit = filtry.get("max_najezd_nafta") or filtry.get("max_najezd_km") or 250000
+        min_limit = filtry.get("min_najezd_nafta") or 0
+        max_limit = filtry.get("max_najezd_nafta") or filtry.get("max_najezd_km") or 250000
     else:
-        limit = filtry.get("max_najezd_benzin") or filtry.get("max_najezd_km") or 200000
-    return naj <= limit
+        min_limit = filtry.get("min_najezd_benzin") or 0
+        max_limit = filtry.get("max_najezd_benzin") or filtry.get("max_najezd_km") or 200000
+    return min_limit <= naj <= max_limit
 
 
 def _problem_v_popisu(popis_pl):

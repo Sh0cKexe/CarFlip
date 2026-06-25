@@ -145,6 +145,61 @@ export function CenovePole({
   );
 }
 
+/** Vicevyberove "rozbalovaci menu" - zavrene vypada jako select (label +
+ * box s aktualnim vyberem), klikem se otevre panel se zaskrtavatky pro
+ * vyber vic polozek najednou. Pouziva se pro karoserie/palivo ve filtrech. */
+export function VicevyberMenu({
+  label, hodnoty, vybrane, onToggle, vseText,
+}: {
+  label: string;
+  hodnoty: [string, string][];
+  vybrane: string[];
+  onToggle: (kod: string) => void;
+  vseText: string;
+}) {
+  const [otevreno, setOtevreno] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function naKliknuti(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOtevreno(false);
+    }
+    document.addEventListener("mousedown", naKliknuti);
+    return () => document.removeEventListener("mousedown", naKliknuti);
+  }, []);
+
+  const popisek = vybrane.length === 0
+    ? vseText
+    : hodnoty.filter(([kod]) => vybrane.includes(kod)).map(([, p]) => p).join(", ");
+
+  return (
+    <div ref={ref} className="relative">
+      <label className="mb-1 block text-xs text-zinc-300">{label}</label>
+      <button
+        type="button"
+        onClick={() => setOtevreno(!otevreno)}
+        className={`${input} flex items-center justify-between gap-2 text-left`}
+      >
+        <span className={`truncate ${vybrane.length === 0 ? "text-zinc-400" : "text-zinc-100"}`}>{popisek}</span>
+        <span className={`shrink-0 text-zinc-500 transition-transform ${otevreno ? "rotate-180" : ""}`}>▾</span>
+      </button>
+      {otevreno && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-panel p-1.5 shadow-lg">
+          {hodnoty.map(([kod, pop]) => (
+            <label
+              key={kod}
+              className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-200 hover:bg-panel2"
+            >
+              <input type="checkbox" checked={vybrane.includes(kod)} onChange={() => onToggle(kod)} className="accent-accent" />
+              {pop}
+            </label>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export const input =
   "w-full rounded-lg border border-border bg-bg px-3 py-2 text-sm text-zinc-100 outline-none transition focus:border-accent2/60 focus:ring-2 focus:ring-accent2";
 
