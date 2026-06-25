@@ -3,13 +3,22 @@
 import { Fragment, useEffect } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { MapContainer, TileLayer, Circle, CircleMarker, Tooltip, useMapEvents, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, CircleMarker, GeoJSON, Tooltip, useMapEvents, useMap } from "react-leaflet";
+import union from "@turf/union";
+import mask from "@turf/mask";
 import { BARVA_ZEME } from "@/lib/zemeBarvy";
+import zemeHranice from "@/lib/zeme-hranice.json";
 
 type Oblast = {
   nazev: string; mesto_slug: string; okruh_km: number; lat?: number; lon?: number;
   zeme?: "pl" | "cz" | "sk" | "de" | "at" | "it";
 };
+
+// Polygon "sveta minus podporovane zeme" (PL/CZ/SK/DE/AT/IT) - vsechno
+// mimo ne se prekryje plnou barvou pozadi, jako by tam ty staty vubec
+// nebyly. Spocitano jednou pri startu modulu (staticka data, slity
+// union vsech 6 hranic + turf.mask proti celemu svetu).
+const VYREZ_MIMO_ZEME = mask(union(zemeHranice as any) as any);
 
 function KlikHandler({ onKlik }: { onKlik: (lat: number, lon: number) => void }) {
   useMapEvents({
@@ -50,6 +59,10 @@ export default function MapaOkruhy({
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <GeoJSON
+          data={VYREZ_MIMO_ZEME as any}
+          style={() => ({ fillColor: "#0b0d12", fillOpacity: 1, stroke: false, interactive: false })}
         />
         <KlikHandler onKlik={onKlik} />
         <DorovnatZaber oblasti={oblasti} />
