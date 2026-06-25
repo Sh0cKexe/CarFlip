@@ -361,7 +361,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
         </Sekce>
 
         <Sekce titulek={t.filtryAut}>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid items-start gap-3 sm:grid-cols-3">
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🚘 {t.karoserie} / {t.palivo}</p>
               <div className="grid gap-3">
