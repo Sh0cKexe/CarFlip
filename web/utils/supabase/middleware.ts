@@ -26,7 +26,14 @@ export async function updateSession(request: NextRequest) {
   );
 
   const path = request.nextUrl.pathname;
-  const skipUdrzba = path.startsWith("/udrzba") || path.startsWith("/admin") || path.startsWith("/api/admin");
+
+  // getUser first — needed for admin bypass of maintenance check
+  const { data: { user } } = await supabase.auth.getUser();
+
+  const isAdmin = user?.email != null && user.email === process.env.ADMIN_EMAIL;
+  const isStaticFile = /\.[^/]+$/.test(path);
+  const skipUdrzba = isAdmin || isStaticFile
+    || path.startsWith("/udrzba") || path.startsWith("/admin") || path.startsWith("/api/admin");
   if (!skipUdrzba) {
     const { data: konfig } = await supabase.from("konfigurace").select("hodnota").eq("klic", "udrzba").single();
     if (konfig?.hodnota === "true") {
@@ -36,7 +43,6 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  const { data: { user } } = await supabase.auth.getUser();
   const chranenaCesta = path.startsWith("/dashboard") || path.startsWith("/auta");
 
   if (!user && chranenaCesta) {
