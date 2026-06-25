@@ -415,4 +415,6 @@ create table if not exists public.admin_chyby (
   user_id uuid references auth.users(id) on delete set null,
   zprava text not null
 );
--- Zamerne zadne RLS - tabulka nepristupna z webu pres anon/auth klic, jen service key.
+alter table public.admin_chyby enable row level security;
+-- Zamerne zadna policy - tabulka nepristupna z webu (anon/auth klic),
+-- service key RLS obchazi automaticky (Python boti + admin panel).
