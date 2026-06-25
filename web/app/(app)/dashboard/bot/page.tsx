@@ -9,7 +9,7 @@ export default async function BotPage() {
 
   const { data: nastaveni, error } = await supabase
     .from("nastaveni")
-    .select("user_id, telegram_token, telegram_chat_id, dalsi_prijemci, aktivni, trh, posledni_beh, posledni_chyba")
+    .select("user_id, telegram_token, telegram_chat_id, dalsi_prijemci, aktivni, trh, posledni_beh")
     .eq("user_id", user.id)
     .single();
 

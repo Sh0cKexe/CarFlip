@@ -14,7 +14,6 @@ type Nastaveni = {
   aktivni: boolean;
   trh: Trh;
   posledni_beh: string | null;
-  posledni_chyba: string | null;
 };
 
 const BOT_PRAH_MINUT = 20;
@@ -41,7 +40,7 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
   const [n, setN] = useState<Nastaveni>(
     nastaveni ?? {
       user_id: "", telegram_token: "", telegram_chat_id: "",
-      dalsi_prijemci: [], aktivni: true, trh: "cz", posledni_beh: null, posledni_chyba: null,
+      dalsi_prijemci: [], aktivni: true, trh: "cz", posledni_beh: null,
     }
   );
   const t = T(n.trh);
@@ -119,11 +118,6 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
           }`}>
             {status.text}
           </p>
-          {status.tone === "red" && n.posledni_chyba && (
-            <p className="mt-2 rounded-lg border border-red-500/30 bg-red-500/[0.06] px-3 py-2 font-mono text-xs text-red-400">
-              {n.posledni_chyba}
-            </p>
-          )}
         </Sekce>
 
         <motion.section

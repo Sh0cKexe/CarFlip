@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { Sekce, Pole, input, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import Logo from "@/app/components/Logo";
 
-export type Clen = { user_id: string; email: string; pristup_do: string | null };
+export type Clen = { user_id: string; email: string; pristup_do: string | null; posledni_chyba: string | null; posledni_beh: string | null };
 export type NepouzityKod = { kod: string; dny_platnosti: number; vytvoreno: string };
 
 function dnyDoVyprseni(pristup_do: string | null): number | null {
@@ -255,6 +255,12 @@ function ClenRadek({ clen }: { clen: Clen }) {
           </button>
         </div>
       </div>
+      {clen.posledni_chyba && (
+        <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/[0.06] px-3 py-2">
+          <p className="mb-1 text-xs font-medium text-red-400">⚠️ Chyba bota{clen.posledni_beh ? ` (${new Date(clen.posledni_beh).toLocaleString("cs-CZ")})` : ""}:</p>
+          <p className="font-mono text-xs text-red-400 break-all">{clen.posledni_chyba}</p>
+        </div>
+      )}
       {heslo && (
         <motion.p
           initial={{ opacity: 0, y: -4 }}
