@@ -8,6 +8,19 @@ function vygenerujKod(): string {
   return `FLIP-${kod}`;
 }
 
+export async function DELETE(req: Request) {
+  const owner = await pozadovatOwnera();
+  if (!owner) return NextResponse.json({ error: "Nepřístupné." }, { status: 403 });
+
+  const { kod } = await req.json();
+  if (!kod) return NextResponse.json({ error: "Chybí kód." }, { status: 400 });
+
+  const admin = adminClient();
+  const { error } = await admin.from("invite_kody").delete().eq("kod", kod).is("pouzil_user_id", null);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: Request) {
   const owner = await pozadovatOwnera();
   if (!owner) return NextResponse.json({ error: "Nepřístupné." }, { status: 403 });

@@ -87,7 +87,8 @@ function UdrzbaToggle({ aktivni: aktivniVychozi }: { aktivni: boolean }) {
   );
 }
 
-function NoveKody({ nepouziteKody }: { nepouziteKody: NepouzityKod[] }) {
+function NoveKody({ nepouziteKody: nepouziteKodyVychozi }: { nepouziteKody: NepouzityKod[] }) {
+  const [nepouziteKody, setNepouziteKody] = useState(nepouziteKodyVychozi);
   const [dny, setDny] = useState("30");
   const [generuji, setGeneruji] = useState(false);
   const [novyKod, setNovyKod] = useState<string | null>(null);
@@ -106,11 +107,22 @@ function NoveKody({ nepouziteKody }: { nepouziteKody: NepouzityKod[] }) {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Nepodařilo se vygenerovat kód.");
       setNovyKod(j.kod);
+      setNepouziteKody((prev) => [{ kod: j.kod, dny_platnosti: Number(dny), vytvoreno: new Date().toISOString() }, ...prev]);
     } catch (e: any) {
       setChyba(e.message);
     } finally {
       setGeneruji(false);
     }
+  }
+
+  async function smazatKod(kod: string) {
+    if (!confirm(`Smazat kód ${kod}?`)) return;
+    await fetch("/api/admin/invite", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kod }),
+    });
+    setNepouziteKody((prev) => prev.filter((k) => k.kod !== kod));
   }
 
   return (
@@ -141,7 +153,15 @@ function NoveKody({ nepouziteKody }: { nepouziteKody: NepouzityKod[] }) {
           {nepouziteKody.map((k) => (
             <div key={k.kod} className="flex items-center justify-between text-sm">
               <span className="font-mono text-zinc-300">{k.kod}</span>
-              <span className="text-xs text-zinc-500">{k.dny_platnosti} dní</span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-zinc-500">{k.dny_platnosti} dní</span>
+                <button
+                  onClick={() => smazatKod(k.kod)}
+                  className="text-xs text-red-400 transition hover:text-red-300"
+                >
+                  Zrušit
+                </button>
+              </div>
             </div>
           ))}
         </div>
