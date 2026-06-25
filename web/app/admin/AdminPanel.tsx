@@ -257,8 +257,11 @@ function ClenRadek({ clen }: { clen: Clen }) {
       </div>
       {clen.posledni_chyba && (
         <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/[0.06] px-3 py-2">
-          <p className="mb-1 text-xs font-medium text-red-400">⚠️ Chyba bota{clen.posledni_beh ? ` (${new Date(clen.posledni_beh).toLocaleString("cs-CZ")})` : ""}:</p>
+          <p className="mb-1 text-xs font-medium text-red-400">⚠️ Chyba bota:</p>
           <p className="font-mono text-xs text-red-400 break-all">{clen.posledni_chyba}</p>
+          {clen.posledni_beh && (
+            <p className="mt-1 text-xs text-zinc-500">Poslední OK běh: {new Date(clen.posledni_beh).toLocaleString("cs-CZ")}</p>
+          )}
         </div>
       )}
       {heslo && (
