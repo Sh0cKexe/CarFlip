@@ -6,6 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { MapContainer, TileLayer, Circle, CircleMarker, GeoJSON, Tooltip, useMapEvents, useMap } from "react-leaflet";
 import union from "@turf/union";
 import mask from "@turf/mask";
+import bbox from "@turf/bbox";
 import { BARVA_ZEME } from "@/lib/zemeBarvy";
 import zemeHranice from "@/lib/zeme-hranice.json";
 
@@ -18,7 +19,11 @@ type Oblast = {
 // mimo ne se prekryje plnou barvou pozadi, jako by tam ty staty vubec
 // nebyly. Spocitano jednou pri startu modulu (staticka data, slity
 // union vsech 6 hranic + turf.mask proti celemu svetu).
-const VYREZ_MIMO_ZEME = mask(union(zemeHranice as any) as any);
+const HRANICE_UNIE = union(zemeHranice as any) as any;
+const VYREZ_MIMO_ZEME = mask(HRANICE_UNIE);
+// [minLon, minLat, maxLon, maxLat] shluku vsech 6 zemi - vychozi zaber
+// mapy se na nej vzdy fitne, at je sirokej box vyplnenej a ne poloprazdny.
+const ZEME_BBOX = bbox(HRANICE_UNIE);
 
 function KlikHandler({ onKlik }: { onKlik: (lat: number, lon: number) => void }) {
   useMapEvents({
@@ -29,23 +34,21 @@ function KlikHandler({ onKlik }: { onKlik: (lat: number, lon: number) => void })
   return null;
 }
 
-/** Po pridani/zmene oblasti dorovna zoom/center mapy, at jsou vsechny
- * pridane oblasti videt (jinak by zustal fixni vychozi vyrez na CR a
- * oblast napr. v Italii by zustala mimo zaber, dokud by uzivatel rucne
- * neodscrolloval). Jedna oblast -> primy setView (fitBounds na 1 bod by
- * zoomoval na maximum), vic oblasti -> fitBounds s capem na zoom 10
- * (at se nezoomuje az na ulice kdyz jsou oblasti blizko sebe). */
+/** Vychozi zaber je vzdy cely shluk podporovanych zemi (vyplni box bez
+ * ohledu na jeho pomer stran - uz nehrozi velka prazdna cerna plocha
+ * jako kdyz se fitovalo jen na 1-2 oblasti). Pridane oblasti zaber jen
+ * rozsiri, kdyby nahodou padly mimo (normalne jsou vzdy uvnitr). */
 function DorovnatZaber({ oblasti }: { oblasti: Oblast[] }) {
   const map = useMap();
   useEffect(() => {
-    const body = oblasti.filter((o) => o.lat != null && o.lon != null) as (Oblast & { lat: number; lon: number })[];
-    if (body.length === 0) return;
-    if (body.length === 1) {
-      map.setView([body[0].lat, body[0].lon], 9);
-      return;
+    const bounds = L.latLngBounds(
+      [ZEME_BBOX[1], ZEME_BBOX[0]],
+      [ZEME_BBOX[3], ZEME_BBOX[2]],
+    );
+    for (const o of oblasti) {
+      if (o.lat != null && o.lon != null) bounds.extend([o.lat, o.lon]);
     }
-    const bounds = L.latLngBounds(body.map((o) => [o.lat, o.lon] as [number, number]));
-    map.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
+    map.fitBounds(bounds, { padding: [20, 20], maxZoom: 9 });
   }, [oblasti, map]);
   return null;
 }
