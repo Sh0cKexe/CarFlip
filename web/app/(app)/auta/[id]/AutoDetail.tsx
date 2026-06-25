@@ -315,7 +315,7 @@ export default function AutoDetail({
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); setStavMenuOtevren(!stavMenuOtevren); }}
-                className={btnGhost}
+                className={btnPrimary}
               >
                 Změnit stav ▾
               </button>
@@ -630,34 +630,18 @@ export default function AutoDetail({
                 <Pole label={t.nazevModel}>
                   <input autoFocus className={input} value={auto.titulek} onChange={(e) => setPole("titulek", e.target.value)} />
                 </Pole>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
-                    <input
-                      type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
-                      onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </Pole>
-                  <Pole label={`${t.najezd} (km)`}>
-                    <input
-                      type="number" className={input} value={auto.najezd_km ?? ""}
-                      onChange={(e) => setPole("najezd_km", e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </Pole>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Pole label={t.datumKoupeno}>
-                    <input
-                      type="date" className={input} value={auto.datum_koupeno ?? ""}
-                      onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
-                    />
-                  </Pole>
-                  <Pole label={t.datumInzerce}>
-                    <input
-                      type="date" className={input} value={auto.datum_inzerce ?? ""}
-                      onChange={(e) => setPole("datum_inzerce", e.target.value || null)}
-                    />
-                  </Pole>
-                </div>
+                <Pole label={t.datumKoupeno}>
+                  <input
+                    type="date" className={input} value={auto.datum_koupeno ?? ""}
+                    onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
+                  />
+                </Pole>
+                <Pole label={`${t.cenaKoupeno} (${t.mena})`}>
+                  <input
+                    type="number" className={input} value={auto.cena_koupeno_kc ?? ""}
+                    onChange={(e) => setPole("cena_koupeno_kc", e.target.value ? Number(e.target.value) : null)}
+                  />
+                </Pole>
                 {zprava && <p className="text-sm text-red-400">{zprava}</p>}
               </div>
               <div className="mt-5 flex justify-end gap-3">
