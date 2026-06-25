@@ -555,9 +555,9 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
           <MapaOkruhy oblasti={n.filtry.oblasti} onKlik={pridatOblastZMapy} />
           <div className="space-y-3">
             {n.filtry.oblasti.map((o, i) => (
-              <div key={i} className="grid grid-cols-2 items-end gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[16px_80px_1fr_100px_auto]">
+              <div key={i} className="grid grid-cols-2 items-start gap-2 rounded-lg border border-border bg-panel2 p-3 sm:grid-cols-[16px_80px_1fr_100px_auto]">
                 <span
-                  className="mb-2.5 hidden h-2.5 w-2.5 shrink-0 self-end rounded-full sm:block"
+                  className="mt-5 hidden h-2.5 w-2.5 shrink-0 rounded-full sm:block"
                   style={{ backgroundColor: BARVA_ZEME[o.zeme ?? "pl"] }}
                   title={t.zeme}
                 />
@@ -606,7 +606,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                     <input type="number" className={input} value={o.okruh_km} onChange={(e) => upravitOblast(i, "okruh_km", Number(e.target.value))} />
                   </Pole>
                 )}
-                <button type="button" onClick={() => odebratOblast(i)} className={`h-fit ${btnDanger}`}>
+                <button type="button" onClick={() => odebratOblast(i)} className={`mt-5 h-fit ${btnDanger}`}>
                   {t.smazat}
                 </button>
               </div>
