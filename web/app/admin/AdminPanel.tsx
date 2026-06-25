@@ -6,8 +6,9 @@ import { motion } from "framer-motion";
 import { Sekce, Pole, input, btnPrimary, btnGhost } from "@/app/components/FormUI";
 import Logo from "@/app/components/Logo";
 
-export type Clen = { user_id: string; email: string; pristup_do: string | null; posledni_chyba: string | null; posledni_beh: string | null };
+export type Clen = { user_id: string; email: string; pristup_do: string | null };
 export type NepouzityKod = { kod: string; dny_platnosti: number; vytvoreno: string };
+export type ChybaLogu = { id: number; vytvoreno: string; typ: string; user_id: string | null; zprava: string };
 
 function dnyDoVyprseni(pristup_do: string | null): number | null {
   if (!pristup_do) return null;
@@ -20,8 +21,8 @@ function formatDatum(d: string | null): string {
 }
 
 export default function AdminPanel({
-  clenove, nepouziteKody, udrzbaAktivni,
-}: { clenove: Clen[]; nepouziteKody: NepouzityKod[]; udrzbaAktivni: boolean }) {
+  clenove, nepouziteKody, udrzbaAktivni, chyby,
+}: { clenove: Clen[]; nepouziteKody: NepouzityKod[]; udrzbaAktivni: boolean; chyby: ChybaLogu[] }) {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 md:px-8">
       <div className="mb-6 flex items-center justify-between">
@@ -37,6 +38,7 @@ export default function AdminPanel({
       <UdrzbaToggle aktivni={udrzbaAktivni} />
       <NoveKody nepouziteKody={nepouziteKody} />
       <Clenove clenove={clenove} />
+      <HistorieChyb chyby={chyby} clenove={clenove} />
     </main>
   );
 }
@@ -255,15 +257,6 @@ function ClenRadek({ clen }: { clen: Clen }) {
           </button>
         </div>
       </div>
-      {clen.posledni_chyba && (
-        <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/[0.06] px-3 py-2">
-          <p className="mb-1 text-xs font-medium text-red-400">⚠️ Chyba bota:</p>
-          <p className="font-mono text-xs text-red-400 break-all">{clen.posledni_chyba}</p>
-          {clen.posledni_beh && (
-            <p className="mt-1 text-xs text-zinc-500">Poslední OK běh: {new Date(clen.posledni_beh).toLocaleString("cs-CZ")}</p>
-          )}
-        </div>
-      )}
       {heslo && (
         <motion.p
           initial={{ opacity: 0, y: -4 }}
@@ -275,5 +268,41 @@ function ClenRadek({ clen }: { clen: Clen }) {
       )}
       {zprava && <p className="mt-2 text-xs text-zinc-400">{zprava}</p>}
     </div>
+  );
+}
+
+const TYP_BADGE: Record<string, { label: string; cls: string }> = {
+  bot_cloud: { label: "bot", cls: "bg-orange-500/15 text-orange-400" },
+  najdi_ted: { label: "najdi teď", cls: "bg-blue-500/15 text-blue-400" },
+};
+
+function TypBadge({ typ }: { typ: string }) {
+  const b = TYP_BADGE[typ] ?? { label: typ, cls: "bg-zinc-500/15 text-zinc-400" };
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${b.cls}`}>{b.label}</span>
+  );
+}
+
+function HistorieChyb({ chyby, clenove }: { chyby: ChybaLogu[]; clenove: Clen[] }) {
+  const emailMapa = new Map(clenove.map((c) => [c.user_id, c.email]));
+
+  return (
+    <Sekce titulek={`Historie chyb${chyby.length > 0 ? ` (${chyby.length})` : ""}`}>
+      {chyby.length === 0 && <p className="text-sm text-zinc-500">Žádné chyby zaznamenány.</p>}
+      <div className="space-y-2">
+        {chyby.map((ch) => (
+          <div key={ch.id} className="rounded-lg border border-red-500/20 bg-red-500/[0.04] px-3 py-2.5">
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <TypBadge typ={ch.typ} />
+              <span className="text-zinc-500">{new Date(ch.vytvoreno).toLocaleString("cs-CZ")}</span>
+              {ch.user_id && (
+                <span className="text-zinc-400">{emailMapa.get(ch.user_id) ?? ch.user_id.slice(0, 8) + "…"}</span>
+              )}
+            </div>
+            <p className="mt-1.5 font-mono text-xs text-red-400 break-all leading-relaxed">{ch.zprava}</p>
+          </div>
+        ))}
+      </div>
+    </Sekce>
   );
 }

@@ -402,3 +402,17 @@ alter table public.pristup enable row level security;
 drop policy if exists "pristup_select_own" on public.pristup;
 create policy "pristup_select_own" on public.pristup
   for select using (auth.uid() = user_id);
+
+-- ---------------------------------------------------------------------
+-- Admin log vsech chyb - appendovaci, nikdy se neprepise, jen se pridava.
+-- Dostupno jen pres service key (admin panel pouziva adminClient,
+-- Python cloud boti tez). Bezny uzivatel nikdy nema pristup.
+-- ---------------------------------------------------------------------
+create table if not exists public.admin_chyby (
+  id bigint generated always as identity primary key,
+  vytvoreno timestamptz not null default now(),
+  typ text not null,
+  user_id uuid references auth.users(id) on delete set null,
+  zprava text not null
+);
+-- Zamerne zadne RLS - tabulka nepristupna z webu pres anon/auth klic, jen service key.

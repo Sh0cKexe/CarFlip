@@ -239,6 +239,7 @@ def main_najdi(user_id):
     except Exception as e:
         print("!!! Chyba behu Najdi ted:", e)
         supa.nastav_najdi_ted_stav(sb, user_id, "chyba", dokonceno=True)
+        supa.zapis_chybu(sb, "najdi_ted", "{}: {}".format(type(e).__name__, str(e)), user_id=user_id)
         raise
 
 

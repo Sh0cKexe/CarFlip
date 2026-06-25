@@ -38,11 +38,9 @@ def main():
             print("  Hotovo. Poslano upozorneni:", poslano)
             supa.nastav_posledni_beh(sb, uid)
         except Exception as e:
-            import datetime
-            cas = datetime.datetime.now(datetime.timezone.utc).strftime("%d.%m. %H:%M UTC")
-            chyba_text = "[{}] {}: {}".format(cas, type(e).__name__, str(e))[:500]
+            chyba_text = "{}: {}".format(type(e).__name__, str(e))
             print("  Chyba u uzivatele {}: {}".format(uid, chyba_text))
-            supa.nastav_chybu(sb, uid, chyba_text)
+            supa.zapis_chybu(sb, "bot_cloud", chyba_text, user_id=uid)
 
 
 if __name__ == "__main__":

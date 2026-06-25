@@ -89,11 +89,14 @@ def nastav_posledni_beh(sb, user_id):
     }).eq("user_id", user_id).execute()
 
 
-def nastav_chybu(sb, user_id, chyba_text):
-    """Zapise text posledni chyby automatickeho bota (nebo None pro vymaz po uspesnem behu)."""
-    sb.table("nastaveni").update({
-        "posledni_chyba": chyba_text
-    }).eq("user_id", user_id).execute()
+def zapis_chybu(sb, typ, zprava, user_id=None):
+    """Appenduje chybu do admin_chyby - nikdy neprepise, jen pridava.
+    typ: 'bot_cloud'|'najdi_ted'|... user_id: None kdyz chyba neni vazana na uzivatele."""
+    sb.table("admin_chyby").insert({
+        "typ": typ,
+        "zprava": str(zprava)[:2000],
+        "user_id": user_id,
+    }).execute()
 
 
 def nastav_najdi_ted_stav(sb, user_id, stav, dokonceno=False):
