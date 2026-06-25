@@ -13,6 +13,7 @@ from functools import partial
 
 import main as carflip
 import supa
+import telegram_send as tg
 
 
 def beh_uzivatele(sb, uziv):
@@ -42,6 +43,12 @@ def main():
             chyba_text = "{}: {}".format(type(e).__name__, str(e))[:500]
             print("  Chyba u uzivatele {}: {}".format(uid, chyba_text))
             supa.nastav_chybu(sb, uid, chyba_text)
+            try:
+                token = uziv["cfg"]["telegram"]["token"]
+                for cid in carflip._prijemci(uziv["cfg"]):
+                    tg.posli_zpravu(token, cid, "⚠️ FlipniTo bot – chyba:\n{}".format(chyba_text))
+            except Exception:
+                pass
 
 
 if __name__ == "__main__":
