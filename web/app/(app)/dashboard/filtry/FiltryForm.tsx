@@ -625,8 +625,12 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
             <Pole label={`${t.nakladyDovoz} (${t.mena})`}>
               <input type="number" className={input} value={n.naklady_dovoz_kc} onChange={(e) => setN({ ...n, naklady_dovoz_kc: Number(e.target.value) })} />
             </Pole>
-            <Pole label={t.minSrovnatelnych}>
-              <input type="number" className={input} value={n.min_srovnani} onChange={(e) => setN({ ...n, min_srovnani: Number(e.target.value) })} />
+            <Pole label={`${t.minSrovnatelnych} (2–6)`}>
+              <input
+                type="number" min={2} max={6} className={input} value={n.min_srovnani}
+                onChange={(e) => setN({ ...n, min_srovnani: Number(e.target.value) })}
+                onBlur={() => setN((aktualni) => ({ ...aktualni, min_srovnani: Math.min(6, Math.max(2, aktualni.min_srovnani || 2)) }))}
+              />
             </Pole>
           </div>
         </Sekce>
