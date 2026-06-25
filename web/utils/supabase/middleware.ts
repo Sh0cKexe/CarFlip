@@ -25,9 +25,19 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  const path = request.nextUrl.pathname;
+  const skipUdrzba = path.startsWith("/udrzba") || path.startsWith("/admin") || path.startsWith("/api/admin");
+  if (!skipUdrzba) {
+    const { data: konfig } = await supabase.from("konfigurace").select("hodnota").eq("klic", "udrzba").single();
+    if (konfig?.hodnota === "true") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/udrzba";
+      return NextResponse.redirect(url);
+    }
+  }
+
   const { data: { user } } = await supabase.auth.getUser();
-  const chranenaCesta = request.nextUrl.pathname.startsWith("/dashboard")
-    || request.nextUrl.pathname.startsWith("/auta");
+  const chranenaCesta = path.startsWith("/dashboard") || path.startsWith("/auta");
 
   if (!user && chranenaCesta) {
     const url = request.nextUrl.clone();

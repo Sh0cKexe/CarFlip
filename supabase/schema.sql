@@ -170,6 +170,17 @@ create table if not exists public.auta (
 );
 
 -- Pro existujici instalace (puvodni create table uz probehl bez datumu):
+-- Konfigurace (admin nastaveni, napr. udrzba)
+create table if not exists public.konfigurace (
+  klic text primary key,
+  hodnota text not null default ''
+);
+alter table public.konfigurace enable row level security;
+drop policy if exists "anyone can read konfigurace" on public.konfigurace;
+create policy "anyone can read konfigurace" on public.konfigurace
+  for select using (true);
+insert into public.konfigurace (klic, hodnota) values ('udrzba', 'false') on conflict do nothing;
+
 alter table public.auta add column if not exists datum_koupeno date;
 alter table public.auta add column if not exists datum_prodano date;
 alter table public.auta add column if not exists datum_inzerce date;

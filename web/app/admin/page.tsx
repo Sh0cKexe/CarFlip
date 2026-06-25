@@ -8,10 +8,11 @@ export default async function AdminPage() {
 
   const admin = adminClient();
 
-  const [{ data: uzivatele }, { data: pristupy }, { data: kody }] = await Promise.all([
+  const [{ data: uzivatele }, { data: pristupy }, { data: kody }, { data: konfig }] = await Promise.all([
     admin.auth.admin.listUsers(),
     admin.from("pristup").select("user_id, pristup_do"),
     admin.from("invite_kody").select("kod, dny_platnosti, vytvoreno").is("pouzil_user_id", null).order("vytvoreno", { ascending: false }),
+    admin.from("konfigurace").select("hodnota").eq("klic", "udrzba").single(),
   ]);
 
   const pristupMapa = new Map((pristupy ?? []).map((p) => [p.user_id, p.pristup_do]));
@@ -28,5 +29,11 @@ export default async function AdminPage() {
       return new Date(a.pristup_do).getTime() - new Date(b.pristup_do).getTime();
     });
 
-  return <AdminPanel clenove={clenove} nepouziteKody={(kody ?? []) as NepouzityKod[]} />;
+  return (
+    <AdminPanel
+      clenove={clenove}
+      nepouziteKody={(kody ?? []) as NepouzityKod[]}
+      udrzbaAktivni={konfig?.hodnota === "true"}
+    />
+  );
 }

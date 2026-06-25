@@ -20,8 +20,8 @@ function formatDatum(d: string | null): string {
 }
 
 export default function AdminPanel({
-  clenove, nepouziteKody,
-}: { clenove: Clen[]; nepouziteKody: NepouzityKod[] }) {
+  clenove, nepouziteKody, udrzbaAktivni,
+}: { clenove: Clen[]; nepouziteKody: NepouzityKod[]; udrzbaAktivni: boolean }) {
   return (
     <main className="mx-auto max-w-4xl px-4 py-8 md:px-8">
       <div className="mb-6 flex items-center justify-between">
@@ -34,9 +34,56 @@ export default function AdminPanel({
         </Link>
       </div>
 
+      <UdrzbaToggle aktivni={udrzbaAktivni} />
       <NoveKody nepouziteKody={nepouziteKody} />
       <Clenove clenove={clenove} />
     </main>
+  );
+}
+
+function UdrzbaToggle({ aktivni: aktivniVychozi }: { aktivni: boolean }) {
+  const [aktivni, setAktivni] = useState(aktivniVychozi);
+  const [pracuje, setPracuje] = useState(false);
+
+  async function prepnout() {
+    setPracuje(true);
+    const novaHodnota = !aktivni;
+    try {
+      const r = await fetch("/api/admin/udrzba", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ udrzba: novaHodnota }),
+      });
+      if (r.ok) setAktivni(novaHodnota);
+    } finally {
+      setPracuje(false);
+    }
+  }
+
+  return (
+    <Sekce titulek="Údržba stránky">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-zinc-200">
+            {aktivni ? "🔴 Údržba je zapnutá — návštěvníci vidí stránku /udrzba" : "🟢 Stránka běží normálně"}
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Admin a /api/admin jsou přístupné i při údržbě.
+          </p>
+        </div>
+        <button
+          onClick={prepnout}
+          disabled={pracuje}
+          className={`min-w-[120px] rounded-xl px-4 py-2 text-sm font-semibold transition ${
+            aktivni
+              ? "bg-red-500/20 text-red-400 hover:bg-red-500/30"
+              : "bg-accent/15 text-accent hover:bg-accent/25"
+          }`}
+        >
+          {pracuje ? "Ukládám..." : aktivni ? "Vypnout údržbu" : "Zapnout údržbu"}
+        </button>
+      </div>
+    </Sekce>
   );
 }
 
