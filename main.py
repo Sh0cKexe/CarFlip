@@ -528,13 +528,27 @@ def zpracuj_auto_domaci(nalez, cfg, zdroj_trh, uz_videno=databaze.uz_videno,
 MAX_STRAN_PRVNI = 25
 
 
+def _rozbalni_znacky(znacky_raw):
+    """Vrati list (znacka, modely) pro oba formaty filtru:
+    stary: ["volkswagen", "bmw"] -> [("volkswagen", []), ("bmw", [])]
+    novy:  [{"znacka": "volkswagen", "modely": ["golf"]}] -> [("volkswagen", ["golf"])]
+    Prazdne modely = hledat vsechny modely dane znacky (puvodni chovani)."""
+    result = []
+    for item in (znacky_raw or []):
+        if isinstance(item, str):
+            result.append((item, []))
+        else:
+            result.append((item["znacka"], item.get("modely") or []))
+    return result
+
+
 def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
               oznac_videno=databaze.oznac_videno):
     trh = cfg.get("trh", "cz")
     kurz_pln = kurz.kurz_pln_eur() if trh == "sk" else kurz.kurz_pln_czk()
     print("Kurz: 1 PLN =", round(kurz_pln, 4), TEXTY.get(trh, TEXTY["cz"])["mena"])
     filtry = cfg["filtry"]
-    znacky = filtry.get("znacky", [])
+    znacky_modely = _rozbalni_znacky(filtry.get("znacky", []))
     # Zdrojove trhy: "pl" (Otomoto, import) + volitelne "cz"/"sk" (Bazos
     # primo jako zdroj, srovnani uvnitr stejneho trhu). Vychozi ["pl"]
     # zachovava puvodni chovani pro vsechny existujici uzivatele.
@@ -548,19 +562,20 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
 
     if "pl" in zdroje:
         okruhy_pl = [o for o in vsechny_okruhy if o.get("zeme", "pl") == "pl"] or [None]
-        for znacka in znacky:
-            for okruh in okruhy_pl:
-                kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cele Polsko"
-                print("Kontroluji (PL):", znacka, "|", kde)
-                auta = otomoto.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh)
-                print("  nalezeno {} inzeratu".format(len(auta)))
-                for auto in auta:
-                    try:
-                        if zpracuj_auto(auto, cfg, kurz_pln, uz_videno, oznac_videno):
-                            poslano += 1
-                    except Exception as e:
-                        print("  chyba u auta:", e)
-                time.sleep(1)
+        for znacka, modely in znacky_modely:
+            for model in (modely if modely else [None]):
+                for okruh in okruhy_pl:
+                    kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cele Polsko"
+                    print("Kontroluji (PL):", znacka, model or "", "|", kde)
+                    auta = otomoto.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh, model=model)
+                    print("  nalezeno {} inzeratu".format(len(auta)))
+                    for auto in auta:
+                        try:
+                            if zpracuj_auto(auto, cfg, kurz_pln, uz_videno, oznac_videno):
+                                poslano += 1
+                        except Exception as e:
+                            print("  chyba u auta:", e)
+                    time.sleep(1)
 
     for zahranicni_trh, modul in ZAHRANICNI_MODULY.items():
         if zahranicni_trh not in zdroje:
@@ -575,31 +590,32 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
         filtry_zeme["min_cena_eur"] = cena_zeme.get("min")
 
         okruhy_zahr = [o for o in vsechny_okruhy if o.get("zeme") == zahranicni_trh] or [None]
-        for znacka in znacky:
-            for okruh in okruhy_zahr:
-                if okruh and okruh.get("area_id"):
-                    kde = okruh.get("nazev", "?")
-                elif okruh and okruh.get("okruh_km"):
-                    kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km"
-                else:
-                    kde = "cela zeme"
-                print("Kontroluji ({}):".format(zahranicni_trh.upper()), znacka, "|", kde)
-                auta = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh)
-                print("  nalezeno {} inzeratu".format(len(auta)))
-                for auto in auta:
-                    try:
-                        if zpracuj_auto_zahranicni(auto, cfg, zahranicni_trh, uz_videno, oznac_videno):
-                            poslano += 1
-                    except Exception as e:
-                        print("  chyba u auta:", e)
-                time.sleep(1)
+        for znacka, modely in znacky_modely:
+            for model in (modely if modely else [None]):
+                for okruh in okruhy_zahr:
+                    if okruh and okruh.get("area_id"):
+                        kde = okruh.get("nazev", "?")
+                    elif okruh and okruh.get("okruh_km"):
+                        kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km"
+                    else:
+                        kde = "cela zeme"
+                    print("Kontroluji ({}):".format(zahranicni_trh.upper()), znacka, model or "", "|", kde)
+                    auta = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh, model=model)
+                    print("  nalezeno {} inzeratu".format(len(auta)))
+                    for auto in auta:
+                        try:
+                            if zpracuj_auto_zahranicni(auto, cfg, zahranicni_trh, uz_videno, oznac_videno):
+                                poslano += 1
+                        except Exception as e:
+                            print("  chyba u auta:", e)
+                    time.sleep(1)
 
     for domaci_trh in ("cz", "sk"):
         if domaci_trh not in zdroje:
             continue
         okruhy_dom = [o for o in vsechny_okruhy if o.get("zeme") == domaci_trh] or [None]
         min_srovnani = cfg.get("min_srovnani", MIN_SROVNANI)
-        for znacka in znacky:
+        for znacka, _ in znacky_modely:
             for okruh in okruhy_dom:
                 kde = okruh.get("nazev", "?") if okruh else "cely trh {}".format(domaci_trh.upper())
                 print("Kontroluji (Bazos {}):".format(domaci_trh.upper()), znacka, "|", kde)

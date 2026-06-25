@@ -36,17 +36,18 @@ def _najdi_pl(cfg, kurz_pln):
 
     videno_id = set()
     auta = []
-    for znacka in filtry.get("znacky", []):
-        for okruh in okruhy:
-            try:
-                davka = otomoto.nacti_inzeraty(znacka, filtry, max_stran=MAX_STRAN, okruh=okruh)
-            except Exception as e:
-                print("  chyba Otomoto:", e)
-                continue
-            for a in davka:
-                if a["id"] not in videno_id:
-                    videno_id.add(a["id"])
-                    auta.append(a)
+    for znacka, modely in main._rozbalni_znacky(filtry.get("znacky", [])):
+        for model in (modely if modely else [None]):
+            for okruh in okruhy:
+                try:
+                    davka = otomoto.nacti_inzeraty(znacka, filtry, max_stran=MAX_STRAN, okruh=okruh, model=model)
+                except Exception as e:
+                    print("  chyba Otomoto:", e)
+                    continue
+                for a in davka:
+                    if a["id"] not in videno_id:
+                        videno_id.add(a["id"])
+                        auta.append(a)
     print("PL: k vyhodnoceni {} aut".format(len(auta)))
 
     vysledky = []
@@ -97,7 +98,7 @@ def _najdi_domaci(cfg, zdroj_trh):
     okruhy = [o for o in (filtry.get("oblasti") or []) if o.get("zeme") == zdroj_trh] or [None]
 
     vysledky = []
-    for znacka in filtry.get("znacky", []):
+    for znacka, _ in main._rozbalni_znacky(filtry.get("znacky", [])):
         for okruh in okruhy:
             try:
                 nalezy = bazos.najdi_podhodnocene(
@@ -143,17 +144,18 @@ def _najdi_zahranicni(cfg, zahranicni_trh, modul):
 
     videno_id = set()
     auta = []
-    for znacka in filtry.get("znacky", []):
-        for okruh in okruhy:
-            try:
-                davka = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=MAX_STRAN, okruh=okruh, zeme=zahranicni_trh)
-            except Exception as e:
-                print("  chyba {}:".format(zahranicni_trh.upper()), e)
-                continue
-            for a in davka:
-                if a["id"] not in videno_id:
-                    videno_id.add(a["id"])
-                    auta.append(a)
+    for znacka, modely in main._rozbalni_znacky(filtry.get("znacky", [])):
+        for model in (modely if modely else [None]):
+            for okruh in okruhy:
+                try:
+                    davka = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=MAX_STRAN, okruh=okruh, zeme=zahranicni_trh, model=model)
+                except Exception as e:
+                    print("  chyba {}:".format(zahranicni_trh.upper()), e)
+                    continue
+                for a in davka:
+                    if a["id"] not in videno_id:
+                        videno_id.add(a["id"])
+                        auta.append(a)
     print("{}: k vyhodnoceni {} aut".format(zahranicni_trh.upper(), len(auta)))
 
     vysledky = []

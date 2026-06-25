@@ -61,13 +61,26 @@ KAROSERIE_MAP = {
 # Plynove palivo - kody AutoScout24 (allFuelTypes/fuel obsahuje neco z tohoto)
 PLYN_SLOVA = ("lpg", "autogas", "cng", "erdgas")
 
+# Modely ktere maji jiny slug na AutoScout24 nez na Otomoto (BMW seria-X -> Xer,
+# Mercedes klasa-X -> X-klasse). Ostatni modely maji stejny slug.
+AS24_MODEL_SLUG = {
+    "seria-1": "1er", "seria-2": "2er", "seria-3": "3er", "seria-4": "4er",
+    "seria-5": "5er", "seria-6": "6er", "seria-7": "7er",
+    "klasa-a": "a-klasse", "klasa-b": "b-klasse", "klasa-c": "c-klasse",
+    "klasa-e": "e-klasse", "klasa-s": "s-klasse",
+}
 
-def _sestav_url(znacka, filtry, strana, zeme, okruh=None):
+
+def _sestav_url(znacka, filtry, strana, zeme, okruh=None, model=None):
     """
     Sestavi URL pro vyhledavani na AutoScout24 podle filtru.
     okruh = None -> cela zeme; jinak dict {plz, okruh_km}.
+    model = "golf" -> jen tento model v URL path (/lst/volkswagen/golf).
     """
+    slug_modelu = AS24_MODEL_SLUG.get(model, model) if model else None
     base = "https://{}/lst/{}".format(DOMENA[zeme], znacka)
+    if slug_modelu:
+        base += "/" + slug_modelu
     params = {
         "atype": "C",
         "sort": "age",
@@ -192,14 +205,14 @@ def _zpracuj_listing(item, zeme):
     }
 
 
-def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="de"):
+def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="de", model=None):
     """Stahne inzeraty pro danou znacku (nejnovejsi nahore). Vraci seznam slovniku."""
     vysledky = []
     session = requests.Session()
     session.headers.update(HEADERS)
 
     for strana in range(1, max_stran + 1):
-        base, params = _sestav_url(znacka, filtry, strana, zeme, okruh=okruh)
+        base, params = _sestav_url(znacka, filtry, strana, zeme, okruh=okruh, model=model)
         klic = json.dumps([base, sorted(params.items())])
 
         zcache = _OCHRANA["cache_get"](klic)

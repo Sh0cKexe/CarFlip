@@ -63,6 +63,14 @@ ZNACKA_MAP = {
     "volkswagen": "vw",
 }
 
+# Modely ktere maji jiny slug na Willhaben nez na Otomoto (stejne jako AS24).
+WH_MODEL_SLUG = {
+    "seria-1": "1er", "seria-2": "2er", "seria-3": "3er", "seria-4": "4er",
+    "seria-5": "5er", "seria-6": "6er", "seria-7": "7er",
+    "klasa-a": "a-klasse", "klasa-b": "b-klasse", "klasa-c": "c-klasse",
+    "klasa-e": "e-klasse", "klasa-s": "s-klasse",
+}
+
 # Willhaben NEMA radius/PSC vyhledavani jako AutoScout24/Otomoto - jen
 # filtr na spolkovou zemi (areaId, zive overeno z navigatorGroups).
 # ISO3166-2-lvl4 kod z Nominatim (AT-1..AT-9) odpovida 1:1 krome Vidne
@@ -86,10 +94,16 @@ NEHAVAROVANE_FRAZE = (
 )
 
 
-def _sestav_url(znacka, filtry, strana, okruh=None):
+def _sestav_url(znacka, filtry, strana, okruh=None, model=None):
     """Sestavi URL pro vyhledavani na Willhaben.
-    okruh = None -> cele Rakousko; jinak dict {area_id: 1-9}."""
-    base = "https://{}/iad/gebrauchtwagen/auto/{}".format(DOMENA, ZNACKA_MAP.get(znacka, znacka))
+    okruh = None -> cele Rakousko; jinak dict {area_id: 1-9}.
+    model = "golf" -> jen tento model v URL path (/iad/.../auto/vw/golf).
+    """
+    slug_modelu = WH_MODEL_SLUG.get(model, model) if model else None
+    znacka_wh = ZNACKA_MAP.get(znacka, znacka)
+    base = "https://{}/iad/gebrauchtwagen/auto/{}".format(DOMENA, znacka_wh)
+    if slug_modelu:
+        base += "/" + slug_modelu
     params = {"page": str(strana)}
 
     if okruh and okruh.get("area_id"):
@@ -211,7 +225,7 @@ def _zpracuj_listing(ad):
     }
 
 
-def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="at"):
+def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="at", model=None):
     """Stahne inzeraty pro danou znacku (nejnovejsi nahore). Vraci seznam slovniku.
     `zeme` parametr je tu jen pro spolecne rozhrani se zahranicnimi moduly
     (Willhaben je jen pro Rakousko, parametr se ignoruje)."""
@@ -220,7 +234,7 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, zeme="at"
     session.headers.update(HEADERS)
 
     for strana in range(1, max_stran + 1):
-        base, params, extra = _sestav_url(znacka, filtry, strana, okruh=okruh)
+        base, params, extra = _sestav_url(znacka, filtry, strana, okruh=okruh, model=model)
         klic = json.dumps([base, extra, sorted(params.items())])
 
         zcache = _OCHRANA["cache_get"](klic)

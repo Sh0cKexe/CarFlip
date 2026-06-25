@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, CenovePole, VicevyberMenu, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
+import { MODELY_MAP, type ZnackaFiltr } from "@/lib/znacky-modely";
 import { useKurz, prevod, type Mena } from "@/lib/kurz";
 import { BARVA_ZEME } from "@/lib/zemeBarvy";
 
@@ -20,7 +21,7 @@ type Oblast = {
 };
 
 type Filtry = {
-  znacky: string[];
+  znacky: ZnackaFiltr[];
   palivo: string[];
   prevodovka: string;
   oblasti: Oblast[];
@@ -82,10 +83,17 @@ const ZNAME_ZNACKY = [
   "toyota", "volkswagen", "volvo",
 ].sort();
 
+function normalizeZnacky(raw: any[]): ZnackaFiltr[] {
+  return (raw ?? []).map((z) => typeof z === "string" ? { znacka: z, modely: [] } : z);
+}
+
 export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaveni | null; jeAdmin?: boolean }) {
   const supabase = createClient();
   const [n, setN] = useState<Nastaveni>(
-    nastaveni ?? {
+    nastaveni ? {
+      ...nastaveni,
+      filtry: { ...nastaveni.filtry, znacky: normalizeZnacky(nastaveni.filtry?.znacky) },
+    } : {
       user_id: "", trh: "cz",
       filtry: {
         znacky: [], palivo: [], prevodovka: "vse", oblasti: [],
@@ -171,7 +179,11 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     }
   }
 
-  const vybraneZname = useMemo(() => new Set(n.filtry.znacky), [n.filtry.znacky]);
+  const vybraneZnacky = useMemo(() => {
+    const m = new Map<string, ZnackaFiltr>();
+    for (const z of n.filtry.znacky) m.set(z.znacka, z);
+    return m;
+  }, [n.filtry.znacky]);
   const filtrovaneZname = useMemo(
     () => ZNAME_ZNACKY.filter((z) => z.includes(hledatZnacku.trim().toLowerCase())),
     [hledatZnacku]
@@ -182,10 +194,23 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
   }
 
   function prepnoutZnacku(znacka: string) {
-    const aktualni = new Set(n.filtry.znacky);
+    const aktualni = new Map(vybraneZnacky);
     if (aktualni.has(znacka)) aktualni.delete(znacka);
-    else aktualni.add(znacka);
-    setFiltr("znacky", Array.from(aktualni));
+    else aktualni.set(znacka, { znacka, modely: [] });
+    setFiltr("znacky", Array.from(aktualni.values()));
+  }
+
+  function setModelyZnacky(znacka: string, modely: string[]) {
+    setFiltr("znacky", n.filtry.znacky.map((z) => z.znacka === znacka ? { ...z, modely } : z));
+  }
+
+  function prepnoutModelZnacky(znacka: string, model: string) {
+    const zf = vybraneZnacky.get(znacka);
+    if (!zf) return;
+    const aktualni = new Set(zf.modely);
+    if (aktualni.has(model)) aktualni.delete(model);
+    else aktualni.add(model);
+    setModelyZnacky(znacka, Array.from(aktualni));
   }
 
   function prepnoutZdroj(zdroj: Zeme) {
@@ -345,27 +370,53 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
           </div>
         </Sekce>
 
-        <Sekce titulek={t.znacky} badge={{ text: `${vybraneZname.size} ${t.vybrano}`, tone: vybraneZname.size > 0 ? "green" : "zinc" }}>
-          {vybraneZname.size > 0 && (
-            <div className="mb-3 flex flex-wrap gap-1.5 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
-              {Array.from(vybraneZname).sort().map((z) => (
-                <span
-                  key={z}
-                  className="flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent"
-                >
-                  {z}
-                  <button type="button" onClick={() => prepnoutZnacku(z)} className="text-accent/70 hover:text-accent" aria-label={t.smazat}>
-                    ×
-                  </button>
-                </span>
-              ))}
-              <button
-                type="button"
-                onClick={() => setFiltr("znacky", [])}
-                className="rounded-full px-2.5 py-1 text-xs text-zinc-400 underline hover:text-zinc-200"
-              >
-                {t.zrusit}
-              </button>
+        <Sekce titulek={t.znacky} badge={{ text: `${vybraneZnacky.size} ${t.vybrano}`, tone: vybraneZnacky.size > 0 ? "green" : "zinc" }}>
+          {vybraneZnacky.size > 0 && (
+            <div className="mb-3 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
+              <div className="flex flex-wrap gap-1.5">
+                {Array.from(vybraneZnacky.values()).sort((a, b) => a.znacka.localeCompare(b.znacka)).map((zf) => (
+                  <span key={zf.znacka} className="flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
+                    {zf.znacka}
+                    {zf.modely.length > 0 && <span className="text-accent/50">·{zf.modely.length}</span>}
+                    <button type="button" onClick={() => prepnoutZnacku(zf.znacka)} className="text-accent/70 hover:text-accent" aria-label={t.smazat}>×</button>
+                  </span>
+                ))}
+                <button type="button" onClick={() => setFiltr("znacky", [])} className="rounded-full px-2.5 py-1 text-xs text-zinc-400 underline hover:text-zinc-200">
+                  {t.zrusit}
+                </button>
+              </div>
+              {Array.from(vybraneZnacky.values()).map((zf) => {
+                const def = MODELY_MAP.get(zf.znacka);
+                if (!def || def.modely.length === 0) return null;
+                return (
+                  <div key={zf.znacka} className="mt-2.5 border-t border-accent/10 pt-2.5">
+                    <p className="mb-1.5 text-xs font-medium text-zinc-400">{def.label} — model:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setModelyZnacky(zf.znacka, [])}
+                        className={`rounded-full border px-2.5 py-0.5 text-xs transition ${
+                          zf.modely.length === 0 ? "border-accent bg-accent/15 text-accent" : "border-border text-zinc-400 hover:border-zinc-500"
+                        }`}
+                      >
+                        Vše
+                      </button>
+                      {def.modely.map((m) => (
+                        <button
+                          key={m.slug}
+                          type="button"
+                          onClick={() => prepnoutModelZnacky(zf.znacka, m.slug)}
+                          className={`rounded-full border px-2.5 py-0.5 text-xs transition ${
+                            zf.modely.includes(m.slug) ? "border-accent bg-accent/15 text-accent" : "border-border text-zinc-400 hover:border-zinc-500"
+                          }`}
+                        >
+                          {m.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
           <input
@@ -382,10 +433,10 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
               <label
                 key={z}
                 className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-1.5 text-sm transition ${
-                  vybraneZname.has(z) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
+                  vybraneZnacky.has(z) ? "border-accent bg-accent/10 text-accent" : "border-border bg-panel2 text-zinc-300 hover:border-zinc-500"
                 }`}
               >
-                <input type="checkbox" checked={vybraneZname.has(z)} onChange={() => prepnoutZnacku(z)} className="hidden" />
+                <input type="checkbox" checked={vybraneZnacky.has(z)} onChange={() => prepnoutZnacku(z)} className="hidden" />
                 {z}
               </label>
             ))}

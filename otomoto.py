@@ -58,16 +58,19 @@ def _km_na_kw(km):
     return int(round(km * 0.7355))
 
 
-def _sestav_url(znacka, filtry, strana=1, okruh=None):
+def _sestav_url(znacka, filtry, strana=1, okruh=None, model=None):
     """
     Sestavi URL pro vyhledavani na Otomoto podle filtru.
     okruh = None  -> cele Polsko
     okruh = {"mesto_slug": "wroclaw", "okruh_km": 50} -> mesto + polomer
+    model = "golf" -> filtrovat jen tento model (/osobowe/volkswagen/golf/...)
     """
-    base = "https://www.otomoto.pl/osobowe/{}".format(znacka)
+    segmenty = [znacka]
+    if model:
+        segmenty.append(model)
     if okruh and okruh.get("mesto_slug"):
-        base = "https://www.otomoto.pl/osobowe/{}/{}".format(
-            znacka, okruh["mesto_slug"])
+        segmenty.append(okruh["mesto_slug"])
+    base = "https://www.otomoto.pl/osobowe/" + "/".join(segmenty)
     params = {
         "search[order]": "created_at_first:desc",  # nejnovejsi nahore
         "search[advanced_search_expanded]": "true",
@@ -205,10 +208,11 @@ def _zpracuj_node(node):
     }
 
 
-def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None):
+def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None, model=None):
     """
     Stahne inzeraty pro danou znacku (nejnovejsi nahore).
     okruh = None -> cele Polsko; jinak dict {mesto_slug, okruh_km}.
+    model = "golf" -> jen tento model v URL path.
     Vraci seznam slovniku.
     """
     vysledky = []
@@ -216,7 +220,7 @@ def nacti_inzeraty(znacka, filtry, max_stran=1, pauza=1.0, okruh=None):
     session.headers.update(HEADERS)
 
     for strana in range(1, max_stran + 1):
-        base, params = _sestav_url(znacka, filtry, strana, okruh=okruh)
+        base, params = _sestav_url(znacka, filtry, strana, okruh=okruh, model=model)
         klic = json.dumps([base, sorted(params.items())])
 
         zcache = _OCHRANA["cache_get"](klic)
