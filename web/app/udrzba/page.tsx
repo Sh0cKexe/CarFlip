@@ -26,9 +26,6 @@ export default function UdrzbaPage() {
           </svg>
           Připojit se na Discord
         </a>
-        <p className="mt-6 text-xs text-zinc-600">
-          Brzy budeme zpět. Díky za trpělivost.
-        </p>
       </div>
     </main>
   );

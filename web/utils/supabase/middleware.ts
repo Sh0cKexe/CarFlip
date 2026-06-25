@@ -32,13 +32,21 @@ export async function updateSession(request: NextRequest) {
 
   const isAdmin = user?.email != null && user.email === process.env.ADMIN_EMAIL;
   const isStaticFile = /\.[^/]+$/.test(path);
-  const skipUdrzba = isAdmin || isStaticFile
-    || path.startsWith("/udrzba") || path.startsWith("/admin") || path.startsWith("/api/admin");
-  if (!skipUdrzba) {
+  const skipKonfig = isAdmin || isStaticFile || path.startsWith("/admin") || path.startsWith("/api/admin");
+
+  if (!skipKonfig) {
     const { data: konfig } = await supabase.from("konfigurace").select("hodnota").eq("klic", "udrzba").single();
-    if (konfig?.hodnota === "true") {
+    const udrzbaAktivni = konfig?.hodnota === "true";
+
+    if (udrzbaAktivni && !path.startsWith("/udrzba")) {
       const url = request.nextUrl.clone();
       url.pathname = "/udrzba";
+      return NextResponse.redirect(url);
+    }
+
+    if (!udrzbaAktivni && path.startsWith("/udrzba")) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
       return NextResponse.redirect(url);
     }
   }
