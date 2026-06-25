@@ -172,6 +172,7 @@ create table if not exists public.auta (
 -- Pro existujici instalace (puvodni create table uz probehl bez datumu):
 alter table public.auta add column if not exists datum_koupeno date;
 alter table public.auta add column if not exists datum_prodano date;
+alter table public.auta add column if not exists datum_inzerce date;
 alter table public.auta add column if not exists najezd_km integer;
 
 create table if not exists public.naklady (

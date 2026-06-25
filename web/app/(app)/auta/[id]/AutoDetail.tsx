@@ -16,6 +16,7 @@ type Auto = {
   cena_koupeno_kc: number | null;
   cena_prodano_kc: number | null;
   datum_koupeno: string | null;
+  datum_inzerce: string | null;
   datum_prodano: string | null;
   najezd_km: number | null;
   poznamky: string;
@@ -106,6 +107,14 @@ export default function AutoDetail({
     setAuto({ ...auto, [klic]: hodnota });
   }
 
+  function onStavChange(novaStav: string) {
+    const update: Partial<Auto> = { stav: novaStav };
+    if (novaStav === "inzerce" && !auto.datum_inzerce) {
+      update.datum_inzerce = dnesIso();
+    }
+    setAuto({ ...auto, ...update });
+  }
+
   async function ulozit() {
     setUklada(true);
     setZprava(null);
@@ -116,6 +125,7 @@ export default function AutoDetail({
         stav: auto.stav,
         cena_koupeno_kc: auto.cena_koupeno_kc,
         datum_koupeno: auto.datum_koupeno,
+        datum_inzerce: auto.datum_inzerce,
         najezd_km: auto.najezd_km,
         poznamky: auto.poznamky,
       })
@@ -151,8 +161,11 @@ export default function AutoDetail({
   }
 
   async function zrusitProdej() {
-    await supabase.from("auta").update({ stav: "koupeno" }).eq("id", auto.id);
-    setAuto({ ...auto, stav: "koupeno" });
+    await supabase
+      .from("auta")
+      .update({ stav: "koupeno", cena_prodano_kc: null, datum_prodano: null })
+      .eq("id", auto.id);
+    setAuto({ ...auto, stav: "koupeno", cena_prodano_kc: null, datum_prodano: null });
   }
 
   async function pridatNaklad() {
@@ -344,7 +357,7 @@ export default function AutoDetail({
                   <select
                     className={input}
                     value={auto.stav === "prodano" ? "koupeno" : auto.stav}
-                    onChange={(e) => setPole("stav", e.target.value)}
+                    onChange={(e) => onStavChange(e.target.value)}
                     disabled={auto.stav === "prodano"}
                   >
                     <option value="koupeno">{t.koupeno}</option>
@@ -363,6 +376,14 @@ export default function AutoDetail({
                   <input
                     type="date" className={input} value={auto.datum_koupeno ?? ""}
                     onChange={(e) => setPole("datum_koupeno", e.target.value || null)}
+                  />
+                </Pole>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Pole label={t.datumInzerce}>
+                  <input
+                    type="date" className={input} value={auto.datum_inzerce ?? ""}
+                    onChange={(e) => setPole("datum_inzerce", e.target.value || null)}
                   />
                 </Pole>
               </div>
