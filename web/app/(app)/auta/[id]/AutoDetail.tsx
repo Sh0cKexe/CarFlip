@@ -121,9 +121,8 @@ export default function AutoDetail({
   }
 
   async function zmenitStav(novaStav: "koupeno") {
-    const update: Partial<Auto> = { stav: novaStav };
-    await supabase.from("auta").update(update).eq("id", auto.id);
-    setAuto({ ...auto, ...update });
+    await supabase.from("auta").update({ stav: novaStav, datum_inzerce: null }).eq("id", auto.id);
+    setAuto({ ...auto, stav: novaStav, datum_inzerce: null });
     setStavMenuOtevren(false);
   }
 
@@ -395,10 +394,6 @@ export default function AutoDetail({
         <StatKarta
           label={t.dobaProdeje}
           hodnota={dobaProdejeDny(auto) != null ? `${dobaProdejeDny(auto)} ${t.dni}` : "—"}
-        />
-        <StatKarta
-          label={t.najezd}
-          hodnota={auto.najezd_km != null ? `${auto.najezd_km.toLocaleString("cs-CZ")} km` : "—"}
         />
       </div>
       <div className="mb-6 border-t border-border/60" />
