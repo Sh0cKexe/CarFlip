@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
@@ -45,19 +45,7 @@ export default function AutaList({
   const [novyDatum, setNovyDatum] = useState(dnesIso());
   const [novaCena, setNovaCena] = useState("");
   const [novaPoznamka, setNovaPoznamka] = useState("");
-  const [fotoUrls, setFotoUrls] = useState<Record<string, string>>({});
   const t = T(trh);
-
-  useEffect(() => {
-    const paths = auta.flatMap((a) => a.fotky.slice(0, 1));
-    if (paths.length === 0) return;
-    supabase.storage.from("auta-fotky").createSignedUrls(paths, 3600).then(({ data }) => {
-      const mapa: Record<string, string> = {};
-      (data ?? []).forEach((d) => { if (d.signedUrl && d.path) mapa[d.path] = d.signedUrl; });
-      setFotoUrls(mapa);
-    });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auta]);
 
   async function vytvoritAuto() {
     if (!novyNazev.trim()) return;
@@ -104,7 +92,6 @@ export default function AutaList({
             nazev={nazev}
             auta={sekceAuta}
             nakladySuma={nakladySuma}
-            fotoUrls={fotoUrls}
             t={t}
           />
         ))}
@@ -168,13 +155,12 @@ export default function AutaList({
 }
 
 function SekceAut({
-  ikona, nazev, auta, nakladySuma, fotoUrls, t,
+  ikona, nazev, auta, nakladySuma, t,
 }: {
   ikona: string;
   nazev: string;
   auta: Auto[];
   nakladySuma: Record<string, number>;
-  fotoUrls: Record<string, string>;
   t: ReturnType<typeof T>;
 }) {
   const router = useRouter();
@@ -196,7 +182,6 @@ function SekceAut({
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/60 text-left text-xs text-zinc-500">
-              <th className="w-12 px-3 py-2.5" />
               <th className="whitespace-nowrap px-4 py-2.5 font-medium">Auto</th>
               <th className="whitespace-nowrap px-4 py-2.5 font-medium">{t.datumKoupeno}</th>
               <th className="whitespace-nowrap px-4 py-2.5 font-medium">{t.datumInzerce}</th>
@@ -211,7 +196,7 @@ function SekceAut({
           <tbody>
             {auta.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-6 py-5 text-center text-sm text-zinc-600">{t.zadneAuto}</td>
+                <td colSpan={9} className="px-6 py-5 text-center text-sm text-zinc-600">{t.zadneAuto}</td>
               </tr>
             ) : (
               auta.map((a, i) => {
@@ -221,7 +206,6 @@ function SekceAut({
                   a.cena_koupeno_kc != null && a.cena_prodano_kc != null
                     ? a.cena_prodano_kc - a.cena_koupeno_kc - naklady
                     : null;
-                const prvniFoto = a.fotky[0] ? fotoUrls[a.fotky[0]] : null;
                 return (
                   <motion.tr
                     key={a.id}
@@ -231,14 +215,6 @@ function SekceAut({
                     onClick={() => router.push(`/auta/${a.id}`)}
                     className="cursor-pointer border-b border-border/40 transition-colors last:border-0 hover:bg-white/[0.03]"
                   >
-                    <td className="px-3 py-2">
-                      {prvniFoto ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={prvniFoto} alt="" className="h-10 w-10 rounded object-cover" />
-                      ) : (
-                        <div className="h-10 w-10 rounded bg-zinc-700/40" />
-                      )}
-                    </td>
                     <td className="max-w-[180px] truncate px-4 py-3 font-medium text-zinc-100">{a.titulek || t.bezNazvu}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-zinc-400">{formatDatum(a.datum_koupeno)}</td>
                     <td className="whitespace-nowrap px-4 py-3 text-zinc-400">{formatDatum(a.datum_inzerce)}</td>
