@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, CenovePole, VicevyberMenu, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
@@ -106,6 +106,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
+  const [hledaSeOblast, setHledaSeOblast] = useState<number | null>(null);
   const zdroje = n.filtry.zdroje ?? ["pl"];
   const [najdiTedOdesilani, setNajdiTedOdesilani] = useState(false);
   const [najdiTedStav, setNajdiTedStav] = useState<string | null>(n.najdi_ted_stav ?? null);
@@ -240,20 +241,25 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     kopie[i] = { ...kopie[i], ...zmeny };
     setFiltr("oblasti", kopie);
   }
-  // Kdyz oblast jeste nema pin (rucne pridana tlacitkem, ne klikem do
-  // mapy) a uzivatel dopise nazev mesta, dohleda se dopredne pres
-  // /api/geokod (nazev -> souradnice) - aby se pin objevil i bez kliku.
+  // Kdyz uzivatel rucne napise/prepise nazev mesta (misto kliku do mapy),
+  // po opusteni pole se dohleda dopredne pres /api/geokod (nazev ->
+  // souradnice), at se pin objevi/aktualizuje i bez kliku. naposledyRef
+  // hlida, jestli se text od fokusu opravdu zmenil - jinak by kazdy
+  // odchod z pole (i bez zmeny) zbytecne posilal dotaz na Nominatim a
+  // mohl by prepsat presny pin z mapy hruboursi shodou podle nazvu.
+  const naposledyZadanyNazevRef = useRef<Record<number, string>>({});
   async function dohledatMestoPodleNazvu(i: number) {
     const o = n.filtry.oblasti[i];
-    if (o.lat != null && o.lon != null) return;
     const nazev = o.nazev.trim();
     if (!nazev) return;
+    setHledaSeOblast(i);
     const r = await fetch("/api/geokod", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dotaz: nazev }),
     });
     const j = await r.json();
+    setHledaSeOblast(null);
     if (!r.ok) {
       setZprava("Geokódování: " + (j.error || "město se nepodařilo najít."));
       return;
@@ -571,9 +577,17 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                 <Pole label={t.nazev}>
                   <input
                     className={input} value={o.nazev}
+                    onFocus={() => { naposledyZadanyNazevRef.current[i] = o.nazev; }}
                     onChange={(e) => upravitOblast(i, "nazev", e.target.value)}
-                    onBlur={() => dohledatMestoPodleNazvu(i)}
+                    onBlur={() => {
+                      if (naposledyZadanyNazevRef.current[i] !== o.nazev) dohledatMestoPodleNazvu(i);
+                    }}
                   />
+                  {hledaSeOblast === i ? (
+                    <p className="mt-1 text-xs text-zinc-500">Hledám město…</p>
+                  ) : o.lat != null && o.lon != null ? (
+                    <p className="mt-1 text-xs text-accent">✓ pin na mapě</p>
+                  ) : null}
                   {o.zeme === "de" || o.zeme === "it" ? (
                     <p className="mt-1 text-xs text-zinc-500">PSC: {o.plz ?? "?"}</p>
                   ) : null}

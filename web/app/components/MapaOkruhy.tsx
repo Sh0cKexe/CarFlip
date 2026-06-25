@@ -59,7 +59,7 @@ export default function MapaOkruhy({
         />
         <GeoJSON
           data={HRANICE_UNIE}
-          style={() => ({ fillOpacity: 0, color: "#22c55e", weight: 2, interactive: false })}
+          style={() => ({ fillOpacity: 0, color: "#ffffff", weight: 1.5, opacity: 0.6, dashArray: "4 4", interactive: false })}
         />
         <KlikHandler onKlik={onKlik} />
         <DorovnatZaber />
