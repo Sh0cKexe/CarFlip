@@ -235,6 +235,31 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
   function odebratOblast(i: number) {
     setFiltr("oblasti", n.filtry.oblasti.filter((_, idx) => idx !== i));
   }
+  function patchOblast(i: number, zmeny: Partial<Oblast>) {
+    const kopie = [...n.filtry.oblasti];
+    kopie[i] = { ...kopie[i], ...zmeny };
+    setFiltr("oblasti", kopie);
+  }
+  // Kdyz oblast jeste nema pin (rucne pridana tlacitkem, ne klikem do
+  // mapy) a uzivatel dopise nazev mesta, dohleda se dopredne pres
+  // /api/geokod (nazev -> souradnice) - aby se pin objevil i bez kliku.
+  async function dohledatMestoPodleNazvu(i: number) {
+    const o = n.filtry.oblasti[i];
+    if (o.lat != null && o.lon != null) return;
+    const nazev = o.nazev.trim();
+    if (!nazev) return;
+    const r = await fetch("/api/geokod", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dotaz: nazev }),
+    });
+    const j = await r.json();
+    if (!r.ok) {
+      setZprava("Geokódování: " + (j.error || "město se nepodařilo najít."));
+      return;
+    }
+    patchOblast(i, { nazev: j.nazev, mesto_slug: j.slug, lat: j.lat, lon: j.lon, zeme: j.zeme, plz: j.plz, areaId: j.areaId });
+  }
   function upravitOblast(i: number, klic: keyof Oblast, hodnota: string | number) {
     const kopie = [...n.filtry.oblasti];
     kopie[i] = { ...kopie[i], [klic]: hodnota };
@@ -544,7 +569,11 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                   </select>
                 </Pole>
                 <Pole label={t.nazev}>
-                  <input className={input} value={o.nazev} onChange={(e) => upravitOblast(i, "nazev", e.target.value)} />
+                  <input
+                    className={input} value={o.nazev}
+                    onChange={(e) => upravitOblast(i, "nazev", e.target.value)}
+                    onBlur={() => dohledatMestoPodleNazvu(i)}
+                  />
                   {o.zeme === "de" || o.zeme === "it" ? (
                     <p className="mt-1 text-xs text-zinc-500">PSC: {o.plz ?? "?"}</p>
                   ) : null}

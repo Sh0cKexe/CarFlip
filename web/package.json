@@ -13,7 +13,6 @@
     "@supabase/supabase-js": "^2.45.4",
     "@turf/bbox": "^7.3.5",
     "@turf/helpers": "^7.3.5",
-    "@turf/mask": "^7.3.5",
     "@turf/union": "^7.3.5",
     "framer-motion": "^12.40.0",
     "leaflet": "^1.9.4",
