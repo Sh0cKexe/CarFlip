@@ -18,7 +18,7 @@ export default async function DashboardPage() {
     { count: aiMechanikChatu },
   ] = await Promise.all([
     getTrh(user.id),
-    supabase.from("auta").select("id, titulek, stav, cena_koupeno_kc, cena_prodano_kc, datum_koupeno, datum_prodano").eq("user_id", user.id),
+    supabase.from("auta").select("id, titulek, stav, cena_koupeno_kc, cena_prodano_kc, datum_koupeno, datum_inzerce, datum_prodano").eq("user_id", user.id),
     supabase.from("naklady").select("auto_id, castka_kc").eq("user_id", user.id),
     supabase.from("ukoly").select("id, auto_id, text").eq("user_id", user.id).eq("hotovo", false).order("vytvoreno", { ascending: true }),
     supabase.from("ai_rozbory").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("vytvoreno", zacatekMesice()),
@@ -54,8 +54,8 @@ export default async function DashboardPage() {
       if (a.cena_koupeno_kc != null && a.cena_prodano_kc != null) {
         celkovyZisk += a.cena_prodano_kc - a.cena_koupeno_kc - (nakladySuma[a.id] ?? 0);
       }
-      if (a.datum_koupeno && a.datum_prodano) {
-        const dny = (new Date(a.datum_prodano).getTime() - new Date(a.datum_koupeno).getTime()) / 86400000;
+      if (a.datum_inzerce && a.datum_prodano) {
+        const dny = (new Date(a.datum_prodano).getTime() - new Date(a.datum_inzerce).getTime()) / 86400000;
         if (dny >= 0) {
           soucetDniDrzeni += dny;
           pocetSDatumy++;

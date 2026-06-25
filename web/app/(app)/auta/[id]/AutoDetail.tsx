@@ -64,6 +64,8 @@ export default function AutoDetail({
   const [prodejOtevren, setProdejOtevren] = useState(false);
   const [stavMenuOtevren, setStavMenuOtevren] = useState(false);
   const stavMenuRef = useRef<HTMLDivElement>(null);
+  const [inzerceModalOtevren, setInzerceModalOtevren] = useState(false);
+  const [inzerceDatum, setInzerceDatum] = useState(dnesIso());
   const [prodejCena, setProdejCena] = useState("");
   const [prodejDatum, setProdejDatum] = useState(dnesIso());
   const [prodavam, setProdavam] = useState(false);
@@ -118,12 +120,17 @@ export default function AutoDetail({
     setAuto({ ...auto, [klic]: hodnota });
   }
 
-  async function zmenitStav(novaStav: "koupeno" | "inzerce") {
+  async function zmenitStav(novaStav: "koupeno") {
     const update: Partial<Auto> = { stav: novaStav };
-    if (novaStav === "inzerce" && !auto.datum_inzerce) update.datum_inzerce = dnesIso();
     await supabase.from("auta").update(update).eq("id", auto.id);
     setAuto({ ...auto, ...update });
     setStavMenuOtevren(false);
+  }
+
+  async function potvrditInzerci() {
+    await supabase.from("auta").update({ stav: "inzerce", datum_inzerce: inzerceDatum }).eq("id", auto.id);
+    setAuto({ ...auto, stav: "inzerce", datum_inzerce: inzerceDatum });
+    setInzerceModalOtevren(false);
   }
 
   async function ulozit() {
@@ -331,7 +338,7 @@ export default function AutoDetail({
                     {auto.stav === "koupeno" && (
                       <button
                         type="button"
-                        onClick={() => zmenitStav("inzerce")}
+                        onClick={() => { setStavMenuOtevren(false); setInzerceDatum(auto.datum_inzerce ?? dnesIso()); setInzerceModalOtevren(true); }}
                         className="block w-full px-3 py-2 text-left text-sm text-zinc-200 transition hover:bg-sidebar2"
                       >
                         📢 V inzerci
@@ -605,6 +612,38 @@ export default function AutoDetail({
                 {lightbox + 1} / {auto.fotky.length}
               </p>
             )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {inzerceModalOtevren && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+            onClick={() => setInzerceModalOtevren(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.97 }}
+              onClick={(e) => e.stopPropagation()}
+              className="glass w-full max-w-sm rounded-2xl border border-border p-6 shadow-glow-lg"
+            >
+              <h2 className="mb-4 text-base font-semibold text-zinc-100">📢 V inzerci</h2>
+              <Pole label={t.datumInzerce}>
+                <input
+                  autoFocus type="date" className={input} value={inzerceDatum}
+                  onChange={(e) => setInzerceDatum(e.target.value)}
+                />
+              </Pole>
+              <div className="mt-5 flex justify-end gap-3">
+                <button onClick={() => setInzerceModalOtevren(false)} className={btnGhost}>{t.zrusit}</button>
+                <button onClick={potvrditInzerci} className={btnPrimary}>{t.ulozit}</button>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
