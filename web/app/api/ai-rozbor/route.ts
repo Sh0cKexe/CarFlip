@@ -273,8 +273,8 @@ export async function POST(req: Request) {
   try {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 1600,
+      model: "claude-opus-4-8",
+      max_tokens: 2048,
       system: SYSTEM_PROMPT,
       tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }],
       messages: [{ role: "user", content: obsahProAi }],

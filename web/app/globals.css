@@ -2,7 +2,7 @@
 @config "../tailwind.config.js";
 
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100vw;
   overscroll-behavior-x: none;
   touch-action: pan-y;
