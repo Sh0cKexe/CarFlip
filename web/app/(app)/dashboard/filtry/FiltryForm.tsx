@@ -361,7 +361,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
         </Sekce>
 
         <Sekce titulek={t.filtryAut}>
-          <div className="grid items-start gap-3 sm:grid-cols-3">
+          <div className="grid items-start gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-border bg-panel2/40 p-3">
               <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🚘 {t.karoserie} / {t.palivo}</p>
               <div className="grid gap-3">
@@ -422,43 +422,43 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
                 </Pole>
               </div>
             </div>
+          </div>
 
-            <div className="rounded-xl border border-border bg-panel2/40 p-3">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🛣️ {t.najezd} (km)</p>
-              <div className="grid gap-3">
-                <div>
-                  <p className="mb-1.5 text-xs text-zinc-400">{t.najezdNafta}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Pole label="od">
-                      <input
-                        type="number" className={input} value={n.filtry.min_najezd_nafta ?? 0}
-                        onChange={(e) => setFiltr("min_najezd_nafta", Number(e.target.value))}
-                      />
-                    </Pole>
-                    <Pole label="do">
-                      <input
-                        type="number" className={input} value={n.filtry.max_najezd_nafta ?? 0}
-                        onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))}
-                      />
-                    </Pole>
-                  </div>
+          <div className="mt-3 rounded-xl border border-border bg-panel2/40 p-3">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-500">🛣️ {t.najezd} (km)</p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 text-xs text-zinc-400">{t.najezdNafta}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Pole label="od">
+                    <input
+                      type="number" className={input} value={n.filtry.min_najezd_nafta ?? 0}
+                      onChange={(e) => setFiltr("min_najezd_nafta", Number(e.target.value))}
+                    />
+                  </Pole>
+                  <Pole label="do">
+                    <input
+                      type="number" className={input} value={n.filtry.max_najezd_nafta ?? 0}
+                      onChange={(e) => setFiltr("max_najezd_nafta", Number(e.target.value))}
+                    />
+                  </Pole>
                 </div>
-                <div>
-                  <p className="mb-1.5 text-xs text-zinc-400">{t.najezdBenzinOstatni}</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Pole label="od">
-                      <input
-                        type="number" className={input} value={n.filtry.min_najezd_benzin ?? 0}
-                        onChange={(e) => setFiltr("min_najezd_benzin", Number(e.target.value))}
-                      />
-                    </Pole>
-                    <Pole label="do">
-                      <input
-                        type="number" className={input} value={n.filtry.max_najezd_benzin ?? 0}
-                        onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))}
-                      />
-                    </Pole>
-                  </div>
+              </div>
+              <div>
+                <p className="mb-1.5 text-xs text-zinc-400">{t.najezdBenzinOstatni}</p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Pole label="od">
+                    <input
+                      type="number" className={input} value={n.filtry.min_najezd_benzin ?? 0}
+                      onChange={(e) => setFiltr("min_najezd_benzin", Number(e.target.value))}
+                    />
+                  </Pole>
+                  <Pole label="do">
+                    <input
+                      type="number" className={input} value={n.filtry.max_najezd_benzin ?? 0}
+                      onChange={(e) => setFiltr("max_najezd_benzin", Number(e.target.value))}
+                    />
+                  </Pole>
                 </div>
               </div>
             </div>
