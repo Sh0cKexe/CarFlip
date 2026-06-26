@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { createClient } from "@/utils/supabase/client";
 import { T, type Trh } from "@/lib/i18n";
-import { DISCORD_URL, DISCORD_HANDLE } from "@/lib/discord";
 import Logo from "@/app/components/Logo";
+import Link from "next/link";
 
 const LANG_KLIC = "carflip_lang";
 
@@ -78,7 +78,7 @@ function LoginFormulare() {
         className="glass w-full max-w-sm rounded-2xl border border-border p-8 shadow-glow-lg"
       >
         <div className="mb-6 flex items-center justify-center">
-          <Logo height={34} />
+          <Link href="/"><Logo height={34} /></Link>
         </div>
 
         <div className="relative mb-6 grid grid-cols-2 rounded-lg bg-panel2 p-1 text-sm">
@@ -171,23 +171,6 @@ function LoginFormulare() {
         </AnimatePresence>
       </motion.form>
 
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
-        className="glass w-full max-w-sm rounded-2xl border border-border p-5 text-center shadow-glow"
-      >
-        <p className="text-sm font-semibold text-white">{t.nemasInviteKod}</p>
-        <a
-          href={DISCORD_URL}
-          target="_blank"
-          rel="noreferrer"
-          className="mt-3 inline-flex items-center gap-2 rounded-lg border border-accent2/50 px-5 py-2.5 text-sm font-semibold text-accent2 transition hover:border-accent2 hover:bg-accent2/10 active:scale-[0.97]"
-        >
-          💬 Připojit se na Discord
-        </a>
-        <p className="mt-3 text-sm text-zinc-300">Nejde link? Discord: {DISCORD_HANDLE}</p>
-      </motion.div>
     </main>
   );
 }

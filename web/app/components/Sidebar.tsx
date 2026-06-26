@@ -32,7 +32,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
 
   async function odhlasit() {
     await supabase.auth.signOut();
-    router.push("/login");
+    router.push("/");
     router.refresh();
   }
 
