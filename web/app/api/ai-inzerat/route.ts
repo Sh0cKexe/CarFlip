@@ -75,7 +75,7 @@ Poznámky od majitele (stav, výbava, co bylo uděláno, důvod prodeje apod.): 
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const response = await client.messages.create({
       model: "claude-sonnet-4-6",
-      max_tokens: 500,
+      max_tokens: 1024,
       output_config: { effort: "low" },
       system: SYSTEM_PROMPT,
       messages: [{ role: "user", content: userPrompt }],
