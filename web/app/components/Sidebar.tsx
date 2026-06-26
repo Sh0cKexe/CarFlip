@@ -76,6 +76,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
             onClick={() => setOtevreno(false)}
             className="fixed inset-0 z-40 bg-black/60 md:hidden"
           />
@@ -83,8 +84,8 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
       </AnimatePresence>
 
       <aside
-        style={{ touchAction: "pan-y" }}
-        className={`fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-300 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
+        style={{ touchAction: "manipulation" }}
+        className={`fixed top-0 z-50 flex h-screen w-72 shrink-0 flex-col overflow-x-hidden overflow-y-auto overscroll-contain border-r border-sidebar2 bg-sidebar text-zinc-200 transition-transform duration-150 md:sticky md:z-auto md:w-60 md:translate-x-0 ${
           otevreno ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -100,7 +101,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
                 key={p.href}
                 href={p.href}
                 onClick={() => setOtevreno(false)}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                className={`relative flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
                   aktivni ? "font-medium text-white" : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
                 }`}
               >
