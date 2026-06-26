@@ -11,7 +11,7 @@ Dostaneš data jednoho inzerátu (z Otomoto.pl, Bazoš.cz, Bazoš.sk, AutoScout2
 
 DŮLEŽITÉ - formátování: NEPIŠ markdown (žádné ##, žádné **). Místo nadpisů použij emoji + krátký název sekce na vlastním řádku (přesně podle vzoru níže), pod tím normální text/odrážky pomlčkou. Tučný text nepiš vůbec, emoji použij jen jako nadpisy sekcí (ne v každé větě).
 
-DŮLEŽITÉ - máš k dispozici web_search nástroj. Když si u konkrétního motoru (podle kódu motoru a generace, ne jen "1.6 HDi" obecně) NEJSI jistý technickou specifikou (typ rozvodu řemen/řetěz, přesný servisní interval, typický výkon), VYHLEDEJ si to (2-3 dotazy max, cíleně na kód motoru/generaci), místo abys to hádal z obecné paměti nebo psal jen vágní hedging. Hedging (níže) použij jen když ani search nedá jasnou odpověď.
+DŮLEŽITÉ - web_search nástroj: Máš k dispozici web_search. Používej ho TIŠE – NIKDY do výstupu nepište text jako "Ověřím si...", "Zkusím dotaz...", "Search nevrátil výsledky", "Search nedostupný", "Použiji své znalosti" apod. Pokud hledáš, prostě hledej na pozadí. Pokud search nefunguje nebo nic nenajde, přejdi rovnou na analýzu z vlastních znalostí – BEZ komentáře o tom, že search selhal. Výstup musí být čistá analýza, žádné popisování procesu. Když si u konkrétního motoru (podle kódu motoru a generace, ne jen "1.6 HDi" obecně) NEJSI jistý technickou specifikou (typ rozvodu řemen/řetěz, přesný servisní interval, typický výkon), VYHLEDEJ si to (2-3 dotazy max, cíleně na kód motoru/generaci). Hedging použij jen když ani search nedá jasnou odpověď.
 
 NA VŮBEC PRVNÍ ŘÁDEK (před vším ostatním, přesně v tomto formátu, nic navíc na ten řádek) napiš:
 TITULEK: Značka Model - Rok
@@ -290,7 +290,7 @@ export async function POST(req: Request) {
 
         const apiStream = client.messages.stream({
           model: "claude-opus-4-8",
-          max_tokens: 2048,
+          max_tokens: 4096,
           system: SYSTEM_PROMPT,
           tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }] as any,
           messages: [{ role: "user", content: obsahProAi }],
@@ -305,20 +305,22 @@ export async function POST(req: Request) {
         apiStream.on("text", (delta: string) => {
           if (!titulekExtracted) {
             titulekBuffer += delta;
-            if (titulekBuffer.includes("\n\n") || titulekBuffer.length > 300) {
-              const titulekM = /^TITULEK:\s*(.+?)\s*\n+/.exec(titulekBuffer);
-              if (titulekM) {
-                const zeme = zemeZdroje(zdroj, new URL(url).hostname);
-                titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
-                const remaining = titulekBuffer.slice(titulekM[0].length);
-                if (remaining) {
-                  displayText += remaining;
-                  send({ type: "text", delta: remaining });
-                }
-              } else {
-                displayText += titulekBuffer;
-                send({ type: "text", delta: titulekBuffer });
+            // Buffer until we find TITULEK line anywhere in text, or give up after 2000 chars
+            const titulekM = /TITULEK:\s*(.+?)\s*\n+/.exec(titulekBuffer);
+            if (titulekM) {
+              const zeme = zemeZdroje(zdroj, new URL(url).hostname);
+              titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
+              // Skip everything before+including TITULEK line (strips planning text too)
+              const remaining = titulekBuffer.slice(titulekM.index + titulekM[0].length);
+              if (remaining) {
+                displayText += remaining;
+                send({ type: "text", delta: remaining });
               }
+              titulekExtracted = true;
+            } else if (titulekBuffer.length > 2000) {
+              // Give up waiting for TITULEK, stream what we have
+              displayText += titulekBuffer;
+              send({ type: "text", delta: titulekBuffer });
               titulekExtracted = true;
             }
           } else {
@@ -329,13 +331,13 @@ export async function POST(req: Request) {
 
         await apiStream.finalMessage();
 
-        // Flush buffer if response was too short to trigger extraction mid-stream
+        // Flush buffer if response was short enough that TITULEK wasn't found mid-stream
         if (!titulekExtracted && titulekBuffer) {
-          const titulekM = /^TITULEK:\s*(.+?)\s*\n+/.exec(titulekBuffer);
+          const titulekM = /TITULEK:\s*(.+?)\s*\n+/.exec(titulekBuffer);
           if (titulekM) {
             const zeme = zemeZdroje(zdroj, new URL(url).hostname);
             titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
-            displayText = titulekBuffer.slice(titulekM[0].length);
+            displayText = titulekBuffer.slice(titulekM.index + titulekM[0].length);
           } else {
             displayText = titulekBuffer;
           }
