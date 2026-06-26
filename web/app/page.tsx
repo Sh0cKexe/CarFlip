@@ -63,61 +63,39 @@ export default async function Home() {
           </div>
         </div>
 
-        {/* Telegram notification mock */}
-        <div className="mx-auto mt-14 max-w-sm">
-          <div className="glass rounded-2xl border border-border shadow-glow-lg overflow-hidden">
-            {/* Photo placeholder */}
-            <div className="relative h-36 w-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center">
-              <span className="text-5xl opacity-30">🚗</span>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
-                <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
-                <span className="text-[10px] font-medium text-white/80">Nový nález · právě teď</span>
-              </div>
-            </div>
-
-            {/* Bot header */}
-            <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/20 text-sm">🤖</div>
-              <div>
-                <p className="text-xs font-semibold text-white">FlipniTo Bot</p>
-                <p className="text-[10px] text-zinc-500">Telegram</p>
-              </div>
-            </div>
-
-            {/* Message body */}
-            <div className="p-4">
-              <p className="mb-2 text-sm font-bold text-white">Skoda Roomster 1.2 TSI</p>
-
-              <div className="mb-3 inline-flex items-center gap-1.5 rounded-lg bg-accent/15 px-3 py-1.5">
-                <span className="text-sm">💰</span>
-                <span className="text-sm font-bold text-accent">Zisk: 38 630 Kč</span>
-              </div>
-
-              <div className="space-y-1 text-xs">
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Cena v PL</span>
-                  <span className="text-white font-medium">9 900 PLN (≈ 56 370 Kč)</span>
+        {/* Phone + Telegram mockup */}
+        <div className="mx-auto mt-14 max-w-[300px]">
+          <div className="rounded-[2.8rem] border-2 border-zinc-700 bg-zinc-900 p-2 shadow-glow-lg">
+            <div className="overflow-hidden rounded-[2.2rem] bg-[#0e1621]">
+              {/* Telegram header */}
+              <div className="flex items-center gap-3 border-b border-white/5 bg-[#17212b] px-4 py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-lg">🤖</div>
+                <div>
+                  <p className="text-sm font-semibold text-white">FlipniTo Bot</p>
+                  <p className="text-[11px] text-zinc-500">bot</p>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Odhad prodej CZ</span>
-                  <span className="text-white font-medium">105 000 Kč</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Náklady dovoz</span>
-                  <span className="text-white font-medium">10 000 Kč</span>
+                <div className="ml-auto flex items-center gap-1">
+                  <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                  <span className="text-[10px] text-zinc-500">online</span>
                 </div>
               </div>
-
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {["2011", "182 800 km", "Benzín", "Manuál", "86 KM"].map((tag) => (
-                  <span key={tag} className="rounded-md bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">
-                    {tag}
-                  </span>
-                ))}
+              {/* Chat background */}
+              <div className="bg-[#0e1621] px-3 py-4">
+                {/* Bot bubble */}
+                <div className="max-w-[88%] rounded-2xl rounded-tl-sm bg-[#182533] px-3.5 py-2.5">
+                  <div className="space-y-0.5 text-xs leading-relaxed">
+                    <p className="font-semibold text-white">🚗 Skoda Roomster 1.2 TSI</p>
+                    <p className="font-bold text-[#4de469]">💰 Zisk: 38 630 Kč</p>
+                    <p className="mt-1 text-zinc-300">🇵🇱 Cena PL: 9 900 PLN (≈ 56 370 Kč)</p>
+                    <p className="text-zinc-300">🇨🇿 Odhad prodej CZ: 105 000 Kč</p>
+                    <p className="text-zinc-300">📦 Náklady dovoz: 10 000 Kč</p>
+                    <p className="mt-1 text-zinc-300">📅 2011 | 182 800 km | Benzyna | Manualna</p>
+                    <p className="text-zinc-300">🔧 1.2 l 1.2 TSI | 86 KM / 63 kW</p>
+                    <p className="text-zinc-300">📍 Marklowice</p>
+                  </div>
+                  <p className="mt-1.5 text-right text-[10px] text-zinc-600">18:42 ✓✓</p>
+                </div>
               </div>
-
-              <p className="mt-2.5 text-[10px] text-zinc-600">📍 Marklowice, Polsko</p>
             </div>
           </div>
         </div>
@@ -141,13 +119,13 @@ export default async function Home() {
                 n: "2",
                 ikona: "🤖",
                 titulek: "Bot hlídá 24/7",
-                popis: "Každých 15 minut bot prochází zahraniční inzertní portály a hledá podhodnocená auta.",
+                popis: "Každých 15 minut bot prochází inzertní portály a hledá podhodnocená auta.",
               },
               {
                 n: "3",
                 ikona: "💬",
                 titulek: "Dostaneš zprávu",
-                popis: "Telegram notifikace s fotkou, cenou, odhadnutým ziskem v Kč a srovnatelnými inzeráty v ČR nebo na Slovensku.",
+                popis: "Telegram notifikace s fotkou, cenou, odhadnutým ziskem v Kč nebo eurech a srovnatelnými inzeráty v ČR nebo na Slovensku.",
               },
             ].map((s) => (
               <div key={s.n} className="glass rounded-2xl border border-border p-5">
@@ -175,10 +153,10 @@ export default async function Home() {
             {[
               { ikona: "🌍", titulek: "6 zdrojových trhů", popis: "Polsko, Německo, Rakousko, Itálie, Česko, Slovensko." },
               { ikona: "📊", titulek: "Odhad zisku v reálném čase", popis: "Porovnání s aktuálními inzeráty v ČR a na Slovensku, median z reálných dat." },
-              { ikona: "🔍", titulek: "Filtry na generace", popis: "Golf Mk7, BMW E39, Octavia III — nehledáš naslepo celou řadu." },
+              { ikona: "🔍", titulek: "Filtry na generace", popis: "Golf Mk7, BMW F30, Octavia III — nehledáš naslepo celou řadu." },
               { ikona: "🤖", titulek: "AI rozbor inzerátu", popis: "Shrnutí, typické závady modelu, red flags a doporučení pro každý inzerát." },
-              { ikona: "🔧", titulek: "AI mechanik", popis: "Na co se zaměřit při prohlídce, typické slabiny konkrétního modelu a co kontrolovat před koupí." },
-              { ikona: "📝", titulek: "AI generátor inzerátu", popis: "Napiš pár vět a bot za tebe sestaví prodejní inzerát v češtině připravený k publikaci." },
+              { ikona: "🔧", titulek: "AI mechanik", popis: "Máš auto na dílně a nevíš si rady? Popiš problém, AI tě nasměruje nebo navrhne co zkontrolovat." },
+              { ikona: "📝", titulek: "AI generátor inzerátu", popis: "Napiš pár vět a bot za tebe sestaví prodejní inzerát v češtině nebo slovenštině — přímo v aplikaci." },
               { ikona: "📁", titulek: "Evidence flipů", popis: "Eviduj auta co máš, přidávej náklady, fotky a sleduj zisk." },
               { ikona: "🔒", titulek: "Uzavřená skupina", popis: "Přístup jen přes pozvánku. Žádné davy, žádné přetížení trhu." },
             ].map((f) => (
