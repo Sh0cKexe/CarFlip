@@ -115,6 +115,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
   const kurz = useKurz();
   const domovskaMena: Mena = n.trh === "sk" ? "EUR" : "CZK";
   const domovskaJednotka = domovskaMena === "EUR" ? "€" : "Kč";
+  const [rozbaleneZnacky, setRozbaleneZnacky] = useState<Set<string>>(new Set());
   const [zprava, setZprava] = useState<string | null>(null);
   const [uklada, setUklada] = useState(false);
   const [hledatZnacku, setHledatZnacku] = useState("");
@@ -199,9 +200,23 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
 
   function prepnoutZnacku(znacka: string) {
     const aktualni = new Map(vybraneZnacky);
-    if (aktualni.has(znacka)) aktualni.delete(znacka);
-    else aktualni.set(znacka, { znacka, modely: [] });
+    const novaRozbalena = new Set(rozbaleneZnacky);
+    if (aktualni.has(znacka)) {
+      aktualni.delete(znacka);
+      novaRozbalena.delete(znacka);
+    } else {
+      aktualni.set(znacka, { znacka, modely: [] });
+      novaRozbalena.add(znacka);
+    }
+    setRozbaleneZnacky(novaRozbalena);
     setFiltr("znacky", Array.from(aktualni.values()));
+  }
+
+  function prepnoutRozbaleni(znacka: string) {
+    const nova = new Set(rozbaleneZnacky);
+    if (nova.has(znacka)) nova.delete(znacka);
+    else nova.add(znacka);
+    setRozbaleneZnacky(nova);
   }
 
   function setModelyZnacky(znacka: string, modely: ModelSelekce[]) {
@@ -400,18 +415,28 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
           {vybraneZnacky.size > 0 && (
             <div className="mb-3 rounded-lg border border-accent/20 bg-accent/5 p-2.5">
               <div className="flex flex-wrap gap-1.5">
-                {Array.from(vybraneZnacky.values()).sort((a, b) => a.znacka.localeCompare(b.znacka)).map((zf) => (
-                  <span key={zf.znacka} className="flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent">
-                    {zf.znacka}
-                    {zf.modely.length > 0 && <span className="text-accent/50">·{zf.modely.length}</span>}
-                    <button type="button" onClick={() => prepnoutZnacku(zf.znacka)} className="text-accent/70 hover:text-accent" aria-label={t.smazat}>×</button>
-                  </span>
-                ))}
+                {Array.from(vybraneZnacky.values()).sort((a, b) => a.znacka.localeCompare(b.znacka)).map((zf) => {
+                  const otevreno = rozbaleneZnacky.has(zf.znacka);
+                  const maDef = MODELY_MAP.has(zf.znacka);
+                  return (
+                    <span
+                      key={zf.znacka}
+                      onClick={() => { if (maDef) prepnoutRozbaleni(zf.znacka); }}
+                      className={`flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent ${maDef ? "cursor-pointer hover:bg-accent/25" : ""}`}
+                    >
+                      {zf.znacka}
+                      {zf.modely.length > 0 && <span className="text-accent/50">·{zf.modely.length}</span>}
+                      {maDef && <span className="text-accent/40 text-[10px]">{otevreno ? "▾" : "▸"}</span>}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); prepnoutZnacku(zf.znacka); }} className="text-accent/70 hover:text-accent" aria-label={t.smazat}>×</button>
+                    </span>
+                  );
+                })}
                 <button type="button" onClick={() => setFiltr("znacky", [])} className="rounded-full px-2.5 py-1 text-xs text-zinc-400 underline hover:text-zinc-200">
                   {t.zrusit}
                 </button>
               </div>
               {Array.from(vybraneZnacky.values()).map((zf) => {
+                if (!rozbaleneZnacky.has(zf.znacka)) return null;
                 const def = MODELY_MAP.get(zf.znacka);
                 if (!def || def.modely.length === 0) return null;
                 const pilulka = (active: boolean, onClick: () => void, label: string, key?: string) => (
