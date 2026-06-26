@@ -170,6 +170,53 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="border-t border-border/40 px-5 py-20">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="mb-10 text-center text-2xl font-bold text-white sm:text-3xl">
+            Časté otázky
+          </h2>
+          <div className="space-y-3">
+            {[
+              {
+                q: "Jak získám přístup?",
+                a: "FlipniTo funguje pouze na pozvání. Připoj se na Discord a ozvi se — pokud je místo, dostaneš invite kód pro registraci.",
+              },
+              {
+                q: "Na jakých portálech bot hledá?",
+                a: "Otomoto (Polsko), AutoScout24 (Německo, Rakousko, Itálie), Willhaben (Rakousko) a Bazoš (Česko, Slovensko). Celkem 6 zdrojových trhů.",
+              },
+              {
+                q: "Jak rychle dostanu notifikaci?",
+                a: "Bot prochází inzeráty každých 15 minut. Pokud najde auto odpovídající tvým filtrům a odhadovaný zisk překročí tvůj cíl, dostaneš zprávu na Telegram.",
+              },
+              {
+                q: "Musím mít Telegram?",
+                a: "Ano. Notifikace chodí přes Telegram bota — potřebuješ token a chat ID, které nastavíš v aplikaci. Návod je přímo v nastavení.",
+              },
+              {
+                q: "Funguje to i pro slovenský trh?",
+                a: "Ano. Můžeš přepnout na SK trh — zisk se pak počítá v eurech a srovnání probíhá proti slovenským inzerátům.",
+              },
+              {
+                q: "Je dovoz auta z Polska legální?",
+                a: "Ano, dovoz osobního auta z EU je standardní postup. Platíš jen přepis, STK a případně opravy. Celní poplatky mezi zeměmi EU nejsou.",
+              },
+            ].map(({ q, a }) => (
+              <details key={q} className="group rounded-2xl border border-border bg-panel/30 px-5 py-4 transition hover:border-zinc-600">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-white">
+                  {q}
+                  <span className="shrink-0 text-lg text-zinc-500 transition-transform duration-200 group-open:rotate-180">
+                    ▾
+                  </span>
+                </summary>
+                <p className="mt-3 text-sm leading-relaxed text-zinc-400">{a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
       <footer className="border-t border-border/40 px-5 py-6 text-center">
         <p className="text-xs text-zinc-600">© 2025 FlipniTo · flipnito.xyz</p>
