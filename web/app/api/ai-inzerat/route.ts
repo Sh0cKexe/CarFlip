@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { AI_INZERAT_LIMIT, zacatekMesice } from "@/lib/aiLimit";
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `Jsi expert na psaní inzerátů na prodej ojetých aut na bazar (Bazoš). Piš VÝHRADNĚ ČESKY NEBO SLOVENSKY podle jazyka v zadání, žádný jiný jazyk ani cizí znaky. Dodrž přesně tuto strukturu:
 
 1. Na začátku technické specifikace, KAŽDÁ NA VLASTNÍ ŘÁDEK, ve formátu "Popisek - hodnota" (např. "Palivo - nafta"). Použij jen ty údaje, které dostaneš, vynech řádky bez hodnoty, nevymýšlej si nic. NIKDY nepiš cenu, cena je na Bazoši v samostatné kolonce a do textu inzerátu nepatří.

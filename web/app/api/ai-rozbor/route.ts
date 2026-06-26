@@ -4,6 +4,8 @@ import { createClient } from "@/utils/supabase/server";
 import { AI_ROZBOR_LIMIT, zacatekMesice } from "@/lib/aiLimit";
 import { nactiKurzServer, type Kurz } from "@/lib/kurzServer";
 
+export const maxDuration = 60;
+
 const SYSTEM_PROMPT = `Jsi expert na ojetá auta a jejich dovoz/import za účelem dalšího prodeje (flip).
 Dostaneš data jednoho inzerátu (z Otomoto.pl, Bazoš.cz, Bazoš.sk, AutoScout24 nebo Willhaben.at - JSON nebo prostý text podle zdroje). Napiš stručnou analýzu v ČEŠTINĚ.
 
@@ -270,40 +272,97 @@ export async function POST(req: Request) {
     obsahProAi = `Cena (přesně dopočítáno): ${formatCena(vysledekFetch.cena, kurz)}\n\n${obsahProAi}`;
   }
 
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const response = await client.messages.create({
-      model: "claude-opus-4-8",
-      max_tokens: 2048,
-      system: SYSTEM_PROMPT,
-      tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }],
-      messages: [{ role: "user", content: obsahProAi }],
-    });
-    // Vic text bloku je mozne, kdyz model pred/po web_search napise text -
-    // spojit vsechny, ne jen prvni (jinak by se ztratila cast odpovedi).
-    let text = response.content
-      .filter((b) => b.type === "text")
-      .map((b: any) => b.text)
-      .join("\n");
+  const encoder = new TextEncoder();
 
-    // Prvni radek "TITULEK: Znacka Model - Rok" - vytahnout a odstranit
-    // z viditelneho textu, doplnit zemi (spocitana z URL, ne od AI).
-    let titulek = "";
-    const titulekM = /^TITULEK:\s*(.+?)\s*\n+/.exec(text);
-    if (titulekM) {
-      const zeme = zemeZdroje(zdroj, new URL(url).hostname);
-      titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
-      text = text.slice(titulekM[0].length);
-    }
+  const readableStream = new ReadableStream({
+    async start(controller) {
+      const send = (data: object) => {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
+      };
 
-    const { data: radek } = await supabase
-      .from("ai_rozbory")
-      .insert({ user_id: user.id, url, vysledek: text, titulek })
-      .select("*")
-      .single();
+      try {
+        const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY! });
 
-    return NextResponse.json({ text, radek, vyuzito: (count ?? 0) + 1, limit: AI_ROZBOR_LIMIT });
-  } catch (e: any) {
-    return NextResponse.json({ error: "Chyba AI rozboru: " + (e?.message || String(e)) }, { status: 502 });
-  }
+        let displayText = "";
+        let titulek = "";
+        let titulekExtracted = false;
+        let titulekBuffer = "";
+
+        const apiStream = client.messages.stream({
+          model: "claude-opus-4-8",
+          max_tokens: 2048,
+          system: SYSTEM_PROMPT,
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }] as any,
+          messages: [{ role: "user", content: obsahProAi }],
+        });
+
+        (apiStream as any).on("content_block_start", (event: any) => {
+          if (event.content_block?.type !== "text") {
+            send({ type: "searching" });
+          }
+        });
+
+        apiStream.on("text", (delta: string) => {
+          if (!titulekExtracted) {
+            titulekBuffer += delta;
+            if (titulekBuffer.includes("\n\n") || titulekBuffer.length > 300) {
+              const titulekM = /^TITULEK:\s*(.+?)\s*\n+/.exec(titulekBuffer);
+              if (titulekM) {
+                const zeme = zemeZdroje(zdroj, new URL(url).hostname);
+                titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
+                const remaining = titulekBuffer.slice(titulekM[0].length);
+                if (remaining) {
+                  displayText += remaining;
+                  send({ type: "text", delta: remaining });
+                }
+              } else {
+                displayText += titulekBuffer;
+                send({ type: "text", delta: titulekBuffer });
+              }
+              titulekExtracted = true;
+            }
+          } else {
+            displayText += delta;
+            send({ type: "text", delta });
+          }
+        });
+
+        await apiStream.finalMessage();
+
+        // Flush buffer if response was too short to trigger extraction mid-stream
+        if (!titulekExtracted && titulekBuffer) {
+          const titulekM = /^TITULEK:\s*(.+?)\s*\n+/.exec(titulekBuffer);
+          if (titulekM) {
+            const zeme = zemeZdroje(zdroj, new URL(url).hostname);
+            titulek = zeme ? `${titulekM[1]} (${zeme})` : titulekM[1];
+            displayText = titulekBuffer.slice(titulekM[0].length);
+          } else {
+            displayText = titulekBuffer;
+          }
+          if (displayText) send({ type: "text", delta: displayText });
+        }
+
+        const { data: radek } = await supabase
+          .from("ai_rozbory")
+          .insert({ user_id: user.id, url, vysledek: displayText, titulek })
+          .select("*")
+          .single();
+
+        send({ type: "done", radek, vyuzito: (count ?? 0) + 1, limit: AI_ROZBOR_LIMIT });
+      } catch (e: any) {
+        const msg = "Chyba AI rozboru: " + (e?.message || String(e));
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "error", error: msg })}\n\n`));
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(readableStream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }

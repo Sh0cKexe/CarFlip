@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 import { AI_MECHANIK_LIMIT, zacatekMesice } from "@/lib/aiLimit";
 
+export const maxDuration = 60;
+
 type ChatZprava = { role: "user" | "assistant"; obsah: string };
 
 export async function POST(req: Request) {

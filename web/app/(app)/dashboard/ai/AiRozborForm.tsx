@@ -18,6 +18,8 @@ export default function AiRozborForm({
   const [historie, setHistorie] = useState<Rozbor[]>(historieVychozi);
   const [vyuzito, setVyuzito] = useState(vyuzitoVychozi);
   const [rozbaleno, setRozbaleno] = useState<Set<string>>(() => new Set());
+  const [streamingText, setStreamingText] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   function prepnoutRozbaleni(id: string) {
     setRozbaleno((aktualni) => {
@@ -31,27 +33,70 @@ export default function AiRozborForm({
   async function spustit() {
     setBezi(true);
     setChyba(null);
+    setStreamingText("");
+    setIsSearching(false);
     try {
       const r = await fetch("/api/ai-rozbor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
-      const j = await r.json();
+
       if (!r.ok) {
+        const j = await r.json();
         setChyba(j.error || t.neznama);
+        setStreamingText(null);
         return;
       }
-      if (j.radek) {
-        setHistorie([j.radek as Rozbor, ...historie]);
-        setRozbaleno((aktualni) => new Set(aktualni).add(j.radek.id));
+
+      const reader = r.body!.getReader();
+      const decoder = new TextDecoder();
+      let sseBuffer = "";
+      let currentText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        sseBuffer += decoder.decode(value, { stream: true });
+        const events = sseBuffer.split("\n\n");
+        sseBuffer = events.pop() ?? "";
+
+        for (const event of events) {
+          const dataLine = event.split("\n").find((l) => l.startsWith("data: "));
+          if (!dataLine) continue;
+          try {
+            const data = JSON.parse(dataLine.slice(6));
+            if (data.type === "text") {
+              setIsSearching(false);
+              currentText += data.delta;
+              setStreamingText(currentText);
+            } else if (data.type === "searching") {
+              setIsSearching(true);
+            } else if (data.type === "done") {
+              setIsSearching(false);
+              if (data.radek) {
+                setHistorie((prev) => [data.radek as Rozbor, ...prev]);
+                setRozbaleno((prev) => new Set(prev).add(data.radek.id));
+              }
+              if (typeof data.vyuzito === "number") setVyuzito(data.vyuzito);
+              setUrl("");
+              setStreamingText(null);
+            } else if (data.type === "error") {
+              setChyba(data.error);
+              setStreamingText(null);
+            }
+          } catch {
+            // malformed SSE chunk, skip
+          }
+        }
       }
-      if (typeof j.vyuzito === "number") setVyuzito(j.vyuzito);
-      setUrl("");
     } catch (e: any) {
       setChyba(t.chybaSite + e.message);
+      setStreamingText(null);
     } finally {
       setBezi(false);
+      setIsSearching(false);
     }
   }
 
@@ -72,16 +117,29 @@ export default function AiRozborForm({
             <button type="button" onClick={spustit} disabled={bezi || !url || limitDosazen} className={`mt-3 ${btnGhost}`}>
               {bezi ? t.analyzuji : t.spustitRozbor}
             </button>
-            {bezi && (
-              <span className="mt-3 flex items-center gap-2 text-sm text-accent">
-                <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
-                {t.aiRozborProbiha}
-              </span>
-            )}
           </div>
           {limitDosazen && <p className="mt-2 text-sm text-amber-400">{t.aiLimitDosazen}</p>}
           {chyba && <p className="mt-2 text-sm text-red-400">{chyba}</p>}
         </Sekce>
+
+        {streamingText !== null && (
+          <div className="mb-6 rounded-lg border border-border bg-panel2 p-4">
+            {isSearching && (
+              <p className="mb-3 flex items-center gap-2 text-sm text-accent">
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+                🔍 Vyhledávám informace na webu...
+              </p>
+            )}
+            {streamingText ? (
+              <p className="whitespace-pre-wrap text-sm text-zinc-200">{streamingText}</p>
+            ) : (
+              <p className="flex items-center gap-2 text-sm text-zinc-500">
+                <span className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-600 border-t-zinc-400" />
+                {t.aiRozborProbiha}
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="mb-6 rounded-2xl border border-amber-500/30 bg-amber-500/[0.06] p-5 text-sm leading-relaxed text-zinc-300 whitespace-pre-wrap">
           {t.aiDisclaimer}
