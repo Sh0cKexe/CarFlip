@@ -319,7 +319,7 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     const r = await fetch("/api/geokod", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ dotaz: nazev }),
+      body: JSON.stringify({ dotaz: nazev, zeme: o.zeme }),
     });
     const j = await r.json();
     setHledaSeOblast(null);

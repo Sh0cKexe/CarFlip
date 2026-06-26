@@ -68,8 +68,10 @@ async function reverzni(lat: number, lon: number) {
 // Dopredne geokodovani: rucne napsany nazev mesta -> souradnice + mesto.
 // Omezeno na podporovane zeme (countrycodes), at se nehlasi shodne nazvy
 // mest odjinud ze sveta.
-async function hledejMesto(dotaz: string) {
-  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(dotaz)}&format=json&accept-language=cs,sk,pl,de,en&countrycodes=cz,sk,pl,de,at,it&addressdetails=1&limit=1`;
+async function hledejMesto(dotaz: string, zeme?: string) {
+  const PODPOROVANE = ["cz", "sk", "pl", "de", "at", "it"];
+  const countrycodes = zeme && PODPOROVANE.includes(zeme) ? zeme : "cz,sk,pl,de,at,it";
+  const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(dotaz)}&format=json&accept-language=cs,sk,pl,de,en&countrycodes=${countrycodes}&addressdetails=1&limit=1`;
   const r = await fetch(url, { headers: HLAVICKY });
   if (!r.ok) return NextResponse.json({ error: "Geokódování se nezdařilo." }, { status: 502 });
   const arr = await r.json();
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
 
   try {
     if (typeof body.dotaz === "string" && body.dotaz.trim()) {
-      return await hledejMesto(body.dotaz.trim());
+      return await hledejMesto(body.dotaz.trim(), body.zeme);
     }
     const lat = Number(body.lat);
     const lon = Number(body.lon);
