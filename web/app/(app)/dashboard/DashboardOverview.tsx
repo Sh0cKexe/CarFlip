@@ -104,7 +104,7 @@ export default function DashboardOverview({
                   <button
                     type="button"
                     onClick={() => hotovoUkol(u.id)}
-                    className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-zinc-500 text-xs text-transparent transition hover:border-zinc-400 hover:text-zinc-300"
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-zinc-500 text-xs text-transparent transition hover:border-zinc-400 hover:text-zinc-300"
                   >
                     ✓
                   </button>

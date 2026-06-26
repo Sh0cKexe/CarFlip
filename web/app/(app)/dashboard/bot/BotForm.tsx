@@ -144,7 +144,7 @@ export default function BotForm({ nastaveni }: { nastaveni: Nastaveni | null }) 
                 className="overflow-hidden"
               >
                 <div className="px-6 pb-6">
-                  <div className="overflow-hidden rounded-lg" style={{ aspectRatio: "16 / 9", maxWidth: 320 }}>
+                  <div className="w-full overflow-hidden rounded-lg" style={{ aspectRatio: "16 / 9" }}>
                     <iframe
                       src="https://www.youtube.com/embed/t5JoCTcf8bI"
                       title={t.navodBota}

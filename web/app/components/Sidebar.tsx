@@ -64,7 +64,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
         <button
           onClick={() => setOtevreno(!otevreno)}
           aria-label="Menu"
-          className="flex h-9 w-9 items-center justify-center rounded-lg text-2xl text-zinc-200 transition hover:bg-sidebar2"
+          className="flex h-11 w-11 items-center justify-center rounded-lg text-2xl text-zinc-200 transition hover:bg-sidebar2"
         >
           {otevreno ? "✕" : "☰"}
         </button>

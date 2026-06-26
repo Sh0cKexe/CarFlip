@@ -17,7 +17,7 @@ export default async function Home() {
           <Logo height={28} />
           <Link
             href="/login"
-            className="rounded-lg border border-border px-4 py-1.5 text-sm text-zinc-300 transition hover:border-accent/50 hover:text-accent"
+            className="flex min-h-[44px] items-center rounded-lg border border-border px-4 text-sm text-zinc-300 transition hover:border-accent/50 hover:text-accent"
           >
             Přihlásit se
           </Link>
@@ -25,7 +25,7 @@ export default async function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="relative overflow-hidden px-5 pb-20 pt-36">
+      <section className="relative overflow-hidden px-5 pb-20 pt-24 sm:pt-36">
         {/* Background blobs */}
         <div
           className="animate-blob pointer-events-none absolute -left-40 -top-40 h-[600px] w-[600px] rounded-full opacity-[0.06]"

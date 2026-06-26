@@ -491,7 +491,7 @@ export default function AutoDetail({
               <button
                 type="button"
                 onClick={() => prepnoutUkol(u)}
-                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs transition ${
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs transition ${
                   u.hotovo
                     ? "border-transparent bg-gradient-to-r from-accent to-accent2 text-white shadow-glow"
                     : "border-zinc-500 text-transparent hover:border-zinc-400"
