@@ -47,7 +47,7 @@ export default async function Home() {
           </h1>
 
           <p className="mx-auto mb-8 max-w-xl text-base text-zinc-400 sm:text-lg">
-            FlipniTo sleduje bazary v 6 zemích 24/7, automaticky počítá předpokládaný
+            FlipniTo sleduje inzertní portály v 6 zemích 24/7, automaticky počítá předpokládaný
             zisk v Kč nebo eurech a pošle ti notifikaci.
           </p>
 
@@ -65,23 +65,59 @@ export default async function Home() {
 
         {/* Telegram notification mock */}
         <div className="mx-auto mt-14 max-w-sm">
-          <div className="glass rounded-2xl border border-border p-4 shadow-glow">
-            <div className="mb-3 flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm">🤖</div>
-              <div>
-                <p className="text-xs font-semibold text-white">FlipniTo Bot</p>
-                <p className="text-[10px] text-zinc-500">Telegram · právě teď</p>
+          <div className="glass rounded-2xl border border-border shadow-glow-lg overflow-hidden">
+            {/* Photo placeholder */}
+            <div className="relative h-36 w-full bg-gradient-to-br from-zinc-700 to-zinc-800 flex items-center justify-center">
+              <span className="text-5xl opacity-30">🚗</span>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+                <span className="text-[10px] font-medium text-white/80">Nový nález · právě teď</span>
               </div>
             </div>
-            <div className="space-y-0.5 text-xs leading-relaxed">
-              <p className="font-semibold text-white">🚗 Skoda Roomster 1.2 TSI</p>
-              <p className="font-semibold text-accent">💰 Zisk: 38 630 Kč</p>
-              <p className="mt-1 text-zinc-400">🇵🇱 Cena PL: <span className="text-white">9 900 PLN</span> (≈ 56 370 Kč)</p>
-              <p className="text-zinc-400">🇨🇿 Odhad prodej CZ: <span className="text-white">105 000 Kč</span></p>
-              <p className="text-zinc-400">📦 Náklady dovoz: <span className="text-white">10 000 Kč</span></p>
-              <p className="mt-1 text-zinc-400">📅 2011 | 182 800 km | Benzyna | Manualna</p>
-              <p className="text-zinc-400">🔧 1.2 l TSI · 86 KM / 63 kW</p>
-              <p className="text-zinc-400">📍 Marklowice</p>
+
+            {/* Bot header */}
+            <div className="flex items-center gap-2 border-b border-border/40 px-4 py-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent/20 text-sm">🤖</div>
+              <div>
+                <p className="text-xs font-semibold text-white">FlipniTo Bot</p>
+                <p className="text-[10px] text-zinc-500">Telegram</p>
+              </div>
+            </div>
+
+            {/* Message body */}
+            <div className="p-4">
+              <p className="mb-2 text-sm font-bold text-white">Skoda Roomster 1.2 TSI</p>
+
+              <div className="mb-3 inline-flex items-center gap-1.5 rounded-lg bg-accent/15 px-3 py-1.5">
+                <span className="text-sm">💰</span>
+                <span className="text-sm font-bold text-accent">Zisk: 38 630 Kč</span>
+              </div>
+
+              <div className="space-y-1 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Cena v PL</span>
+                  <span className="text-white font-medium">9 900 PLN (≈ 56 370 Kč)</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Odhad prodej CZ</span>
+                  <span className="text-white font-medium">105 000 Kč</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-zinc-500">Náklady dovoz</span>
+                  <span className="text-white font-medium">10 000 Kč</span>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {["2011", "182 800 km", "Benzín", "Manuál", "86 KM"].map((tag) => (
+                  <span key={tag} className="rounded-md bg-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+
+              <p className="mt-2.5 text-[10px] text-zinc-600">📍 Marklowice, Polsko</p>
             </div>
           </div>
         </div>
@@ -99,19 +135,19 @@ export default async function Home() {
                 n: "1",
                 ikona: "🎯",
                 titulek: "Nastav filtry",
-                popis: "Vyber značky, modely, generace, rok, cenu a oblasti kde chceš hledat. Klidně 10 značek najednou.",
+                popis: "Vyber značky, modely, generace, rok, cenu, oblasti a zisk na který cílíš. Klidně 10 značek najednou.",
               },
               {
                 n: "2",
                 ikona: "🤖",
                 titulek: "Bot hlídá 24/7",
-                popis: "Každých 15 minut prochází Otomoto (PL), AutoScout24 a Willhaben (DE/AT/IT) a hledá podhodnocená auta.",
+                popis: "Každých 15 minut bot prochází zahraniční inzertní portály a hledá podhodnocená auta.",
               },
               {
                 n: "3",
                 ikona: "💬",
                 titulek: "Dostaneš zprávu",
-                popis: "Telegram notifikace s fotkou, cenou, odhadnutým ziskem v Kč a srovnatelnými inzeráty z Bazoše.",
+                popis: "Telegram notifikace s fotkou, cenou, odhadnutým ziskem v Kč a srovnatelnými inzeráty v ČR nebo na Slovensku.",
               },
             ].map((s) => (
               <div key={s.n} className="glass rounded-2xl border border-border p-5">
@@ -138,9 +174,11 @@ export default async function Home() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
               { ikona: "🌍", titulek: "6 zdrojových trhů", popis: "Polsko, Německo, Rakousko, Itálie, Česko, Slovensko." },
-              { ikona: "📊", titulek: "Odhad zisku v reálném čase", popis: "Porovnání s aktuálními inzeráty na Bazoši, median z reálných dat." },
+              { ikona: "📊", titulek: "Odhad zisku v reálném čase", popis: "Porovnání s aktuálními inzeráty v ČR a na Slovensku, median z reálných dat." },
               { ikona: "🔍", titulek: "Filtry na generace", popis: "Golf Mk7, BMW E39, Octavia III — nehledáš naslepo celou řadu." },
               { ikona: "🤖", titulek: "AI rozbor inzerátu", popis: "Shrnutí, typické závady modelu, red flags a doporučení pro každý inzerát." },
+              { ikona: "🔧", titulek: "AI mechanik", popis: "Na co se zaměřit při prohlídce, typické slabiny konkrétního modelu a co kontrolovat před koupí." },
+              { ikona: "📝", titulek: "AI generátor inzerátu", popis: "Napiš pár vět a bot za tebe sestaví prodejní inzerát v češtině připravený k publikaci." },
               { ikona: "📁", titulek: "Evidence flipů", popis: "Eviduj auta co máš, přidávej náklady, fotky a sleduj zisk." },
               { ikona: "🔒", titulek: "Uzavřená skupina", popis: "Přístup jen přes pozvánku. Žádné davy, žádné přetížení trhu." },
             ].map((f) => (
@@ -150,34 +188,6 @@ export default async function Home() {
                 <p className="text-sm text-zinc-400">{f.popis}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA bottom */}
-      <section className="border-t border-border/40 px-5 py-20">
-        <div className="mx-auto max-w-xl text-center">
-          <div className="glass rounded-3xl border border-border p-10 shadow-glow">
-            <h2 className="mb-3 text-2xl font-bold text-white">Přístup jen na pozvání</h2>
-            <p className="mb-6 text-sm text-zinc-400">
-              FlipniTo není veřejná appka. Pokud chceš přístup, připoj se na Discord a ozvi se.
-            </p>
-            <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <a
-                href={DISCORD_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="rounded-lg bg-gradient-to-r from-accent to-accent2 px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition-all hover:shadow-glow-lg"
-              >
-                💬 Připojit se na Discord
-              </a>
-              <Link
-                href="/login"
-                className="rounded-lg border border-border px-6 py-2.5 text-sm font-semibold text-zinc-300 transition hover:border-zinc-500"
-              >
-                Mám invite kód →
-              </Link>
-            </div>
           </div>
         </div>
       </section>
