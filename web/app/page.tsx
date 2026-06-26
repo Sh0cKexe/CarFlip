@@ -38,7 +38,7 @@ export default async function Home() {
 
         <div className="relative mx-auto max-w-3xl text-center">
           <span className="mb-5 inline-block rounded-full border border-accent/30 bg-accent/10 px-3.5 py-1 text-xs font-medium text-accent">
-            🔒 Uzavřená beta · přístup jen na pozvání
+            🔒 Uzavřená skupina · přístup jen na pozvání
           </span>
 
           <h1 className="mb-5 text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
@@ -47,22 +47,16 @@ export default async function Home() {
           </h1>
 
           <p className="mx-auto mb-8 max-w-xl text-base text-zinc-400 sm:text-lg">
-            FlipniTo sleduje polské, německé a rakouské bazary 24/7, automaticky počítá
-            zisk v Kč a pošle ti notifikaci na Telegram — než to kdo jiný vůbec uvidí.
+            FlipniTo sleduje bazary v 6 zemích 24/7, automaticky počítá předpokládaný
+            zisk v Kč nebo eurech a pošle ti notifikaci.
           </p>
 
           <div className="flex flex-wrap justify-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-lg bg-gradient-to-r from-accent to-accent2 px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition-all hover:shadow-glow-lg"
-            >
-              Přihlásit se
-            </Link>
             <a
               href={DISCORD_URL}
               target="_blank"
               rel="noreferrer"
-              className="rounded-lg border border-border bg-panel2 px-6 py-2.5 text-sm font-semibold text-zinc-200 transition hover:border-zinc-500"
+              className="rounded-lg bg-gradient-to-r from-accent to-accent2 px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition-all hover:shadow-glow-lg"
             >
               💬 Chci pozvánku
             </a>
@@ -72,19 +66,22 @@ export default async function Home() {
         {/* Telegram notification mock */}
         <div className="mx-auto mt-14 max-w-sm">
           <div className="glass rounded-2xl border border-border p-4 shadow-glow">
-            <div className="mb-2 flex items-center gap-2">
+            <div className="mb-3 flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20 text-sm">🤖</div>
               <div>
                 <p className="text-xs font-semibold text-white">FlipniTo Bot</p>
                 <p className="text-[10px] text-zinc-500">Telegram · právě teď</p>
               </div>
             </div>
-            <div className="space-y-0.5 text-xs">
-              <p className="font-semibold text-white">🚗 VW Golf Mk7 1.6 TDI · 2015</p>
-              <p className="text-zinc-400">📍 Varšava · 180 000 km · manuál</p>
-              <p className="text-zinc-400">💶 Cena: <span className="text-white">5 800 PLN</span> (~33 200 Kč)</p>
-              <p className="text-zinc-400">📊 Odhad CZ: <span className="text-white">62 000 Kč</span></p>
-              <p className="mt-1 font-semibold text-accent">✅ Odhadovaný zisk: ~21 800 Kč</p>
+            <div className="space-y-0.5 text-xs leading-relaxed">
+              <p className="font-semibold text-white">🚗 Skoda Roomster 1.2 TSI</p>
+              <p className="font-semibold text-accent">💰 Zisk: 38 630 Kč</p>
+              <p className="mt-1 text-zinc-400">🇵🇱 Cena PL: <span className="text-white">9 900 PLN</span> (≈ 56 370 Kč)</p>
+              <p className="text-zinc-400">🇨🇿 Odhad prodej CZ: <span className="text-white">105 000 Kč</span></p>
+              <p className="text-zinc-400">📦 Náklady dovoz: <span className="text-white">10 000 Kč</span></p>
+              <p className="mt-1 text-zinc-400">📅 2011 | 182 800 km | Benzyna | Manualna</p>
+              <p className="text-zinc-400">🔧 1.2 l TSI · 86 KM / 63 kW</p>
+              <p className="text-zinc-400">📍 Marklowice</p>
             </div>
           </div>
         </div>
@@ -143,7 +140,7 @@ export default async function Home() {
               { ikona: "🌍", titulek: "6 zdrojových trhů", popis: "Polsko, Německo, Rakousko, Itálie, Česko, Slovensko." },
               { ikona: "📊", titulek: "Odhad zisku v reálném čase", popis: "Porovnání s aktuálními inzeráty na Bazoši, median z reálných dat." },
               { ikona: "🔍", titulek: "Filtry na generace", popis: "Golf Mk7, BMW E39, Octavia III — nehledáš naslepo celou řadu." },
-              { ikona: "🤖", titulek: "AI rozbor inzerátu", popis: "Shrnutí, typické závady modelu, red flags a doporučení z Claude AI." },
+              { ikona: "🤖", titulek: "AI rozbor inzerátu", popis: "Shrnutí, typické závady modelu, red flags a doporučení pro každý inzerát." },
               { ikona: "📁", titulek: "Evidence flipů", popis: "Eviduj auta co máš, přidávej náklady, fotky a sleduj zisk." },
               { ikona: "🔒", titulek: "Uzavřená skupina", popis: "Přístup jen přes pozvánku. Žádné davy, žádné přetížení trhu." },
             ].map((f) => (
@@ -161,7 +158,6 @@ export default async function Home() {
       <section className="border-t border-border/40 px-5 py-20">
         <div className="mx-auto max-w-xl text-center">
           <div className="glass rounded-3xl border border-border p-10 shadow-glow">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-accent">Uzavřená beta</p>
             <h2 className="mb-3 text-2xl font-bold text-white">Přístup jen na pozvání</h2>
             <p className="mb-6 text-sm text-zinc-400">
               FlipniTo není veřejná appka. Pokud chceš přístup, připoj se na Discord a ozvi se.
