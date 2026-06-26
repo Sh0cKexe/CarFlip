@@ -86,10 +86,10 @@ export default async function Home() {
                   <div className="space-y-0.5 text-[13px] leading-relaxed">
                     <p className="font-semibold text-white">🚗 Skoda Roomster 1.2 TSI</p>
                     <p className="font-bold text-[#4de469]">💰 Zisk: 38 630 Kč</p>
-                    <p className="mt-2 text-zinc-300">📍 Cena PL: 9 900 PLN (≈ 56 370 Kč)</p>
+                    <p className="mt-4 text-zinc-300">📍 Cena PL: 9 900 PLN (≈ 56 370 Kč)</p>
                     <p className="text-zinc-300">📊 Odhad prodej CZ: 105 000 Kč</p>
                     <p className="text-zinc-300">📦 Náklady dovoz: 10 000 Kč</p>
-                    <p className="mt-2 text-zinc-300">📅 2011 | 182 800 km | Benzyna | Manualna</p>
+                    <p className="mt-4 text-zinc-300">📅 2011 | 182 800 km | Benzyna | Manualna</p>
                     <p className="text-zinc-300">🔧 1.2 l 1.2 TSI | 86 KM / 63 kW</p>
                     <p className="text-zinc-300">🗺️ Marklowice</p>
                   </div>
