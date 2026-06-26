@@ -15,12 +15,20 @@ export default async function Home() {
       <nav className="fixed top-0 z-50 w-full border-b border-border/50 bg-bg/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3">
           <Logo height={28} />
-          <Link
-            href="/login"
-            className="flex min-h-[44px] items-center rounded-lg border border-border px-4 text-sm text-zinc-300 transition hover:border-accent/50 hover:text-accent"
-          >
-            Přihlásit se
-          </Link>
+          <div className="flex items-center gap-3">
+            <a
+              href="#faq"
+              className="flex min-h-[44px] items-center px-3 text-sm text-zinc-400 transition hover:text-zinc-200"
+            >
+              FAQ
+            </a>
+            <Link
+              href="/login"
+              className="flex min-h-[44px] items-center rounded-lg border border-border px-4 text-sm text-zinc-300 transition hover:border-accent/50 hover:text-accent"
+            >
+              Přihlásit se
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -167,11 +175,17 @@ export default async function Home() {
               </div>
             ))}
           </div>
+          <p className="mt-10 text-center text-sm text-zinc-500">
+            Máš otázku?{" "}
+            <a href="#faq" className="text-zinc-300 underline underline-offset-2 hover:text-white">
+              Přečti si FAQ
+            </a>
+          </p>
         </div>
       </section>
 
       {/* FAQ */}
-      <section className="border-t border-border/40 px-5 py-20">
+      <section id="faq" className="border-t border-border/40 px-5 py-20">
         <div className="mx-auto max-w-2xl">
           <h2 className="mb-10 text-center text-2xl font-bold text-white sm:text-3xl">
             Časté otázky
