@@ -86,8 +86,8 @@ export default async function Home() {
                   <div className="space-y-0.5 text-[13px] leading-relaxed">
                     <p className="font-semibold text-white">🚗 Skoda Roomster 1.2 TSI</p>
                     <p className="font-bold text-[#4de469]">💰 Zisk: 38 630 Kč</p>
-                    <p className="mt-6 flex items-center gap-1.5 text-zinc-300"><img src="https://flagcdn.com/h20/pl.png" alt="PL" className="inline-block h-3.5 w-auto rounded-[2px]" />Cena: 9 900 PLN (≈ 56 370 Kč)</p>
-                    <p className="flex items-center gap-1.5 text-zinc-300"><img src="https://flagcdn.com/h20/cz.png" alt="CZ" className="inline-block h-3.5 w-auto rounded-[2px]" />Odhad prodej: 105 000 Kč</p>
+                    <p className="mt-6 flex items-center gap-1 text-zinc-300"><img src="https://flagcdn.com/h20/pl.png" alt="PL" className="inline-block h-2.5 w-auto rounded-[2px] translate-y-px" />Cena: 9 900 PLN (≈ 56 370 Kč)</p>
+                    <p className="flex items-center gap-1 text-zinc-300"><img src="https://flagcdn.com/h20/cz.png" alt="CZ" className="inline-block h-2.5 w-auto rounded-[2px] translate-y-px" />Odhad prodej: 105 000 Kč</p>
                     <p className="text-zinc-300">📦 Náklady dovoz: 10 000 Kč</p>
                     <p className="mt-6 text-zinc-300">📅 2011 | 182 800 km | Benzyna | Manualna</p>
                     <p className="text-zinc-300">🔧 1.2 l 1.2 TSI | 86 KM / 63 kW</p>
