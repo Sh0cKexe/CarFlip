@@ -24,7 +24,7 @@ Model, rok, motor, nájezd, cena (cenu napiš PŘESNĚ podle řádku "Cena (pře
 DŮLEŽITÉ - výkon: vezmi PŘESNOU hodnotu výkonu přímo z dat (ne z paměti/odhadu). Polské "KM" v datech znamená koně (konie mechaniczne), NIKDY to nepiš jako "km" (to je jednotka vzdálenosti, ne výkonu) - vždy napiš "X k (Y kW)". Pokud data dávají jen koně, kW dopočítej (kW = koně × 0,7355, zaokrouhli na celé číslo).
 
 🔧 Co zkontrolovat
-Spojí typické známé problémy této motorizace/modelu (z obecných znalostí, NE z textu inzerátu) S tím, co je rozumné zkontrolovat KONKRÉTNĚ při tomto nájezdu. Piš konkrétně k tomuto motoru, ne obecné fráze.
+Spojí typické známé problémy této motorizace/modelu (z obecných znalostí, NE z textu inzerátu) S tím, co je rozumné zkontrolovat KONKRÉTNĚ při tomto nájezdu. Piš konkrétně k tomuto motoru, ne obecné fráze. KAŽDÝ bod maximálně 2 krátké věty – žádné odstavce, jen to nejdůležitější.
 DŮLEŽITÉ - realističnost: kupující u prohlídky má jen VIZUÁLNÍ kontrolu, zkušební jízdu a OBD diagnostiku (vyčtení chybových kódů i živých hodnot/korekcí) - NEMÁ zvedák, nerozebírá motor. Nikdy nepiš rady vyžadující demontáž nebo dílnu (např. "zkontrolovat vůli na turbu", "zkontrolovat ventilovou vůli") - místo toho napiš co se z toho projeví navenek (zvuky/kouř/výkon při jízdě, co ukáže OBD - např. u vstřikovačů korekce za studeného motoru na diagnostice).
 DŮLEŽITÉ - nepřeháněj opotřebení: u dílu s dlouhou typickou životností (turbo, DPF apod.) NIKDY nepiš, že je "na hranici životnosti" nebo že něco "už by mělo být vyměněno" jen podle kilometrů, pokud to fakt neříká servisní interval výrobce - tyto díly při dobré péči běžně vydrží i 250-300 tisíc km. Piš to jako "na co si dát pozor"/"co poslouchat", ne jako predikci blížící se poruchy. U DPF/FAP konkrétně: je to opotřebitelná součástka, jejíž životnost hodně závisí na typu provozu (krátké městské jezdy ji zatěžují víc než dálnice) - NEPIŠ že "se běžně nevyměňuje" ani že "určitě potřebuje výměnu", jen doporuč zkontrolovat stav/kontrolku na OBD a zeptat se na historii.
 DŮLEŽITÉ - buď důkladný u specifických systémů dané motorizace, ne jen obecné "turbo/rozvody" - např. u PSA/Peugeot-Citroën HDi s FAP filtrem nezapomeň na systém Eolys (přídavná kapalina pro regeneraci filtru, dolévá/doplňuje se v servisu), pokud je pro daný motor relevantní.
@@ -292,7 +292,7 @@ export async function POST(req: Request) {
           model: "claude-sonnet-4-6",
           max_tokens: 16000,
           system: SYSTEM_PROMPT,
-          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }] as any,
+          tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 2 }] as any,
           messages: [{ role: "user", content: obsahProAi }],
         });
 
