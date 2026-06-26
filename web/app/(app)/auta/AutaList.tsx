@@ -171,7 +171,8 @@ function SekceAut({
         <span className="rounded-full bg-zinc-700/40 px-2 py-0.5 text-xs text-zinc-400">{auta.length}</span>
       </div>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scrollbar-thin">
+        <p className="px-4 pb-1 pt-2 text-[10px] text-zinc-600 sm:hidden">← přejeď pro více sloupců →</p>
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border/60 text-left text-xs text-zinc-500">

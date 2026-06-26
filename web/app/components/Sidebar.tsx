@@ -44,11 +44,11 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
 
   const polozky = [
     { href: "/dashboard", ikona: "📊", text: t.prehled, presne: true },
-    { href: "/dashboard/ai", ikona: "🤖", text: t.aiRozborNadpis },
-    { href: "/dashboard/ai-inzerat", ikona: "📝", text: t.aiInzeratNadpis },
-    { href: "/dashboard/ai-mechanik", ikona: "🔧", text: t.aiMechanikNadpis },
-    { href: "/dashboard/bot", ikona: "🛠️", text: t.nastaveniBota },
-    { href: "/dashboard/filtry", ikona: "🔍", text: t.filtryHledani },
+    { href: "/dashboard/ai", ikona: "🤖", text: t.aiRozborNadpis, presne: true },
+    { href: "/dashboard/ai-inzerat", ikona: "📝", text: t.aiInzeratNadpis, presne: true },
+    { href: "/dashboard/ai-mechanik", ikona: "🔧", text: t.aiMechanikNadpis, presne: true },
+    { href: "/dashboard/bot", ikona: "🛠️", text: t.nastaveniBota, presne: true },
+    { href: "/dashboard/filtry", ikona: "🔍", text: t.filtryHledani, presne: true },
     { href: "/auta", ikona: "📋", text: t.mojeAuta },
   ];
 
@@ -99,6 +99,7 @@ export default function Sidebar({ email, trh, userId }: { email: string; trh?: T
               <Link
                 key={p.href}
                 href={p.href}
+                onClick={() => setOtevreno(false)}
                 className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                   aktivni ? "font-medium text-white" : "text-zinc-200 hover:bg-sidebar2 hover:text-white"
                 }`}
