@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { createClient } from "@/utils/supabase/client";
 import { Sekce, Pole, CenovePole, VicevyberMenu, input, btnPrimary, btnGhost, btnDanger } from "@/app/components/FormUI";
 import { T, type Trh } from "@/lib/i18n";
-import { MODELY_MAP, type ZnackaFiltr } from "@/lib/znacky-modely";
+import { MODELY_MAP, type ZnackaFiltr, type ModelSelekce, type ModelDef } from "@/lib/znacky-modely";
 import { useKurz, prevod, type Mena } from "@/lib/kurz";
 import { BARVA_ZEME } from "@/lib/zemeBarvy";
 
@@ -84,7 +84,11 @@ const ZNAME_ZNACKY = [
 ].sort();
 
 function normalizeZnacky(raw: any[]): ZnackaFiltr[] {
-  return (raw ?? []).map((z) => typeof z === "string" ? { znacka: z, modely: [] } : z);
+  return (raw ?? []).map((z): ZnackaFiltr =>
+    typeof z === "string"
+      ? { znacka: z, modely: [] }
+      : { ...z, modely: (z.modely ?? []).map((m: any): ModelSelekce => typeof m === "string" ? { slug: m } : m) }
+  );
 }
 
 export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaveni | null; jeAdmin?: boolean }) {
@@ -200,17 +204,39 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
     setFiltr("znacky", Array.from(aktualni.values()));
   }
 
-  function setModelyZnacky(znacka: string, modely: string[]) {
+  function setModelyZnacky(znacka: string, modely: ModelSelekce[]) {
     setFiltr("znacky", n.filtry.znacky.map((z) => z.znacka === znacka ? { ...z, modely } : z));
   }
 
-  function prepnoutModelZnacky(znacka: string, model: string) {
+  function prepnoutModelZnacky(znacka: string, slug: string) {
     const zf = vybraneZnacky.get(znacka);
     if (!zf) return;
-    const aktualni = new Set(zf.modely);
-    if (aktualni.has(model)) aktualni.delete(model);
-    else aktualni.add(model);
-    setModelyZnacky(znacka, Array.from(aktualni));
+    const jeVybran = zf.modely.some((m) => m.slug === slug);
+    const noveModely = jeVybran
+      ? zf.modely.filter((m) => m.slug !== slug)
+      : [...zf.modely, { slug }];
+    setModelyZnacky(znacka, noveModely);
+  }
+
+  function prepnoutGeneraci(znacka: string, slug: string, g: { label: string; rokOd: number; rokDo: number }) {
+    const zf = vybraneZnacky.get(znacka);
+    if (!zf) return;
+    const jeVybrana = zf.modely.some((m) => m.slug === slug && m.rokOd === g.rokOd);
+    let noveModely: ModelSelekce[];
+    if (jeVybrana) {
+      noveModely = zf.modely.filter((m) => !(m.slug === slug && m.rokOd === g.rokOd));
+    } else {
+      const bezVse = zf.modely.filter((m) => !(m.slug === slug && !m.rokOd));
+      noveModely = [...bezVse, { slug, rokOd: g.rokOd, rokDo: g.rokDo, generaceLabel: g.label }];
+    }
+    setModelyZnacky(znacka, noveModely);
+  }
+
+  function nastavModelVse(znacka: string, slug: string) {
+    const zf = vybraneZnacky.get(znacka);
+    if (!zf) return;
+    const bezTohotoModelu = zf.modely.filter((m) => m.slug !== slug);
+    setModelyZnacky(znacka, [...bezTohotoModelu, { slug }]);
   }
 
   function prepnoutZdroj(zdroj: Zeme) {
@@ -388,32 +414,51 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
               {Array.from(vybraneZnacky.values()).map((zf) => {
                 const def = MODELY_MAP.get(zf.znacka);
                 if (!def || def.modely.length === 0) return null;
+                const pilulka = (active: boolean, onClick: () => void, label: string, key?: string) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={onClick}
+                    className={`rounded-full border px-2.5 py-0.5 text-xs transition ${
+                      active ? "border-accent bg-accent/15 text-accent" : "border-border text-zinc-400 hover:border-zinc-500"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
                 return (
                   <div key={zf.znacka} className="mt-2.5 border-t border-accent/10 pt-2.5">
                     <p className="mb-1.5 text-xs font-medium text-zinc-400">{def.label} — model:</p>
                     <div className="flex flex-wrap gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => setModelyZnacky(zf.znacka, [])}
-                        className={`rounded-full border px-2.5 py-0.5 text-xs transition ${
-                          zf.modely.length === 0 ? "border-accent bg-accent/15 text-accent" : "border-border text-zinc-400 hover:border-zinc-500"
-                        }`}
-                      >
-                        Vše
-                      </button>
-                      {def.modely.map((m) => (
-                        <button
-                          key={m.slug}
-                          type="button"
-                          onClick={() => prepnoutModelZnacky(zf.znacka, m.slug)}
-                          className={`rounded-full border px-2.5 py-0.5 text-xs transition ${
-                            zf.modely.includes(m.slug) ? "border-accent bg-accent/15 text-accent" : "border-border text-zinc-400 hover:border-zinc-500"
-                          }`}
-                        >
-                          {m.label}
-                        </button>
-                      ))}
+                      {pilulka(zf.modely.length === 0, () => setModelyZnacky(zf.znacka, []), "Vše")}
+                      {def.modely.map((m: ModelDef) => {
+                        const jeVybran = zf.modely.some((ms) => ms.slug === m.slug);
+                        return pilulka(jeVybran, () => prepnoutModelZnacky(zf.znacka, m.slug), m.label, m.slug);
+                      })}
                     </div>
+                    {def.modely
+                      .filter((m: ModelDef) => m.generace?.length && zf.modely.some((ms) => ms.slug === m.slug))
+                      .map((m: ModelDef) => (
+                        <div key={m.slug} className="mt-2 ml-1 border-l-2 border-accent/20 pl-3">
+                          <p className="mb-1 text-xs text-zinc-500">{m.label} — generace:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {pilulka(
+                              zf.modely.some((ms) => ms.slug === m.slug && !ms.rokOd),
+                              () => nastavModelVse(zf.znacka, m.slug),
+                              "Vše",
+                              `${m.slug}-vse`
+                            )}
+                            {m.generace!.map((g) =>
+                              pilulka(
+                                zf.modely.some((ms) => ms.slug === m.slug && ms.rokOd === g.rokOd),
+                                () => prepnoutGeneraci(zf.znacka, m.slug, g),
+                                `${g.label} (${g.rokOd}–${g.rokDo})`,
+                                `${m.slug}-${g.label}`
+                              )
+                            )}
+                          </div>
+                        </div>
+                      ))}
                   </div>
                 );
               })}

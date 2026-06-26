@@ -37,10 +37,17 @@ def _najdi_pl(cfg, kurz_pln):
     videno_id = set()
     auta = []
     for znacka, modely in main._rozbalni_znacky(filtry.get("znacky", [])):
-        for model in (modely if modely else [None]):
+        for model_entry in (modely if modely else [None]):
+            slug = model_entry["slug"] if model_entry else None
+            lok_filtry = dict(filtry)
+            if model_entry:
+                if model_entry.get("rokOd"):
+                    lok_filtry["min_rok"] = model_entry["rokOd"]
+                if model_entry.get("rokDo"):
+                    lok_filtry["max_rok"] = model_entry["rokDo"]
             for okruh in okruhy:
                 try:
-                    davka = otomoto.nacti_inzeraty(znacka, filtry, max_stran=MAX_STRAN, okruh=okruh, model=model)
+                    davka = otomoto.nacti_inzeraty(znacka, lok_filtry, max_stran=MAX_STRAN, okruh=okruh, model=slug)
                 except Exception as e:
                     print("  chyba Otomoto:", e)
                     continue
@@ -145,10 +152,17 @@ def _najdi_zahranicni(cfg, zahranicni_trh, modul):
     videno_id = set()
     auta = []
     for znacka, modely in main._rozbalni_znacky(filtry.get("znacky", [])):
-        for model in (modely if modely else [None]):
+        for model_entry in (modely if modely else [None]):
+            slug = model_entry["slug"] if model_entry else None
+            lok_filtry_zeme = dict(filtry_zeme)
+            if model_entry:
+                if model_entry.get("rokOd"):
+                    lok_filtry_zeme["min_rok"] = model_entry["rokOd"]
+                if model_entry.get("rokDo"):
+                    lok_filtry_zeme["max_rok"] = model_entry["rokDo"]
             for okruh in okruhy:
                 try:
-                    davka = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=MAX_STRAN, okruh=okruh, zeme=zahranicni_trh, model=model)
+                    davka = modul.nacti_inzeraty(znacka, lok_filtry_zeme, max_stran=MAX_STRAN, okruh=okruh, zeme=zahranicni_trh, model=slug)
                 except Exception as e:
                     print("  chyba {}:".format(zahranicni_trh.upper()), e)
                     continue

@@ -529,16 +529,21 @@ MAX_STRAN_PRVNI = 25
 
 
 def _rozbalni_znacky(znacky_raw):
-    """Vrati list (znacka, modely) pro oba formaty filtru:
-    stary: ["volkswagen", "bmw"] -> [("volkswagen", []), ("bmw", [])]
-    novy:  [{"znacka": "volkswagen", "modely": ["golf"]}] -> [("volkswagen", ["golf"])]
+    """Vrati list (znacka, modely) kde kazdy model je dict {"slug": ..., "rokOd"?: ..., "rokDo"?: ...}.
+
+    Formaty vstupu:
+    - stary string: ["volkswagen"] -> [("volkswagen", [])]
+    - stary model string: {"znacka":"vw","modely":["golf"]} -> [("vw",[{"slug":"golf"}])]
+    - novy model dict: {"znacka":"vw","modely":[{"slug":"golf","rokOd":2012,"rokDo":2019,...}]}
     Prazdne modely = hledat vsechny modely dane znacky (puvodni chovani)."""
     result = []
     for item in (znacky_raw or []):
         if isinstance(item, str):
             result.append((item, []))
         else:
-            result.append((item["znacka"], item.get("modely") or []))
+            raw_modely = item.get("modely") or []
+            modely = [{"slug": m} if isinstance(m, str) else m for m in raw_modely]
+            result.append((item["znacka"], modely))
     return result
 
 
@@ -563,11 +568,19 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
     if "pl" in zdroje:
         okruhy_pl = [o for o in vsechny_okruhy if o.get("zeme", "pl") == "pl"] or [None]
         for znacka, modely in znacky_modely:
-            for model in (modely if modely else [None]):
+            for model_entry in (modely if modely else [None]):
+                slug = model_entry["slug"] if model_entry else None
+                lok_filtry = dict(filtry)
+                if model_entry:
+                    if model_entry.get("rokOd"):
+                        lok_filtry["min_rok"] = model_entry["rokOd"]
+                    if model_entry.get("rokDo"):
+                        lok_filtry["max_rok"] = model_entry["rokDo"]
                 for okruh in okruhy_pl:
                     kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km" if okruh else "cele Polsko"
-                    print("Kontroluji (PL):", znacka, model or "", "|", kde)
-                    auta = otomoto.nacti_inzeraty(znacka, filtry, max_stran=max_stran, okruh=okruh, model=model)
+                    gen = " ({})".format(model_entry["generaceLabel"]) if model_entry and model_entry.get("generaceLabel") else ""
+                    print("Kontroluji (PL):", znacka, (slug or "") + gen, "|", kde)
+                    auta = otomoto.nacti_inzeraty(znacka, lok_filtry, max_stran=max_stran, okruh=okruh, model=slug)
                     print("  nalezeno {} inzeratu".format(len(auta)))
                     for auto in auta:
                         try:
@@ -591,7 +604,14 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
 
         okruhy_zahr = [o for o in vsechny_okruhy if o.get("zeme") == zahranicni_trh] or [None]
         for znacka, modely in znacky_modely:
-            for model in (modely if modely else [None]):
+            for model_entry in (modely if modely else [None]):
+                slug = model_entry["slug"] if model_entry else None
+                lok_filtry_zeme = dict(filtry_zeme)
+                if model_entry:
+                    if model_entry.get("rokOd"):
+                        lok_filtry_zeme["min_rok"] = model_entry["rokOd"]
+                    if model_entry.get("rokDo"):
+                        lok_filtry_zeme["max_rok"] = model_entry["rokDo"]
                 for okruh in okruhy_zahr:
                     if okruh and okruh.get("area_id"):
                         kde = okruh.get("nazev", "?")
@@ -599,8 +619,9 @@ def jeden_beh(cfg, prvni_beh, uz_videno=databaze.uz_videno,
                         kde = okruh.get("nazev", "?") + " " + str(okruh.get("okruh_km")) + "km"
                     else:
                         kde = "cela zeme"
-                    print("Kontroluji ({}):".format(zahranicni_trh.upper()), znacka, model or "", "|", kde)
-                    auta = modul.nacti_inzeraty(znacka, filtry_zeme, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh, model=model)
+                    gen = " ({})".format(model_entry["generaceLabel"]) if model_entry and model_entry.get("generaceLabel") else ""
+                    print("Kontroluji ({}):".format(zahranicni_trh.upper()), znacka, (slug or "") + gen, "|", kde)
+                    auta = modul.nacti_inzeraty(znacka, lok_filtry_zeme, max_stran=max_stran, okruh=okruh, zeme=zahranicni_trh, model=slug)
                     print("  nalezeno {} inzeratu".format(len(auta)))
                     for auto in auta:
                         try:
