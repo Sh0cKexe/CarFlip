@@ -200,23 +200,20 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
 
   function prepnoutZnacku(znacka: string) {
     const aktualni = new Map(vybraneZnacky);
-    const novaRozbalena = new Set(rozbaleneZnacky);
     if (aktualni.has(znacka)) {
       aktualni.delete(znacka);
-      novaRozbalena.delete(znacka);
+      setRozbaleneZnacky((prev) => { const s = new Set(prev); s.delete(znacka); return s; });
     } else {
       aktualni.set(znacka, { znacka, modely: [] });
-      novaRozbalena.add(znacka);
+      // Otevrit jen tuto znacku, zbytek zabalit
+      setRozbaleneZnacky(new Set([znacka]));
     }
-    setRozbaleneZnacky(novaRozbalena);
     setFiltr("znacky", Array.from(aktualni.values()));
   }
 
   function prepnoutRozbaleni(znacka: string) {
-    const nova = new Set(rozbaleneZnacky);
-    if (nova.has(znacka)) nova.delete(znacka);
-    else nova.add(znacka);
-    setRozbaleneZnacky(nova);
+    // Jen jeden panel otevreny najednou
+    setRozbaleneZnacky((prev) => prev.has(znacka) ? new Set() : new Set([znacka]));
   }
 
   function setModelyZnacky(znacka: string, modely: ModelSelekce[]) {
@@ -417,17 +414,21 @@ export default function FiltryForm({ nastaveni, jeAdmin }: { nastaveni: Nastaven
               <div className="flex flex-wrap gap-1.5">
                 {Array.from(vybraneZnacky.values()).sort((a, b) => a.znacka.localeCompare(b.znacka)).map((zf) => {
                   const otevreno = rozbaleneZnacky.has(zf.znacka);
-                  const maDef = MODELY_MAP.has(zf.znacka);
+                  const def = MODELY_MAP.get(zf.znacka);
+                  const modelLabels = zf.modely.map((ms) =>
+                    ms.generaceLabel ?? def?.modely.find((d) => d.slug === ms.slug)?.label ?? ms.slug
+                  );
+                  const modelText = modelLabels.length === 0 ? "" :
+                    modelLabels.length <= 2 ? ` (${modelLabels.join(", ")})` : ` (${modelLabels.length}×)`;
                   return (
                     <span
                       key={zf.znacka}
-                      onClick={() => { if (maDef) prepnoutRozbaleni(zf.znacka); }}
-                      className={`flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent ${maDef ? "cursor-pointer hover:bg-accent/25" : ""}`}
+                      onClick={() => { if (def) prepnoutRozbaleni(zf.znacka); }}
+                      className={`flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-xs font-medium text-accent ${def ? "cursor-pointer hover:bg-accent/25" : ""}`}
                     >
-                      {zf.znacka}
-                      {zf.modely.length > 0 && <span className="text-accent/50">·{zf.modely.length}</span>}
-                      {maDef && <span className="text-accent/40 text-[10px]">{otevreno ? "▾" : "▸"}</span>}
-                      <button type="button" onClick={(e) => { e.stopPropagation(); prepnoutZnacku(zf.znacka); }} className="text-accent/70 hover:text-accent" aria-label={t.smazat}>×</button>
+                      <span>{zf.znacka}{modelText && <span className="text-accent/60 font-normal">{modelText}</span>}</span>
+                      {def && <span className="text-accent/40 text-[10px]">{otevreno ? "▾" : "▸"}</span>}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); prepnoutZnacku(zf.znacka); }} className="ml-0.5 text-accent/70 hover:text-accent" aria-label={t.smazat}>×</button>
                     </span>
                   );
                 })}
